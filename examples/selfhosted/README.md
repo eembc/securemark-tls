@@ -1,9 +1,9 @@
 # Introduction
 
 This example implements a self-hosted version of the benchmark by including
-a `main()` entrypoint with an mbedTLS crypto SDK. It does not requrie a UART
+a `main()` entry point with an mbedTLS crypto SDK. It does not require a UART
 or GPIO timestamp, nor does it require the host UI. It can be compiled into 
-a stand-alone executable which can be run from an OS or as baremetal on an
+a stand-alone executable which can be run from an OS, or bare-metal on an
 embedded platform.
 
 # Details
@@ -17,10 +17,15 @@ a set of wrapper functions in `main.c` prepare the primitives for local
 execution. Keys, plaintext, and ciphertext are all generated randomly with
 `ee_srand()` which is seeded with zero for each primitive invocation.
 
-## Self-timinig
+The `th_timestamp` function is implemented with the POSIX `clock_gettime`
+function, which reports elapsed time down to nanoseconds (if supported). If
+your compiler does not support this function, edit the `th_timestamp` function
+to generate a counter that increases at least once per microsecond.
+
+## Self-timing
 
 The benchmark determines the correct number of iterations automatically by
-porportionally increasing the count until a minimum number of seconds (or
+proportionally increasing the count until a minimum number of seconds (or
 minimum number of iterations) elapse. See `MIN_RUNTIME_SEC` and `MIN_ITER` in
 `main.c`.
 
