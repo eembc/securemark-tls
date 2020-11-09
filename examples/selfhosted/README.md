@@ -68,7 +68,18 @@ SecureMark-TLS Score is 112677.812 marks
 :
 ```
 
-# Scoring
+To build with using wolfSSL for crypto (https://github.com/wolfssl/wolfssl)
+install wolfSSL on the system. On the host a good configure option to use when
+building wolfSSL is "./configure CFLAGS="-DWOLFSSL_AES_DIRECT -DHAVE_AES_ECB" --enable-ecc --enable-keygen --enable-aesccm --enable-sp --enable-sp-asm"
+
+Then run
+
+```
+% mkdir build
+% cd build
+% cmake -DWOLFSSL=1 ..
+% make
+```
 
 This code is provided as an example of how the benchmark operates. In order to
 generate an official score, the host software must be used to verify operation

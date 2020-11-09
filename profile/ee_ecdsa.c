@@ -30,6 +30,7 @@ ee_ecdsa_sign(
     unsigned int   iterations   // input: # of test iterations
 )
 {
+    unsigned int max_slen;
     void *p_context; // Generic context if needed by implementation
 
     if (th_ecdsa_create(&p_context) != EE_STATUS_OK)
@@ -37,6 +38,7 @@ ee_ecdsa_sign(
         th_printf("e-ecdsa_sign-[Failed to create context]\r\n");
         return;
     }
+    max_slen = *p_slen;
 
     if (th_ecdsa_init(p_context, EE_P256R1, p_private, plen) != EE_STATUS_OK)
     {
@@ -50,6 +52,7 @@ ee_ecdsa_sign(
     th_pre();
     while (iterations-- > 0)
     {
+        *p_slen = max_slen; /* signature size can vary, keep max buffer size */
         if (th_ecdsa_sign(p_context, p_hash, hlen, p_sig, p_slen)
             != EE_STATUS_OK)
         {
