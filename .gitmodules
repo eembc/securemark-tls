@@ -1,3 +1,6 @@
 [submodule "mbedtls"]
-	path = mbedtls
+	path = examples/selfhosted/profile/psa_th_api/mbedtls
+	url = https://github.com/ARMmbed/mbedtls.git
+[submodule "examples/selfhosted/profile/psa_th_api/mbedtls"]
+	path = examples/selfhosted/profile/psa_th_api/mbedtls
 	url = https://github.com/ARMmbed/mbedtls.git
