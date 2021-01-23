@@ -335,7 +335,7 @@ wrap_aes_ccm_encrypt(unsigned int n, unsigned int i)
     unsigned int   x;
     uint16_t       crc;
 
-    buflen = AES_KEYSIZE + AES_IVSIZE + n + AES_TAGSIZE + n;
+    buflen = AES_KEYSIZE + AES_IVSIZE + n + AES_TAGSIZE + n + 100;
     buffer = (unsigned char *)th_malloc(buflen);
     assert(buffer != NULL);
     key = buffer;
@@ -379,7 +379,7 @@ wrap_aes_ccm_decrypt(unsigned int n, unsigned int i)
     unsigned int   x;
     uint16_t       crc;
 
-    buflen = AES_KEYSIZE + AES_IVSIZE + n + AES_TAGSIZE + n;
+    buflen = AES_KEYSIZE + AES_IVSIZE + n + AES_TAGSIZE + n + 100;
     buffer = (unsigned char *)th_malloc(buflen);
     assert(buffer != NULL);
     key = buffer;
