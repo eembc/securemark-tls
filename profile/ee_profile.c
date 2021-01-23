@@ -631,7 +631,7 @@ ee_buffer_parse(char *p_command)
             }
             else
             {
-                ee_buffer_fill(hex);
+                ee_buffer_fill( (unsigned char) hex);
             }
         }
         else
@@ -659,7 +659,7 @@ ee_buffer_parse(char *p_command)
                 }
                 else
                 {
-                    ee_buffer_add(hex);
+                    ee_buffer_add( (unsigned char) hex);
                 }
                 
                 p_next = th_strtok(NULL, EE_CMD_DELIMITER);
@@ -723,7 +723,7 @@ ee_profile_parse(char *p_command)
             }
             else
             {
-                ee_srand(hex);
+                ee_srand( (unsigned char) hex);
             }
         }
     }
