@@ -90,7 +90,7 @@ if (SELFHOSTED)
 		# The following directives are used in the EEMBC benchmark.
 		add_definitions(-DEE_CFG_SELFHOSTED=1)
 		add_definitions(-DCRYPTO_PSA=1) 
-		#add_definitions(-DEE_CFG_QUIET=1) 
+		add_definitions(-DEE_CFG_QUIET=1) 
 	 
 		set(SOURCE
 			../../profile/ee_aes.c

@@ -36,40 +36,45 @@ th_aes128_create(
 {
     psa_encryption_structure *context;
 
-    if (mode == AES_ECB)
-    {
-        context = 
+    context = 
             (psa_encryption_structure *)th_malloc(sizeof(psa_encryption_structure));
 
-        context->attributes = th_malloc(sizeof(psa_key_attributes_t));
-        memset(context->attributes, 0, sizeof(psa_key_attributes_t));
+    if (context == NULL)
+    {
+        th_printf("e-[malloc() fail in th_aes128_create\r\n");
+        return EE_STATUS_ERROR;
+    }
 
-        if (mode == AES_ECB)
+    context->attributes = th_malloc(sizeof(psa_key_attributes_t));
+
+    if (context->attributes == NULL)
+    {
+        th_printf("e-[malloc() fail in th_aes128_create\r\n");
+        return EE_STATUS_ERROR;
+    }
+
+    memset(context->attributes, 0, sizeof(psa_key_attributes_t));
+
+    psa_set_key_usage_flags( context->attributes,
+                             PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT );
+
+    if (mode == AES_ECB)
+    {
+        context->operation = th_malloc(sizeof(psa_cipher_operation_t));
+
+        if (context->attributes == NULL)
         {
-            context->operation = th_malloc(sizeof(psa_cipher_operation_t));
-            memset(context->operation, 0, sizeof(psa_cipher_operation_t));
+            th_printf("e-[malloc() fail in th_aes128_create\r\n");
+            return EE_STATUS_ERROR;
         }
-        psa_set_key_usage_flags( context->attributes,
-                                 PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT );
-        psa_set_key_algorithm( context->attributes, PSA_ALG_ECB_NO_PADDING );
-        psa_set_key_type( context->attributes, PSA_KEY_TYPE_AES );
 
-        *p_context = context;
+        memset(context->operation, 0, sizeof(psa_cipher_operation_t));
+
+        psa_set_key_algorithm( context->attributes, PSA_ALG_ECB_NO_PADDING );
     }
     else if (mode == AES_CCM)
     {
-        context = 
-            (psa_encryption_structure *)th_malloc(sizeof(psa_encryption_structure));
-
-        context->attributes = th_malloc(sizeof(psa_key_attributes_t));
-        memset(context->attributes, 0, sizeof(psa_key_attributes_t));
-
-        psa_set_key_usage_flags( context->attributes,
-                                    PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT );
         psa_set_key_algorithm( context->attributes, PSA_ALG_CCM );
-        psa_set_key_type( context->attributes, PSA_KEY_TYPE_AES );
-
-        *p_context = context;
     }
     else
     {
@@ -77,11 +82,9 @@ th_aes128_create(
         return EE_STATUS_ERROR;        
     }
 
-    if (*p_context == NULL)
-    {
-        th_printf("e-[malloc() fail in th_aes128_create\r\n");
-        return EE_STATUS_ERROR;
-    }
+    psa_set_key_type( context->attributes, PSA_KEY_TYPE_AES );
+
+    *p_context = context;
 
     return EE_STATUS_OK;
 }
@@ -101,25 +104,28 @@ th_aes128_init(
     aes_cipher_mode_t    mode       // input: AES_ECB or AES_CCM
 )
 {
-    int                  keybits;
-
     psa_status_t status;
     psa_encryption_structure *context = (psa_encryption_structure *) p_context;
 
-    keybits = keylen * 8;
-
     psa_crypto_init( );
 
-    psa_set_key_bits( context->attributes, keybits );
+    if(context==NULL || context->attributes==NULL) 
+    { 
+        th_printf("e-[memory not correctly allocated in th_aes128_init]\r\n");
+        return EE_STATUS_ERROR;
+    }
+
+    psa_set_key_bits( context->attributes, keylen * 8 );
 
     status = psa_import_key( context->attributes, p_key, keylen, &context->key_handle );
+
     if (status != PSA_SUCCESS)
     {
         th_printf("e-[Failed to set CCM key: -0x%04x]\r\n", -status);
         return EE_STATUS_ERROR;
     }
 
-    if (mode == AES_ECB)
+    if (mode == AES_ECB && context->operation!=NULL)
     {
         if (func == AES_ENC)
             status = psa_cipher_encrypt_setup( context->operation, context->key_handle, PSA_ALG_ECB_NO_PADDING );
@@ -153,15 +159,21 @@ th_aes128_deinit(
 
     if (mode == AES_ECB)
     {
-        psa_cipher_finish( context->operation,
-                                  NULL,
-                                  AES_BLOCKLEN,
-                                  &res_len );
+        if (context!=NULL && context->operation!=NULL)
+        {
+            psa_cipher_finish( context->operation,
+                               NULL,
+                               AES_BLOCKLEN,
+                               &res_len );
 
-        psa_cipher_abort( context->operation );
+            psa_cipher_abort( context->operation );
+        }
     }
 
-    psa_destroy_key( context->key_handle );
+    if (context!=NULL)
+    {
+        psa_destroy_key( context->key_handle );
+    }
 }
 
 /**
@@ -180,15 +192,18 @@ th_aes128_ecb_encrypt(
     psa_encryption_structure *context = (psa_encryption_structure *) p_context;
     size_t res_len;
 
-    status = psa_cipher_update( context->operation,
-                                p_pt, AES_BLOCKLEN,
-                                p_ct, AES_BLOCKLEN,
-                                &res_len );
-
-    if( status != PSA_SUCCESS )
+    if (context!=NULL && context->operation!=NULL)
     {
-        return( EE_STATUS_ERROR );
-    }
+        status = psa_cipher_update( context->operation,
+                                    p_pt, AES_BLOCKLEN,
+                                    p_ct, AES_BLOCKLEN,
+                                    &res_len );
+
+        if( status != PSA_SUCCESS )
+        {
+            return( EE_STATUS_ERROR );
+        }
+    } else return EE_STATUS_ERROR;
 
     return EE_STATUS_OK;
 }
@@ -209,15 +224,18 @@ th_aes128_ecb_decrypt(
     psa_encryption_structure *context = (psa_encryption_structure *) p_context;
     size_t res_len;
 
-    status = psa_cipher_update( context->operation,
-                                p_ct, AES_BLOCKLEN,
-                                p_pt, AES_BLOCKLEN,
-                                &res_len );
-
-    if( status != PSA_SUCCESS )
+    if (context!=NULL && context->operation!=NULL)
     {
-        return( EE_STATUS_ERROR );
-    }
+        status = psa_cipher_update( context->operation,
+                                    p_ct, AES_BLOCKLEN,
+                                    p_pt, AES_BLOCKLEN,
+                                    &res_len );
+
+        if( status != PSA_SUCCESS )
+        {
+            return EE_STATUS_ERROR;
+        }
+    } else return EE_STATUS_ERROR;
 
     return EE_STATUS_OK;
 }
@@ -243,18 +261,22 @@ th_aes128_ccm_encrypt(
     psa_encryption_structure *context = (psa_encryption_structure *) p_context;
     size_t ciphertext_length;
 
-    status = psa_aead_encrypt( context->key_handle,      // key
-                               PSA_ALG_CCM,              // algorithm
-                               p_iv, ivlen,              // nonce
-                               NULL, 0,                  // additional data
-                               p_pt, ptlen,              // plaintext
-                               p_ct, ptlen + taglen,     // ciphertext
-                               &ciphertext_length );     // length of output
-    if( status != PSA_SUCCESS )
+    if (context!=NULL) 
     {
-        th_printf("e-[Failed perform CCM encrypt: -0x%04x]\r\n", -status);
-        return EE_STATUS_ERROR;
-    }
+        status = psa_aead_encrypt( context->key_handle,  // key
+                                   PSA_ALG_CCM,          // algorithm
+                                   p_iv, ivlen,          // nonce
+                                   NULL, 0,              // additional data
+                                   p_pt, ptlen,          // plaintext
+                                   p_ct, ptlen + taglen, // ciphertext
+                                   &ciphertext_length ); // length of output
+
+        if( status != PSA_SUCCESS )
+        {
+            th_printf("e-[Failed perform CCM encrypt: -0x%04x]\r\n", -status);
+            return EE_STATUS_ERROR;
+        }
+    } else return EE_STATUS_ERROR;
 
     return EE_STATUS_OK;
 }
@@ -280,18 +302,22 @@ th_aes128_ccm_decrypt(
     psa_encryption_structure *context = (psa_encryption_structure *) p_context;
     size_t plaintext_length;
 
-    status = psa_aead_decrypt( context->key_handle,   // key
-                               PSA_ALG_CCM,            // algorithm
-                               p_iv, ivlen,            // nonce
-                               NULL, 0,                // additional data
-                               p_ct, ctlen,            // ciphertext
-                               p_pt, ctlen,            // plaintext
-                               &plaintext_length );    // length of output
-    if( status != PSA_SUCCESS )
+    if (context!=NULL) 
     {
-        th_printf("e-[Failed perform CCM decrypt: -0x%04x]\r\n", -status);
-        return( EE_STATUS_OK );
-    }
+        status = psa_aead_decrypt( context->key_handle,    // key
+                                   PSA_ALG_CCM,            // algorithm
+                                   p_iv, ivlen,            // nonce
+                                   NULL, 0,                // additional data
+                                   p_ct, ctlen+taglen,     // ciphertext
+                                   p_pt, ctlen,            // plaintext
+                                   &plaintext_length );    // length of output
+
+        if( status != PSA_SUCCESS )
+        {
+            th_printf("e-[Failed perform CCM decrypt: -0x%04x]\r\n", -status);
+            return EE_STATUS_ERROR;
+        }
+    } else return EE_STATUS_ERROR;
 
     return EE_STATUS_OK;
 }
@@ -309,8 +335,9 @@ th_aes128_destroy(
 {
     psa_encryption_structure *context = (psa_encryption_structure *) p_context;
 
-    th_free(context->attributes);
-     if (mode == AES_ECB) th_free(context->operation);
+    if (context!=NULL && context->attributes!=NULL) th_free(context->attributes);
+
+    if (mode == AES_ECB && context!=NULL && context->operation!=NULL) th_free(context->operation);
 
     mbedtls_psa_crypto_free( );
 

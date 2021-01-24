@@ -62,7 +62,7 @@ wrapper_function_t wrap_variation_001;
 typedef struct
 {
     wrapper_function_t *func;         // The primitive for this task
-    unsigned int        n;            // Number of octets for input data
+    uint16_t            n;            // Number of octets for input data
     float               ips;          // iterations-per-second
     float               weight;       // equation scaling weight
     uint16_t            actual_crc;   // CRC computed for 1 iter. seed 0
@@ -134,7 +134,7 @@ void          ee_srand(unsigned char);
  */
 // clang-format off
 // Peer public key, 'Q'
-static unsigned char g_ecc_peer_public_key[] =
+static uint8_t g_ecc_peer_public_key[] =
 {
 // Q.X
 0x01,0x2a,0x23,0x0e,0xbe,0xfc,0x7e,0x6d,0xc6,0xe2,0x8f,0x4f,0xc3,0xba,0x66,0x0f,
@@ -144,7 +144,7 @@ static unsigned char g_ecc_peer_public_key[] =
 0xd8,0x9b,0xb2,0xa6,0x76,0x1f,0xce,0x8e,0x06,0x73,0x28,0x7e,0x6d,0x7b,0xbb,0x46
 };
 // Private key, 'd'
-static unsigned char g_ecc_private_key[] =
+static uint8_t g_ecc_private_key[] =
 {
 0x6e,0x24,0x26,0x96,0x5f,0x12,0x90,0x18,0xbe,0x06,0xf7,0x09,0x2c,0xdf,0x83,0x22,
 0x33,0x8e,0x3e,0x65,0x74,0x61,0x61,0x03,0x6d,0x61,0x55,0xf9,0xcb,0x14,0x44,0x70
@@ -335,14 +335,15 @@ wrap_aes_ccm_encrypt(unsigned int n, unsigned int i)
     unsigned int   x;
     uint16_t       crc;
 
-    buflen = AES_KEYSIZE + AES_IVSIZE + n + AES_TAGSIZE + n + 100;
+    buflen = AES_KEYSIZE + AES_IVSIZE + n + n + AES_TAGSIZE;
     buffer = (unsigned char *)th_malloc(buflen);
     assert(buffer != NULL);
     key = buffer;
     iv  = key + AES_KEYSIZE;
     in  = iv + AES_IVSIZE;
-    tag = in + n;
-    out = tag + AES_TAGSIZE;
+    out = in + n;
+    tag = out + n;
+
     // Fill the key, iv, and plaintext with random values
     for (x = 0; x < AES_KEYSIZE; ++x)
     {
@@ -357,6 +358,7 @@ wrap_aes_ccm_encrypt(unsigned int n, unsigned int i)
         in[x] = ee_rand();
     }
     g_verify_mode = false;
+
     ee_aes128_ccm(key, iv, in, n, tag, out, AES_ENC, i);
     for (crc = 0, x = 0; x < n; ++x)
     {
@@ -379,14 +381,16 @@ wrap_aes_ccm_decrypt(unsigned int n, unsigned int i)
     unsigned int   x;
     uint16_t       crc;
 
-    buflen = AES_KEYSIZE + AES_IVSIZE + n + AES_TAGSIZE + n + 100;
+    buflen = AES_KEYSIZE + AES_IVSIZE + n + n + AES_TAGSIZE;
     buffer = (unsigned char *)th_malloc(buflen);
     assert(buffer != NULL);
+    memset(buffer,0x0,buflen);
     key = buffer;
     iv  = key + AES_KEYSIZE;
     in  = iv + AES_IVSIZE;
-    tag = in + n;
-    out = tag + AES_TAGSIZE;
+    out = in + n;
+    tag = out + n;
+
     // Fill the key, iv, and plaintext with random values
     for (x = 0; x < AES_KEYSIZE; ++x)
     {
@@ -429,6 +433,7 @@ wrap_aes_ecb_encrypt(unsigned int n, unsigned int i)
     buflen = AES_KEYSIZE + n + n;
     buffer = (unsigned char *)th_malloc(buflen);
     assert(buffer != NULL);
+    memset(buffer,0x0,buflen);
     // Assign the helper points to the region of the buffer
     key = buffer;
     in  = key + AES_KEYSIZE;
@@ -465,6 +470,7 @@ wrap_aes_ecb_decrypt(unsigned int n, unsigned int i)
     buflen = AES_KEYSIZE + n + n;
     buffer = (unsigned char *)th_malloc(buflen);
     assert(buffer != NULL);
+    memset(buffer,0x0,buflen);
     // Assign the helper points to the region of the buffer
     key = buffer;
     in  = key + AES_KEYSIZE;
@@ -538,8 +544,9 @@ wrap_ecdsa_sign(unsigned int n, unsigned int i)
         hash[x] = ee_rand();
     }
     slen = 256; // Note: this is also an input to ee_ecdsa_sign
-    sig  = (unsigned char *)th_malloc(slen); // should be 71, 72 B
+    sig  = (unsigned char *)th_malloc(slen); 
     assert(sig != NULL);
+    memset(sig,0x0,slen);
     privkey = g_ecc_private_key;
     g_verify_mode = false;
     ee_ecdsa_sign(hash, HMAC_SIZE, sig, &slen, privkey, ECC_DSIZE, i);
@@ -577,8 +584,9 @@ wrap_ecdsa_verify(unsigned int n, unsigned int i)
         hash[x] = ee_rand();
     }
     slen = 256; // Note: this is also an input to ee_ecdsa_sign
-    sig  = (unsigned char *)th_malloc(slen); // should be 71, 72 B
+    sig  = (unsigned char *)th_malloc(slen); 
     assert(sig != NULL);
+    memset(sig,0x0,slen);
     privkey = g_ecc_private_key;
     // Do NOT record timestamps during encrypt! (see th_timestamp())
     g_verify_mode = true;
