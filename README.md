@@ -29,6 +29,22 @@ A TLS handshake with this configuration has 14 steps and generates over a dozen 
 
 The high-level wrapper for each primitive is implemented in the `profile/ee_*` files. The `profiles/th_api/th_*` files provide the user implementation. In the `examples` folder, the self-hosted code implements the `th_*` functionality with Arm's mbedTLS(tm) library. A version of mbedTLS has been provided for completeness, but this is just one possible implementation. A developer could use wolfSSL or LibTomCrypt, or the hardware acceleration libraries found on many Arm-based MCU and SoC products. The EEMBC API makes porting quick and easy.
 
+To build the benchmark with the PSA Crypto API (see `https://armmbed.github.io/mbed-crypto/PSA_Cryptography_API_Specification.pdf`) use the build commands below. The implementation of the PSA Crypto API is based on Mbed TLS (see see `https://github.com/ARMmbed/mbedtls`). To configure the PSA Crypto implementation use the config.h file found in the Mbed TLS directory at `examples/selfhosted/profiles/psa_th_api/mbedtls`. 
+
+Here are the commands to build the benchmark based on the PSA Crypto API:
+
+```
+% git clone https://github.com/hannestschofenig/securemark-tls.git
+% cd securemark-tls/
+% git checkout psa-crypto-api
+% git submodule init
+% git submodule update
+% mkdir build
+% cd build
+% cmake -DSELFHOSTED=1 -DPSA_CRYPTO=1 ../examples/selfhosted/
+% make
+```
+
 ## Scoring
 
 By design, the profile firmware only contains the primitives for the test, and not the actual test sequence itself. Normally this is controlled by the host software, which also provides additional analysis capabilities. However, in this repository, the self-hosted version invokes each primitive with the correct number of iterations, and summarizes the performance results according on its own.
