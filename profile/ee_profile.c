@@ -18,7 +18,7 @@
 #include "ee_variations.h"
 #include "th_util.h"
 
-#define EE_FW_VERSION "SecureMark-TLS Firmware v1.0.3"
+#define EE_FW_VERSION "SecureMark-TLS Firmware v1.0.4"
 #define EE_PRINTMEM_DEFAULT_HEADER "m-hexdump-";
 
 // What mode we are currently in (perf or verf) [see monitor/th_api/th_lib.c]
@@ -35,7 +35,7 @@ static unsigned char g_prn_coeff = 0;
  *
  * @param hex without decoration, case insensitive.
  *
- * @return -1 on error; but if the result is > size(long) 
+ * @return -1 on error; but if the result is > size(long)
  * the number is invalid (there is no character counting)
  * and no error generated.
  *
@@ -108,6 +108,7 @@ ee_printmem(unsigned char *addr, size_t len, char *user_header)
 {
     size_t i;
     char  *header;
+    char   b;
 
     if (user_header == NULL)
     {
@@ -117,12 +118,21 @@ ee_printmem(unsigned char *addr, size_t len, char *user_header)
     {
         header = user_header;
     }
-    
+
     th_printf(header);
-    
+
     for (i = 0; i < len; ++i)
     {
-        th_printf("%02x", addr[i]);
+        // Some libc printf's don't provide padding, e.g., %02x
+        b = addr[i];
+        if (b <= 0xf)
+        {
+            th_printf("0%x", b);
+        }
+        else
+        {
+            th_printf("%x", b);
+        }
         if ((i + 1) % 16 == 0)
         {
             th_printf("\r\n");
@@ -136,7 +146,7 @@ ee_printmem(unsigned char *addr, size_t len, char *user_header)
             th_printf("-");
         }
     }
-    
+
     if (i % 16 != 0)
     {
         th_printf("\r\n");
@@ -153,6 +163,7 @@ ee_printmem_be(unsigned char *p_addr, size_t len, char *p_user_header)
 {
     size_t   i;
     char    *p_header;
+    char     b;
 
     if (p_user_header == NULL)
     {
@@ -167,7 +178,16 @@ ee_printmem_be(unsigned char *p_addr, size_t len, char *p_user_header)
     th_printf("0x");
     for (i = 0; i < len; ++i)
     {
-        th_printf("%02x", p_addr[i]);
+        // Some libc printf's don't provide padding, e.g., %02x
+        b = p_addr[i];
+        if (b <= 0xf)
+        {
+            th_printf("0%x", b);
+        }
+        else
+        {
+            th_printf("%x", b);
+        }
     }
     th_printf("\r\n");
 }
@@ -275,7 +295,7 @@ ee_bench_parse(char *p_command)
 
     unsigned int i; // iterations
     unsigned int n; // data size in bytes
-    
+
     if (th_strncmp(p_command, "bench", EE_CMD_SIZE) != 0)
     {
         return EE_ARG_UNCLAIMED;
@@ -283,7 +303,7 @@ ee_bench_parse(char *p_command)
 
     /**
      * Each subcommand takes four paramters:
-     * 
+     *
      * subcmd : the name of the primitive to benchmark
      * seed   : the decimal positive integer seed
      * iter   : the decimal positive integer iteration count
@@ -349,18 +369,18 @@ ee_bench_parse(char *p_command)
         unsigned char *p_in;
         unsigned char *p_out;
         size_t         x;
-        
+
         //       in         out
         buflen =  n +  SHA_SIZE;
 
         p_buffer = (unsigned char *)th_malloc(buflen);
-    
+
         if (p_buffer == NULL)
         {
             th_printf("e-[SHA256 malloc() failed, size %d]\r\n", buflen);
             goto error_exit;
         }
-        
+
         // Assign the helper points to the region of the p_buffer
         p_in  = p_buffer;
         p_out = p_in + n;
@@ -375,7 +395,7 @@ ee_bench_parse(char *p_command)
             ee_printmem_be(p_out, SHA_SIZE, "m-bench-sha256-hash-");
         }
         th_free(p_buffer);
-    } 
+    }
     else if (th_strncmp(p_subcmd, "aes128_ecb", EE_CMD_SIZE) == 0)
     {
         unsigned char *p_buffer;
@@ -407,23 +427,23 @@ ee_bench_parse(char *p_command)
         }
 
         ee_aes128_ecb(p_key, p_in, n, p_out, AES_ENC, i);
-        
+
         if (g_verify_mode)
         {
             ee_printmem_be(p_key, 16, "m-bench-aes128_ecb_enc-key-");
             ee_printmem_be(p_in, n, "m-bench-aes128_ecb_enc-in-");
             ee_printmem_be(p_out, n, "m-bench-aes128_ecb_enc-out-");
         }
-        
+
         ee_aes128_ecb(p_key, p_out, n, p_in, AES_DEC, i);
-        
+
         if (g_verify_mode)
         {
             ee_printmem_be(p_key, 16, "m-bench-aes128_ecb_dec-key-");
             ee_printmem_be(p_out, n, "m-bench-aes128_ecb_dec-in-");
             ee_printmem_be(p_in, n, "m-bench-aes128_ecb_dec-out-");
         }
-        
+
         th_free(p_buffer);
     }
     else if (th_strncmp(p_subcmd, "aes128_ccm", EE_CMD_SIZE) == 0) {
@@ -445,7 +465,7 @@ ee_bench_parse(char *p_command)
             th_printf("e-[AES128 CCM malloc() failed, size %d]\r\n", buflen);
             goto error_exit;
         }
-        
+
         // Assign the helper points to the region of the buffer
         p_key = p_buffer;
         p_iv  = p_key + AES_KEYSIZE;
@@ -480,9 +500,9 @@ ee_bench_parse(char *p_command)
             ee_printmem_be(p_tag, AES_TAGSIZE, "m-bench-aes128_ccm_enc-tag-");
             ee_printmem_be(p_out, n, "m-bench-aes128_ccm_enc-out-");
         }
-        
+
         ee_aes128_ccm(p_key, p_iv, p_out, n, p_tag, p_in, AES_DEC, i);
-        
+
         if (g_verify_mode)
         {
             ee_printmem_be(p_key, AES_KEYSIZE, "m-bench-aes128_ccm_dec-key-");
@@ -491,12 +511,12 @@ ee_bench_parse(char *p_command)
             ee_printmem_be(p_tag, AES_TAGSIZE, "m-bench-aes128_ccm_dec-tag-");
             ee_printmem_be(p_in, n, "m-bench-aes128_ccm_dec-out-");
         }
-        
+
         th_free(p_buffer);
-    } 
+    }
     /**
      * We require the ability to send our own key to the ECC functions to
-     * prevent cheating the test. Some APIs make it very difficult to 
+     * prevent cheating the test. Some APIs make it very difficult to
      * provide our own secret, but they do offer a way to load keys. So,
      * we use the generic th_buffer to load the keys using buffer-add
      * commands on the host.
@@ -515,7 +535,7 @@ ee_bench_parse(char *p_command)
          * ECDH Key mixing
          *
          * Preload buffer with:
-         * 
+         *
          * Value      Size (Bytes)
          * Q.X        32 (Peer public key uncompressed 32-byte X valid coord)
          * Q.Y        32 (Peer public key uncompressed 32-byte Y valid coord)
@@ -544,7 +564,7 @@ ee_bench_parse(char *p_command)
          * ECDSA Sign & Verify a hash
          *
          * Preload buffer with:
-         * 
+         *
          * Value      Size (Bytes)
          * unused     32
          * unused     32
@@ -559,26 +579,26 @@ ee_bench_parse(char *p_command)
 
         slen = 256; // Note: this is also an input to ee_ecdsa_sign
         p_sig = (unsigned char *)th_malloc(slen); // should be 71, 72 B
-        
+
         if (p_sig == NULL)
         {
             th_printf("e-[ECDSA malloc() failed, size %d]\r\n", 256);
             goto error_exit;
         }
-        
+
         p_pri  = th_buffer_address() + 64;
         p_hmac = p_pri + ECC_DSIZE;
-        
+
         ee_ecdsa_sign(p_hmac, HMAC_SIZE, p_sig, &slen, p_pri, ECC_DSIZE, i);
-        
+
         if (g_verify_mode) {
             ee_printmem_be(p_pri, ECC_DSIZE, "m-bench-ecdsa-sign-own-private-");
             ee_printmem_be(p_sig, slen, "m-bench-ecdsa-sign-signature-");
             ee_printmem_be(p_hmac, HMAC_SIZE, "m-bench-ecdsa-sign-hash-");
         }
-        
+
         ee_ecdsa_verify(p_hmac, HMAC_SIZE, p_sig, slen, p_pri, ECC_DSIZE, i);
-        
+
         th_free(p_sig);
     }
     else if (th_strncmp(p_subcmd, "var01", EE_CMD_SIZE) == 0)
@@ -603,12 +623,12 @@ ee_buffer_parse(char *p_command)
     char *p_subcmd; // Subcommand
     char *p_next;   // Next token in subcommand parse
     long  hex;      // String-to-hex byte (see ee_hexdec)
-    
+
     if (th_strncmp(p_command, "buffer", EE_CMD_SIZE) != 0)
     {
         return EE_ARG_UNCLAIMED;
     }
-    
+
     p_subcmd = th_strtok(NULL, EE_CMD_DELIMITER);
 
     if (p_subcmd == NULL)
@@ -624,7 +644,7 @@ ee_buffer_parse(char *p_command)
         if (p_next)
         {
             hex = ee_hexdec(p_next);
-        
+
             if (hex < 0)
             {
                 th_printf("e-[Buffer fill invalid byte: %s]\r\n", p_next);
@@ -642,7 +662,7 @@ ee_buffer_parse(char *p_command)
     else if (th_strncmp(p_subcmd, "add", EE_CMD_SIZE) == 0)
     {
         p_next = th_strtok(NULL, EE_CMD_DELIMITER);
-        
+
         if (p_next == NULL)
         {
             th_printf("e-[Buffer add expects at least on byte]\r\n");
@@ -652,8 +672,8 @@ ee_buffer_parse(char *p_command)
             while (p_next != NULL)
             {
                 hex = ee_hexdec(p_next);
-        
-                if (hex < 0) 
+
+                if (hex < 0)
                 {
                     th_printf("e-[Buffer add invalid byte: %s]\r\n", p_next);
                 }
@@ -661,7 +681,7 @@ ee_buffer_parse(char *p_command)
                 {
                     ee_buffer_add(hex);
                 }
-                
+
                 p_next = th_strtok(NULL, EE_CMD_DELIMITER);
             }
         }
