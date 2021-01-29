@@ -11,11 +11,158 @@
  */
 
 #include "mbedtls/config.h"
-#include "psa/crypto.h"
 
-#if !defined(MBEDTLS_PSA_CRYPTO_C) || !defined(MBEDTLS_ECDSA_C) || !defined(MBEDTLS_ECDSA_DETERMINISTIC) || !defined(PSA_WANT_ALG_DETERMINISTIC_ECDSA)
-#error "Necessary PSA functionality not defined!"
-#endif
+#include "mbedtls/pk_internal.h"
+#include "mbedtls/error.h"
+#include "psa/crypto.h"
+#include "mbedtls/psa_util.h"
+
+#include <string.h>
+
+//#include "mbedtls/asn1.h"
+#include "mbedtls/asn1write.h"
+
+/*
+ * An ASN.1 encoded signature is a sequence of two ASN.1 integers. Parse one of
+ * those integers and convert it to the fixed-length encoding expected by PSA.
+ */
+static int extract_ecdsa_sig_int( unsigned char **from, const unsigned char *end,
+                                  unsigned char *to, size_t to_len )
+{
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+    size_t unpadded_len, padding_len;
+
+    if( ( ret = mbedtls_asn1_get_tag( from, end, &unpadded_len,
+                                      MBEDTLS_ASN1_INTEGER ) ) != 0 )
+    {
+        return( ret );
+    }
+
+    while( unpadded_len > 0 && **from == 0x00 )
+    {
+        ( *from )++;
+        unpadded_len--;
+    }
+
+    if( unpadded_len > to_len || unpadded_len == 0 )
+        return( MBEDTLS_ERR_ASN1_LENGTH_MISMATCH );
+
+    padding_len = to_len - unpadded_len;
+    memset( to, 0x00, padding_len );
+    memcpy( to + padding_len, *from, unpadded_len );
+    ( *from ) += unpadded_len;
+
+    return( 0 );
+}
+
+/*
+ * Convert a signature from an ASN.1 sequence of two integers
+ * to a raw {r,s} buffer. Note: the provided sig buffer must be at least
+ * twice as big as int_size.
+ */
+static int extract_ecdsa_sig( unsigned char **p, const unsigned char *end,
+                              unsigned char *sig, size_t int_size )
+{
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+    size_t tmp_size;
+
+    if( ( ret = mbedtls_asn1_get_tag( p, end, &tmp_size,
+                MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE ) ) != 0 )
+        return( ret );
+
+    /* Extract r */
+    if( ( ret = extract_ecdsa_sig_int( p, end, sig, int_size ) ) != 0 )
+        return( ret );
+    /* Extract s */
+    if( ( ret = extract_ecdsa_sig_int( p, end, sig + int_size, int_size ) ) != 0 )
+        return( ret );
+
+    return( 0 );
+}
+
+
+
+/*
+ * Simultaneously convert and move raw MPI from the beginning of a buffer
+ * to an ASN.1 MPI at the end of the buffer.
+ * See also mbedtls_asn1_write_mpi().
+ *
+ * p: pointer to the end of the output buffer
+ * start: start of the output buffer, and also of the mpi to write at the end
+ * n_len: length of the mpi to read from start
+ */
+static int asn1_write_mpibuf( unsigned char **p, unsigned char *start,
+                              size_t n_len )
+{
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+    size_t len = 0;
+
+    if( (size_t)( *p - start ) < n_len )
+        return( MBEDTLS_ERR_ASN1_BUF_TOO_SMALL );
+
+    len = n_len;
+    *p -= len;
+    memmove( *p, start, len );
+
+    /* ASN.1 DER encoding requires minimal length, so skip leading 0s.
+     * Neither r nor s should be 0, but as a failsafe measure, still detect
+     * that rather than overflowing the buffer in case of a PSA error. */
+    while( len > 0 && **p == 0x00 )
+    {
+        ++(*p);
+        --len;
+    }
+
+    /* this is only reached if the signature was invalid */
+    if( len == 0 )
+        return( MBEDTLS_ERR_PK_HW_ACCEL_FAILED );
+
+    /* if the msb is 1, ASN.1 requires that we prepend a 0.
+     * Neither r nor s can be 0, so we can assume len > 0 at all times. */
+    if( **p & 0x80 )
+    {
+        if( *p - start < 1 )
+            return( MBEDTLS_ERR_ASN1_BUF_TOO_SMALL );
+
+        *--(*p) = 0x00;
+        len += 1;
+    }
+
+    MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_len( p, start, len ) );
+    MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_tag( p, start,
+                                                MBEDTLS_ASN1_INTEGER ) );
+
+    return( (int) len );
+}
+
+/* Transcode signature from PSA format to ASN.1 sequence.
+ * See ecdsa_signature_to_asn1 in ecdsa.c, but with byte buffers instead of
+ * MPIs, and in-place.
+ *
+ * [in/out] sig: the signature pre- and post-transcoding
+ * [in/out] sig_len: signature length pre- and post-transcoding
+ * [int] buf_len: the available size the in/out buffer
+ */
+static int pk_ecdsa_sig_asn1_from_psa( unsigned char *sig, size_t *sig_len,
+                                       size_t buf_len )
+{
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+    size_t len = 0;
+    const size_t rs_len = *sig_len / 2;
+    unsigned char *p = sig + buf_len;
+
+    MBEDTLS_ASN1_CHK_ADD( len, asn1_write_mpibuf( &p, sig + rs_len, rs_len ) );
+    MBEDTLS_ASN1_CHK_ADD( len, asn1_write_mpibuf( &p, sig, rs_len ) );
+
+    MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_len( &p, sig, len ) );
+    MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_tag( &p, sig,
+                          MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE ) );
+
+    memmove( sig, p, len );
+    *sig_len = len;
+
+    return( 0 );
+}
 
 struct psa_ecdsa_structure
 {
@@ -121,6 +268,7 @@ th_ecdsa_sign(
     size_t                 slent;
     psa_status_t status;
     psa_ecdsa_structure *context = (psa_ecdsa_structure *) p_context;
+    int res;
 
     status = psa_sign_hash( context->key_handle,            // key handle 
                             PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256), // signature algorithm
@@ -131,6 +279,15 @@ th_ecdsa_sign(
 	if( status != PSA_SUCCESS )
     {
         th_printf("e-[Failed to sign in th_ecdsa_sign: -0x%04x]\r\n", -status);
+        return EE_STATUS_ERROR;
+    }
+
+    /* Encode the PSA signature output into the RFC4492 format. */
+    res = pk_ecdsa_sig_asn1_from_psa( p_sig, (size_t*) &slent, (size_t) *p_slen );
+
+    if (res != 0)
+    {
+        th_printf("e-[Failed to pk_ecdsa_sig_asn1_from_psa: -0x%04x]\r\n", -res);
         return EE_STATUS_ERROR;
     }
 
@@ -155,11 +312,28 @@ th_ecdsa_verify(
 { 
     psa_status_t status;
     psa_ecdsa_structure *context = (psa_ecdsa_structure *) p_context;
+	// Buffer to store the ASN.1 representation of the signature
+    unsigned char buf[30 + 2 * MBEDTLS_ECP_MAX_BYTES];
+	/* Length of binary representation of r and s, respectively. 
+	 * Size for P256r1 curve. 
+	 */
+    size_t signature_part_size = 0x20;
+    int ret;
 
-    status = psa_verify_hash( context->key_handle,                // key handle
-                              PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256),     // signature algorithm
-                              p_hash, hlen,                       // hash of message
-                              p_sig, slen );                      // signature
+    if( ( ret = extract_ecdsa_sig( &p_sig, p_sig + slen, // signature start and end
+	                               buf,                  // output buffer
+                                   signature_part_size   // length of r and s, respectively 
+								 ) ) != 0 )
+    {
+        th_printf("e-[Failed to extract_ecdsa_sig: -0x%04x]\r\n", -ret);
+        return EE_STATUS_ERROR;
+    }
+
+    status = psa_verify_hash( context->key_handle,                           // key handle
+                              PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256),  // signature algorithm
+                              p_hash, hlen,                                  // hash of message
+                              buf, 2 * signature_part_size );                // signature
+   
     if( status != PSA_SUCCESS )
     {
         th_printf("e-[Failed to verify in th_ecdsa_verify: -0x%04x]\r\n", -status);
