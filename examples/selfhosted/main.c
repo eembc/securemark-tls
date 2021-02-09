@@ -32,8 +32,17 @@
 #include "ee_ecdsa.h"
 #include "ee_sha.h"
 #include "ee_variations.h"
+
+#include <inttypes.h> 
+ 
 // There are several POSIX assumptions in this implementation.
+#ifdef __linux__ 
 #include <time.h>
+#elif _WIN32
+#include <sys\timeb.h>
+#else
+#error "Operating system not recognized"
+#endif
 #include <assert.h>
 
 // Longest time to run each primitive during self-tuning
@@ -157,11 +166,11 @@ static unsigned char g_ecc_private_key[] =
  * The framework expects an external agent to monitor the timestamp message.
  * Since there is no external agent, create a local stack of stamps.
  */
-static unsigned long g_timestamps[MAX_TIMESTAMPS];
-static size_t        g_stamp_idx = 0;
+static uint64_t g_timestamps[MAX_TIMESTAMPS];
+static size_t   g_stamp_idx = 0;
 
 void
-push_timestamp(unsigned long us)
+push_timestamp(uint64_t us)
 {
     assert(g_stamp_idx < MAX_TIMESTAMPS);
     g_timestamps[g_stamp_idx] = us;
@@ -173,7 +182,7 @@ clear_timestamps(void)
 {
     g_stamp_idx = 0;
     /*@-redef*/ /*@-retvalother*/
-    th_memset(g_timestamps, MAX_TIMESTAMPS, sizeof(unsigned long));
+    th_memset(g_timestamps, 0, MAX_TIMESTAMPS * sizeof(uint64_t));
 }
 
 /**
@@ -193,9 +202,20 @@ void
 th_timestamp(void)
 {
     // --- BEGIN USER CODE 1
+#ifdef __linux__ 	
     struct timespec t;
+
     /*@-unrecog*/
     clock_gettime(CLOCK_REALTIME, &t);
+#elif _WIN32
+    struct timeb t;
+    uint64_t elapsedMicroSeconds;
+
+    ftime(&t);
+#else
+#error "Operating system not recognized"
+#endif
+	
     // --- END USER CODE 1
     if (g_verify_mode)
     {
@@ -204,12 +224,19 @@ th_timestamp(void)
     else
     {
         // --- BEGIN USER CODE 2
+#ifdef __linux__ 		
         const unsigned long NSEC_PER_SEC      = 1000000000UL;
         const unsigned long TIMER_RES_DIVIDER = 1000UL;
-        unsigned long       elapsedMicroSeconds;
+        uint64_t            elapsedMicroSeconds;
         /*@-usedef*/
         elapsedMicroSeconds = t.tv_sec * (NSEC_PER_SEC / TIMER_RES_DIVIDER)
                               + t.tv_nsec / TIMER_RES_DIVIDER;
+#elif _WIN32
+        elapsedMicroSeconds = ( (uint64_t) t.time ) * 1000 * 1000 + ( (uint64_t) t.millitm ) * 1000;
+#else
+#error "Operating system not recognized"
+#endif
+							  
         // --- END USER CODE 2
         th_printf(EE_MSG_TIMESTAMP, elapsedMicroSeconds);
         push_timestamp(elapsedMicroSeconds);
@@ -622,7 +649,7 @@ tune_iterations(unsigned int n, wrapper_function_t *func)
 {
     size_t        iter;
     size_t        total_iter;
-    unsigned long total_us;
+    uint64_t      total_us;
     float         ipus;
     float         delta;
 
@@ -638,7 +665,7 @@ tune_iterations(unsigned int n, wrapper_function_t *func)
         if (total_us > 0)
         {
             ipus = (float)total_iter / total_us;
-            delta = MIN_RUNTIME_USEC - total_us;
+            delta = (float) MIN_RUNTIME_USEC - total_us;
             iter = (size_t)(ipus * delta);
             iter = iter == 0 ? 1 : iter;
         }

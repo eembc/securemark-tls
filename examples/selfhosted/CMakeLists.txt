@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14.0)
+cmake_minimum_required(VERSION 3.10.2)
 project(sec-tls
 	DESCRIPTION "Firmware for the SecureMark-TLS Self-Hosted Benchmark"
 	LANGUAGES C

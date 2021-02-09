@@ -68,6 +68,9 @@ SecureMark-TLS Score is 112677.812 marks
 :
 ```
 
+To compile the SecureMark-TLS benchmark on Windows using Visual Studio open 
+the Visual Studio project file at `visualc/sec-tls/sec-tls.vcxproj`. 
+
 # Scoring
 
 This code is provided as an example of how the benchmark operates. In order to
