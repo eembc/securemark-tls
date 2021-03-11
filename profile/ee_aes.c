@@ -77,6 +77,7 @@ ee_aes128_ecb(
                     goto exit;
                 }
             }
+            th_aes128_deinit(p_context,AES_ECB);
         }
         th_post();
         th_timestamp();
@@ -107,6 +108,7 @@ ee_aes128_ecb(
                     goto exit;
                 }
             }
+            th_aes128_deinit(p_context,AES_ECB); 			
         }
         th_post();
         th_timestamp();
