@@ -25,43 +25,97 @@ include_directories(../../monitor/th_api)
 include_directories(../../profile)
 
 if (SELFHOSTED)
-    include_directories(profile/th_api)
-    include_directories(profile/th_api/redist)
-    set(SOURCE
-        ../../profile/ee_aes.c
-        ../../profile/ee_ecdsa.c
-        ../../profile/ee_variations.c
-        ../../profile/ee_ecdh.c
-        ../../profile/ee_profile.c
-        ../../profile/ee_sha.c
-        profile/th_api/th_aes.c
-        profile/th_api/redist/mbedtls/aes.c
-        profile/th_api/redist/mbedtls/ecdh.c
-        profile/th_api/redist/mbedtls/cipher_wrap.c
-        profile/th_api/redist/mbedtls/hmac_drbg.c
-        profile/th_api/redist/mbedtls/asn1parse.c
-        profile/th_api/redist/mbedtls/asn1write.c
-        profile/th_api/redist/mbedtls/ccm.c
-        profile/th_api/redist/mbedtls/bignum.c
-        profile/th_api/redist/mbedtls/md_wrap.c
-        profile/th_api/redist/mbedtls/ecp.c
-        profile/th_api/redist/mbedtls/sha256.c
-        profile/th_api/redist/mbedtls/ecp_curves.c
-        profile/th_api/redist/mbedtls/md.c
-        profile/th_api/redist/mbedtls/cipher.c
-        profile/th_api/redist/mbedtls/ecdsa.c
-        profile/th_api/th_util.c
-        profile/th_api/th_ecdh.c
-        profile/th_api/th_ecdsa.c
-        profile/th_api/th_sha.c
-        ../../monitor/ee_main.c
-        ../../monitor/th_api/th_lib.c
-        ../../monitor/th_api/th_libc.c
-        main.c
-    )
-    add_definitions(-DEE_CFG_SELFHOSTED=1)
-    add_definitions(-DEE_CFG_QUIET=1)
-    add_executable(sec-tls ${SOURCE})
+	if(MBEDTLS)
+		include_directories(profile/th_api)
+		include_directories(profile/th_api/redist)
+		set(SOURCE
+			../../profile/ee_aes.c
+			../../profile/ee_ecdsa.c
+			../../profile/ee_variations.c
+			../../profile/ee_ecdh.c
+			../../profile/ee_profile.c
+			../../profile/ee_sha.c
+			profile/th_api/th_aes.c
+			profile/th_api/redist/mbedtls/aes.c
+			profile/th_api/redist/mbedtls/ecdh.c
+			profile/th_api/redist/mbedtls/cipher_wrap.c
+			profile/th_api/redist/mbedtls/hmac_drbg.c
+			profile/th_api/redist/mbedtls/asn1parse.c
+			profile/th_api/redist/mbedtls/asn1write.c
+			profile/th_api/redist/mbedtls/ccm.c
+			profile/th_api/redist/mbedtls/bignum.c
+			profile/th_api/redist/mbedtls/md_wrap.c
+			profile/th_api/redist/mbedtls/ecp.c
+			profile/th_api/redist/mbedtls/sha256.c
+			profile/th_api/redist/mbedtls/ecp_curves.c
+			profile/th_api/redist/mbedtls/md.c
+			profile/th_api/redist/mbedtls/cipher.c
+			profile/th_api/redist/mbedtls/ecdsa.c
+			profile/th_api/th_util.c
+			profile/th_api/th_ecdh.c
+			profile/th_api/th_ecdsa.c
+			profile/th_api/th_sha.c
+			../../monitor/ee_main.c
+			../../monitor/th_api/th_lib.c
+			../../monitor/th_api/th_libc.c
+			main.c
+		)
+		add_definitions(-DEE_CFG_SELFHOSTED=1)
+		add_definitions(-DEE_CFG_QUIET=1)
+		add_executable(sec-tls ${SOURCE})
+	elseif(PSA_CRYPTO)
+		include_directories(profile/psa_th_api)
+	
+		option(USE_PKCS11_HELPER_LIBRARY "Build mbed TLS with the pkcs11-helper library." OFF)
+		option(ENABLE_ZLIB_SUPPORT "Build mbed TLS with zlib library." OFF)
+		option(ENABLE_PROGRAMS "Build mbed TLS programs." OFF)
+		option(ENABLE_TESTING "Build mbed TLS tests." OFF)
+		
+		# Enable PSA Crypto in the Mbed TLS Implementation
+		add_definitions(-DMBEDTLS_PSA_CRYPTO_CONFIG=1)
+
+		set(CMAKE_INSTALL_NAME_DIR ${CMAKE_INSTALL_FULL_LIBDIR}/lib)
+		include_directories(profile/psa_th_api/mbedtls/include)
+		add_subdirectory(profile/psa_th_api/mbedtls mbedtls)
+		
+		option(USE_STATIC_MBEDTLS_LIBRARY "Build mbed TLS static library." off)
+		option(USE_SHARED_MBEDTLS_LIBRARY "Build mbed TLS shared library." on)
+		
+		if (CMAKE_SYSTEM MATCHES "OpenBSD")
+			option(LINK_WITH_PTHREAD "Explicitly link mbed TLS library to pthread." on)
+		endif()
+		
+		set(MBEDTLS_LIBRARIES "mbedtls" "mbedx509" "mbedcrypto")
+
+		# The following directives are used in the EEMBC benchmark.
+		add_definitions(-DEE_CFG_SELFHOSTED=1)
+		add_definitions(-DCRYPTO_PSA=1) 
+		add_definitions(-DEE_CFG_QUIET=1) 
+	 
+		set(SOURCE
+			../../profile/ee_aes.c
+			../../profile/ee_ecdsa.c
+			../../profile/ee_variations.c
+			../../profile/ee_ecdh.c
+			../../profile/ee_profile.c
+			../../profile/ee_sha.c
+			profile/psa_th_api/th_aes.c
+			profile/psa_th_api/th_util.c
+			profile/psa_th_api/th_ecdh.c
+			profile/psa_th_api/th_ecdsa.c
+			profile/psa_th_api/th_sha.c
+			../../monitor/ee_main.c
+			../../monitor/th_api/th_lib.c
+			../../monitor/th_api/th_libc.c
+			main.c
+		)
+		
+		add_executable(sec-tls ${SOURCE})
+
+		target_link_libraries(sec-tls ${MBEDTLS_LIBRARIES})
+		set_target_properties(sec-tls PROPERTIES INSTALL_RPATH mbedtls)
+		
+	endif()	
 else()
     include_directories(../../monitor/th_api)
     include_directories(../../profile/th_api)
