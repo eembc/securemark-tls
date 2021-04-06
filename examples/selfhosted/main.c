@@ -36,7 +36,7 @@
 #include <inttypes.h> 
  
 // There are several POSIX assumptions in this implementation.
-#ifdef __linux__ 
+#if defined __linux__ || __APPLE__
 #include <time.h>
 #elif _WIN32
 #include <sys\timeb.h>
@@ -202,7 +202,7 @@ void
 th_timestamp(void)
 {
     // --- BEGIN USER CODE 1
-#ifdef __linux__ 	
+#if defined __linux__ || __APPLE__
     struct timespec t;
 
     /*@-unrecog*/
@@ -224,7 +224,7 @@ th_timestamp(void)
     else
     {
         // --- BEGIN USER CODE 2
-#ifdef __linux__ 		
+#if defined __linux__ || __APPLE__
         const unsigned long NSEC_PER_SEC      = 1000000000UL;
         const unsigned long TIMER_RES_DIVIDER = 1000UL;
         uint64_t            elapsedMicroSeconds;
