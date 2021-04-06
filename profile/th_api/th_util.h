@@ -14,6 +14,7 @@
 #define __TH_UTIL_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 // Minimum buffer size
 #define EE_MINBUF 256
@@ -21,7 +22,7 @@
 void           th_pre(void);
 void           th_post(void);
 void           th_buffer_initialize(void);
-unsigned char *th_buffer_address(void);
-size_t         th_buffer_size(void);
+uint8_t *th_buffer_address(void);
+uint_fast32_t         th_buffer_size(void);
 
 #endif

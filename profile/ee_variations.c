@@ -21,7 +21,7 @@
     }                       \
 }
 // profile/ee_profile.c
-unsigned char ee_rand(void);
+uint8_t ee_rand(void);
 
 /**
  * For tests where expliclty calling the primitive's wrapper benchmark
@@ -37,22 +37,22 @@ unsigned char ee_rand(void);
 #define VAR001_SESSION_SIZE 1495
 #define VAR001_AES_SIZE       16
 void
-ee_variation_001(unsigned int iterations)
+ee_variation_001(uint_fast32_t iterations)
 {
     void          *p_csha1 = NULL;          // SHA context 1
     void          *p_csha2 = NULL;          // SHA context 2
     void          *p_caes = NULL;           // AES context
-    unsigned char *p_msg;                   // All bytes to hash
-    unsigned char *p_buf1;                  // SHA1's buffer
-    unsigned char *p_buf2;                  // SHA2's buffer
-    unsigned char  p_digest[SHA_SIZE];      // SHA digest
-    unsigned char  p_pt[VAR001_AES_SIZE];   // AES plaintext
-    unsigned char  p_ct[VAR001_AES_SIZE];   // AES ciphertext
-    unsigned char  p_key[AES_KEYSIZE];      // AES key
-    size_t         idx;                     // Loop index
+    uint8_t *p_msg;                   // All bytes to hash
+    uint8_t *p_buf1;                  // SHA1's buffer
+    uint8_t *p_buf2;                  // SHA2's buffer
+    uint8_t  p_digest[SHA_SIZE];      // SHA digest
+    uint8_t  p_pt[VAR001_AES_SIZE];   // AES plaintext
+    uint8_t  p_ct[VAR001_AES_SIZE];   // AES ciphertext
+    uint8_t  p_key[AES_KEYSIZE];      // AES key
+    uint_fast32_t         idx;                     // Loop index
     
     // Total number of bytes in the TLS handshake session-hash
-    p_msg = (unsigned char *)th_malloc(VAR001_SESSION_SIZE);
+    p_msg = (uint8_t *)th_malloc(VAR001_SESSION_SIZE);
     if (p_msg == NULL)
     {
         th_printf("e-variation-001-[malloc() fail]\r\n");

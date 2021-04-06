@@ -24,10 +24,10 @@
 
 void
 ee_sha256(
-    const unsigned char *p_in,      // input: bytes to hash
-    unsigned int         len,       // input: length of input in bytes
-    unsigned char       *p_result,  // output: resulting digest
-    unsigned int         iterations // input: # of test iterations
+    const uint8_t *p_in,      // input: bytes to hash
+    uint_fast32_t         len,       // input: length of input in bytes
+    uint8_t       *p_result,  // output: resulting digest
+    uint_fast32_t         iterations // input: # of test iterations
 )
 ;
 
@@ -61,8 +61,8 @@ th_sha256_init(
 ee_status_t
 th_sha256_process(
     void                *p_context, // input: portable context
-    const unsigned char *p_in,      // input: data to hash    
-    unsigned int         len        // input: length of data in bytes
+    const uint8_t *p_in,      // input: data to hash    
+    uint_fast32_t         len        // input: length of data in bytes
 );
 
 /**
@@ -73,7 +73,7 @@ th_sha256_process(
 ee_status_t
 th_sha256_done(
     void          *p_context,   // input: portable context
-    unsigned char *p_result     // output: digest, SHA_SIZE bytes
+    uint8_t *p_result     // output: digest, SHA_SIZE bytes
 );
 
 /**

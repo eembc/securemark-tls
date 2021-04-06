@@ -19,7 +19,7 @@
 
 void
 ee_variation_001(
-    unsigned int iterations
+    uint_fast32_t iterations
 );
 
 #endif

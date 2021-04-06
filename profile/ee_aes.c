@@ -17,18 +17,18 @@
  */
 void
 ee_aes128_ecb(
-    unsigned char  *p_key,      // input: key
-    unsigned char  *p_in,       // input: pointer to source input (pt or ct)
-    unsigned int    len,        // input: length of input in bytes
-    unsigned char  *p_out,      // output: pointer to output buffer
+    uint8_t  *p_key,      // input: key
+    uint8_t  *p_in,       // input: pointer to source input (pt or ct)
+    uint_fast32_t    len,        // input: length of input in bytes
+    uint8_t  *p_out,      // output: pointer to output buffer
     aes_function_t  func,       // input: func (AES_ENC|AES_DEC)
-    unsigned int    iterations  // input: # of test iterations
+    uint_fast32_t    iterations  // input: # of test iterations
 )
 {
     void         *p_context;    // Generic context if needed by implementation
-    unsigned int  numblocks;    // This wrapper uses fixed-size blocks
-    unsigned int  i;            // iteration index
-    unsigned int  j;            // iteration index
+    uint_fast32_t  numblocks;    // This wrapper uses fixed-size blocks
+    uint_fast32_t  i;            // iteration index
+    uint_fast32_t  j;            // iteration index
 
     if (len < AES_BLOCKLEN)
     {
@@ -123,14 +123,14 @@ exit:
  */
 void
 ee_aes128_ccm(
-    unsigned char  *p_key,      // input: key
-    unsigned char  *p_iv,       // input: initialization vector
-    unsigned char  *p_in,       // input: pointer to source input (pt or ct)
-    unsigned int    len,        // input: length of input in bytes
-    unsigned char  *p_tag,      // inout: output in encrypt, input on decrypt
-    unsigned char  *p_out,      // output: pointer to output buffer
+    uint8_t  *p_key,      // input: key
+    uint8_t  *p_iv,       // input: initialization vector
+    uint8_t  *p_in,       // input: pointer to source input (pt or ct)
+    uint_fast32_t    len,        // input: length of input in bytes
+    uint8_t  *p_tag,      // inout: output in encrypt, input on decrypt
+    uint8_t  *p_out,      // output: pointer to output buffer
     aes_function_t  func,       // input: func (AES_ENC|AES_DEC)
-    unsigned int    iterations  // input: # of test iterations
+    uint_fast32_t    iterations  // input: # of test iterations
 )
 {
     void *p_context; // Generic context if needed by implementation

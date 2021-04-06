@@ -14,7 +14,7 @@
 
 // NOTE: Feel free to replace the static variable with any allocation scheme
 #define BUFFER_SIZE (1024*4)
-static unsigned char g_generic_buffer[BUFFER_SIZE];
+static uint8_t g_generic_buffer[BUFFER_SIZE];
 
 /**
  * The pre/post hooks are called immediately before the th_timestamp() and
@@ -45,7 +45,7 @@ th_buffer_initialize(void)
  * can use as a generic place to store data. Should be 1K at least, but profiles
  * will always check to make sure it is suitably sized.
  */
-unsigned char *
+uint8_t *
 th_buffer_address(void)
 {
 	return g_generic_buffer;
@@ -54,7 +54,7 @@ th_buffer_address(void)
 /**
  * PORTME: If you opt to do a malloc, be sure to return the size here
  */
-size_t
+uint_fast32_t
 th_buffer_size(void)
 {
 	return BUFFER_SIZE;

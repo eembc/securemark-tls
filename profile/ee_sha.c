@@ -17,10 +17,10 @@
  */
 void
 ee_sha256(
-    const unsigned char *p_in,      // input: bytes to hash
-    unsigned int         len,       // input: length of input in bytes
-    unsigned char       *p_result,  // output: resulting digest
-    unsigned int         iterations // input: # of test iterations
+    const uint8_t *p_in,      // input: bytes to hash
+    uint_fast32_t         len,       // input: length of input in bytes
+    uint8_t       *p_result,  // output: resulting digest
+    uint_fast32_t         iterations // input: # of test iterations
 )
 {
     void *p_context; // Generic context if needed by implementation

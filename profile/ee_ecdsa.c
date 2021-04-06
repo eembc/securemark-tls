@@ -21,13 +21,13 @@
  */
 void
 ee_ecdsa_sign(
-    unsigned char *p_hash,      // input: sha256 digest
-    unsigned int   hlen,        // input: length of digest in bytes
-    unsigned char *p_sig,       // output: signature
-    unsigned int  *p_slen,      // in/out: input=MAX slen, output=resultant
-    unsigned char *p_private,   // input: private key (from host)
-    unsigned int   plen,        // input: private key length in bytes
-    unsigned int   iterations   // input: # of test iterations
+    uint8_t *p_hash,      // input: sha256 digest
+    uint_fast32_t   hlen,        // input: length of digest in bytes
+    uint8_t *p_sig,       // output: signature
+    uint_fast32_t  *p_slen,      // in/out: input=MAX slen, output=resultant
+    uint8_t *p_private,   // input: private key (from host)
+    uint_fast32_t   plen,        // input: private key length in bytes
+    uint_fast32_t   iterations   // input: # of test iterations
 )
 {
     void *p_context; // Generic context if needed by implementation
@@ -74,13 +74,13 @@ exit:
  */
 void
 ee_ecdsa_verify(
-    unsigned char *p_hash,      // input: sha256 digest
-    unsigned int   hlen,        // input: length of digest in bytes
-    unsigned char *p_sig,       // input: signature
-    unsigned int   slen,        // input: length of signature in bytes
-    unsigned char *p_private,   // input: private key (from host)
-    unsigned int   plen,        // input: private key length in bytes
-    unsigned int   iterations   // input: # of test iterations
+    uint8_t *p_hash,      // input: sha256 digest
+    uint_fast32_t   hlen,        // input: length of digest in bytes
+    uint8_t *p_sig,       // input: signature
+    uint_fast32_t   slen,        // input: length of signature in bytes
+    uint8_t *p_private,   // input: private key (from host)
+    uint_fast32_t   plen,        // input: private key length in bytes
+    uint_fast32_t   iterations   // input: # of test iterations
 )
 {
     void *p_context; // Generic context if needed by implementation

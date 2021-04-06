@@ -35,9 +35,9 @@ th_aes128_create(
 ee_status_t
 th_aes128_init(
     void                *p_context, // input: portable context
-    const unsigned char *p_key,     // input: key
-    unsigned int         keylen,    // input: length of key in bytes
-    unsigned int         rounds,    // input: number of AES rounds
+    const uint8_t *p_key,     // input: key
+    uint_fast32_t         keylen,    // input: length of key in bytes
+    uint_fast32_t         rounds,    // input: number of AES rounds
     aes_function_t       func,      // input: AES_ENC or AES_DEC
     aes_cipher_mode_t    mode       // input: AES_ECB or AES_CCM
 )
@@ -69,8 +69,8 @@ th_aes128_deinit(
 ee_status_t
 th_aes128_ecb_encrypt(
     void                *p_context, // input: portable context
-    const unsigned char *p_pt,      // input: plaintext (AES_BLOCKSIZE bytes)
-    unsigned char       *p_ct       // output: ciphertext (AES_BLOCKSIZE bytes)
+    const uint8_t *p_pt,      // input: plaintext (AES_BLOCKSIZE bytes)
+    uint8_t       *p_ct       // output: ciphertext (AES_BLOCKSIZE bytes)
 )
 {
     #warning "th_aes128_ecb_encrypt not implemented"
@@ -85,8 +85,8 @@ th_aes128_ecb_encrypt(
 ee_status_t
 th_aes128_ecb_decrypt(
     void                *p_context, // input: portable context
-    const unsigned char *p_ct,      // input: ciphertext (AES_BLOCKSIZE bytes)
-    unsigned char       *p_pt       // output: plaintext (AES_BLOCKSIZE bytes)
+    const uint8_t *p_ct,      // input: ciphertext (AES_BLOCKSIZE bytes)
+    uint8_t       *p_pt       // output: plaintext (AES_BLOCKSIZE bytes)
 )
 {
     #warning "th_aes128_ecb_decrypt not implemented"
@@ -101,13 +101,13 @@ th_aes128_ecb_decrypt(
 ee_status_t
 th_aes128_ccm_encrypt(
     void                *p_context, // input: portable context
-    const unsigned char *p_pt,      // input: plaintext
-    unsigned int         ptlen,     // input: length of plaintext in bytes
-    unsigned char       *p_ct,      // output: ciphertext
-    unsigned char       *p_tag,     // output: tag
-    unsigned int         taglen,    // input: tag length in bytes
-    unsigned char       *p_iv,      // input: initialization vector
-    unsigned int         ivlen      // input: IV length in bytes
+    const uint8_t *p_pt,      // input: plaintext
+    uint_fast32_t         ptlen,     // input: length of plaintext in bytes
+    uint8_t       *p_ct,      // output: ciphertext
+    uint8_t       *p_tag,     // output: tag
+    uint_fast32_t         taglen,    // input: tag length in bytes
+    uint8_t       *p_iv,      // input: initialization vector
+    uint_fast32_t         ivlen      // input: IV length in bytes
 )
 {
     #warning "th_aes128_ccm_encrypt not implemented"
@@ -122,13 +122,13 @@ th_aes128_ccm_encrypt(
 ee_status_t
 th_aes128_ccm_decrypt(
     void                *p_context, // input: portable context
-    const unsigned char *p_ct,      // input: ciphertext
-    unsigned int         ctlen,     // input: length of ciphertext in bytes
-    unsigned char       *p_pt,      // output: plaintext
-    unsigned char       *p_tag,     // input: tag
-    unsigned int         taglen,    // input: tag length in bytes
-    unsigned char       *p_iv,      // input: initialization vector
-    unsigned int         ivlen      // input: IV length in bytes
+    const uint8_t *p_ct,      // input: ciphertext
+    uint_fast32_t         ctlen,     // input: length of ciphertext in bytes
+    uint8_t       *p_pt,      // output: plaintext
+    uint8_t       *p_tag,     // input: tag
+    uint_fast32_t         taglen,    // input: tag length in bytes
+    uint8_t       *p_iv,      // input: initialization vector
+    uint_fast32_t         ivlen      // input: IV length in bytes
 )
 {
     #warning "th_aes128_ccm_decrypt not implemented"
@@ -143,13 +143,13 @@ th_aes128_ccm_decrypt(
 ee_status_t
 th_aes128_gcm_encrypt(
     void                *p_context, // input: portable context
-    const unsigned char *p_pt,      // input: plaintext
-    unsigned int         ptlen,     // input: length of plaintext in bytes
-    unsigned char       *p_ct,      // output: ciphertext
-    unsigned char       *p_tag,     // output: tag
-    unsigned int         taglen,    // input: tag length in bytes
-    unsigned char       *p_iv,      // input: initialization vector
-    unsigned int         ivlen      // input: IV length in bytes
+    const uint8_t *p_pt,      // input: plaintext
+    uint_fast32_t         ptlen,     // input: length of plaintext in bytes
+    uint8_t       *p_ct,      // output: ciphertext
+    uint8_t       *p_tag,     // output: tag
+    uint_fast32_t         taglen,    // input: tag length in bytes
+    uint8_t       *p_iv,      // input: initialization vector
+    uint_fast32_t         ivlen      // input: IV length in bytes
 )
 {
     #warning "th_aes128_gcm_encrypt not implemented"
@@ -164,13 +164,13 @@ th_aes128_gcm_encrypt(
 ee_status_t
 th_aes128_gcm_decrypt(
     void                *p_context, // input: portable context
-    const unsigned char *p_ct,      // input: ciphertext
-    unsigned int         ctlen,     // input: length of plaintext in bytes
-    unsigned char       *p_pt,      // output: plaintext
-    unsigned char       *p_tag,     // output: tag
-    unsigned int         taglen,    // input: tag length in bytes
-    unsigned char       *p_iv,      // input: initialization vector
-    unsigned int         ivlen      // input: IV length in bytes
+    const uint8_t *p_ct,      // input: ciphertext
+    uint_fast32_t         ctlen,     // input: length of plaintext in bytes
+    uint8_t       *p_pt,      // output: plaintext
+    uint8_t       *p_tag,     // output: tag
+    uint_fast32_t         taglen,    // input: tag length in bytes
+    uint8_t       *p_iv,      // input: initialization vector
+    uint_fast32_t         ivlen      // input: IV length in bytes
 )
 {
     #warning "th_aes128_gcm_decrypt not implemented"

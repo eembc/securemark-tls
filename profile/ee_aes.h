@@ -41,24 +41,24 @@ typedef enum
 
 void
 ee_aes128_ecb(
-    unsigned char  *p_key,      // input: key
-    unsigned char  *p_in,       // input: pointer to source input (pt or ct)
-    unsigned int    len,        // input: length of input in bytes
-    unsigned char  *p_out,      // output: pointer to output buffer
+    uint8_t  *p_key,      // input: key
+    uint8_t  *p_in,       // input: pointer to source input (pt or ct)
+    uint_fast32_t    len,        // input: length of input in bytes
+    uint8_t  *p_out,      // output: pointer to output buffer
     aes_function_t  func,       // input: func (AES_ENC|AES_DEC)
-    unsigned int    iterations  // input: # of test iterations
+    uint_fast32_t    iterations  // input: # of test iterations
 );
 
 void
 ee_aes128_ccm(
-    unsigned char  *p_key,      // input: key
-    unsigned char  *p_iv,       // input: initialization vector
-    unsigned char  *p_in,       // input: pointer to source input (pt or ct)
-    unsigned int    len,        // input: length of input in bytes
-    unsigned char  *p_tag,      // inout: output in encrypt, input on decrypt
-    unsigned char  *p_out,      // output: pointer to output buffer
+    uint8_t  *p_key,      // input: key
+    uint8_t  *p_iv,       // input: initialization vector
+    uint8_t  *p_in,       // input: pointer to source input (pt or ct)
+    uint_fast32_t    len,        // input: length of input in bytes
+    uint8_t  *p_tag,      // inout: output in encrypt, input on decrypt
+    uint8_t  *p_out,      // output: pointer to output buffer
     aes_function_t  func,       // input: func (AES_ENC|AES_DEC)
-    unsigned int    iterations  // input: # of test iterations
+    uint_fast32_t    iterations  // input: # of test iterations
 );
 
 // Implementation API
@@ -83,9 +83,9 @@ th_aes128_create(
 ee_status_t
 th_aes128_init(
     void                *p_context, // input: portable context
-    const unsigned char *p_key,     // input: key
-    unsigned int         keylen,    // input: length of key in bytes
-    unsigned int         rounds,    // input: number of AES rounds
+    const uint8_t *p_key,     // input: key
+    uint_fast32_t         keylen,    // input: length of key in bytes
+    uint_fast32_t         rounds,    // input: number of AES rounds
     aes_function_t       func,      // input: AES_ENC or AES_DEC
     aes_cipher_mode_t    mode       // input: AES_ECB or AES_CCM
 );
@@ -110,8 +110,8 @@ th_aes128_deinit(
 ee_status_t
 th_aes128_ecb_encrypt(
     void                *p_context, // input: portable context
-    const unsigned char *p_pt,      // input: plaintext (AES_BLOCKSIZE bytes)
-    unsigned char       *p_ct       // output: ciphertext (AES_BLOCKSIZE bytes)
+    const uint8_t *p_pt,      // input: plaintext (AES_BLOCKSIZE bytes)
+    uint8_t       *p_ct       // output: ciphertext (AES_BLOCKSIZE bytes)
 );
 
 /**
@@ -122,8 +122,8 @@ th_aes128_ecb_encrypt(
 ee_status_t
 th_aes128_ecb_decrypt(
     void                *p_context, // input: portable context
-    const unsigned char *p_ct,      // input: ciphertext (AES_BLOCKSIZE bytes)
-    unsigned char       *p_pt       // output: plaintext (AES_BLOCKSIZE bytes)
+    const uint8_t *p_ct,      // input: ciphertext (AES_BLOCKSIZE bytes)
+    uint8_t       *p_pt       // output: plaintext (AES_BLOCKSIZE bytes)
 );
 
 /**
@@ -134,13 +134,13 @@ th_aes128_ecb_decrypt(
 ee_status_t
 th_aes128_ccm_encrypt(
     void                *p_context, // input: portable context
-    const unsigned char *p_pt,      // input: plaintext
-    unsigned int         ptlen,     // input: length of plaintext in bytes
-    unsigned char       *p_ct,      // output: ciphertext
-    unsigned char       *p_tag,     // output: tag
-    unsigned int         taglen,    // input: tag length in bytes
-    unsigned char       *p_iv,      // input: initialization vector
-    unsigned int         ivlen      // input: IV length in bytes
+    const uint8_t *p_pt,      // input: plaintext
+    uint_fast32_t         ptlen,     // input: length of plaintext in bytes
+    uint8_t       *p_ct,      // output: ciphertext
+    uint8_t       *p_tag,     // output: tag
+    uint_fast32_t         taglen,    // input: tag length in bytes
+    uint8_t       *p_iv,      // input: initialization vector
+    uint_fast32_t         ivlen      // input: IV length in bytes
 );
 
 /**
@@ -151,13 +151,13 @@ th_aes128_ccm_encrypt(
 ee_status_t
 th_aes128_ccm_decrypt(
     void                *p_context, // input: portable context
-    const unsigned char *p_ct,      // input: ciphertext
-    unsigned int         ctlen,     // input: length of ciphertext in bytes
-    unsigned char       *p_pt,      // output: plaintext
-    unsigned char       *p_tag,     // input: tag
-    unsigned int         taglen,    // input: tag length in bytes
-    unsigned char       *p_iv,      // input: initialization vector
-    unsigned int         ivlen      // input: IV length in bytes
+    const uint8_t *p_ct,      // input: ciphertext
+    uint_fast32_t         ctlen,     // input: length of ciphertext in bytes
+    uint8_t       *p_pt,      // output: plaintext
+    uint8_t       *p_tag,     // input: tag
+    uint_fast32_t         taglen,    // input: tag length in bytes
+    uint8_t       *p_iv,      // input: initialization vector
+    uint_fast32_t         ivlen      // input: IV length in bytes
 ); 
 
 /**

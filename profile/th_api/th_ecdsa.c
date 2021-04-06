@@ -36,8 +36,8 @@ ee_status_t
 th_ecdsa_init(
     void            *p_context, // input: portable context
     ecdh_group_t     group,     // input: see `ecdh_group_t` for options
-    unsigned char   *p_private, // input: private key from host
-    size_t           plen       // input: length of private key in bytes
+    uint8_t   *p_private, // input: private key from host
+    uint_fast32_t           plen       // input: length of private key in bytes
 )
 {
     #warning "th_ecdsa_init not implemented"
@@ -52,14 +52,14 @@ th_ecdsa_init(
 ee_status_t
 th_ecdsa_sign(
     void          *p_context,   // input: portable context
-    unsigned char *p_hash,      // input: sha256 digest
-    unsigned int   hlen,        // input: length of digest in bytes
-    unsigned char *p_sig,       // output: signature
-    unsigned int  *p_slen       // in/out: input=MAX slen, output=resultant
+    uint8_t *p_hash,      // input: sha256 digest
+    uint_fast32_t   hlen,        // input: length of digest in bytes
+    uint8_t *p_sig,       // output: signature
+    uint_fast32_t  *p_slen       // in/out: input=MAX slen, output=resultant
 )
 {
     // WARNING: Copy *slen into local storage if your SDK size type is not
-    //          the same size as "unsigned int" and recast on assignment.
+    //          the same size as "uint_fast32_t" and recast on assignment.
     #warning "th_ecdsa_sign not implemented"
     return EE_STATUS_OK;
 }
@@ -72,10 +72,10 @@ th_ecdsa_sign(
 ee_status_t
 th_ecdsa_verify(
     void          *p_context,   // input: portable context
-    unsigned char *p_hash,      // input: sha256 digest
-    unsigned int   hlen,        // input: length of digest in bytes
-    unsigned char *p_sig,       // output: signature
-    unsigned int   slen         // input: length of signature in bytes
+    uint8_t *p_hash,      // input: sha256 digest
+    uint_fast32_t   hlen,        // input: length of digest in bytes
+    uint8_t *p_sig,       // output: signature
+    uint_fast32_t   slen         // input: length of signature in bytes
 )
 {
     #warning "th_ecdsa_verify not implemented"

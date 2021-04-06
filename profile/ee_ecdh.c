@@ -21,13 +21,13 @@
  */
 void
 ee_ecdh(
-    unsigned char *p_public,    // input: peer public key, from host
-    unsigned int   publen,      // input: peer public key length in bytes
-    unsigned char *p_private,   // input: private key, from host
-    unsigned int   prilen,      // input: private key length in bytes
-    unsigned char *p_secret,    // output: shared secret
-    unsigned int   seclen,      // input: size of buffer for secret, in bytes
-    unsigned int   iterations   // input: # of test iterations
+    uint8_t *p_public,    // input: peer public key, from host
+    uint_fast32_t   publen,      // input: peer public key length in bytes
+    uint8_t *p_private,   // input: private key, from host
+    uint_fast32_t   prilen,      // input: private key length in bytes
+    uint8_t *p_secret,    // output: shared secret
+    uint_fast32_t   seclen,      // input: size of buffer for secret, in bytes
+    uint_fast32_t   iterations   // input: # of test iterations
 )
 {
     void *p_context; // Generic context if needed by implementation

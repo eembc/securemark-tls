@@ -25,8 +25,8 @@
 bool g_verify_mode = false;
 
 // These are used for our PRNG ee_rand()
-static unsigned char g_prn = 0x7f;
-static unsigned char g_prn_coeff = 0;
+static uint8_t g_prn = 0x7f;
+static uint8_t g_prn_coeff = 0;
 
 /**
  * @brief convert a hexidecimal string to a signed long
@@ -81,14 +81,14 @@ ee_hexdec(char *hex)
  */
 
 void
-ee_srand(unsigned char seed)
+ee_srand(uint8_t seed)
 {
     g_prn = seed;
     g_prn_coeff = 0;
 }
 
 // return a byte using xorshift
-unsigned char
+uint8_t
 ee_rand(void)
 {
     g_prn ^= g_prn << 3;
@@ -104,9 +104,9 @@ ee_rand(void)
  * lowercase hexadecimal. User can specify their own line header for debugging.
  */
 void
-ee_printmem(unsigned char *addr, size_t len, char *user_header)
+ee_printmem(uint8_t *addr, uint_fast32_t len, char *user_header)
 {
-    size_t i;
+    uint_fast32_t i;
     char  *header;
     char   b;
 
@@ -159,9 +159,9 @@ ee_printmem(unsigned char *addr, size_t len, char *user_header)
  * Prints out memory as one line in big-endian hex bytes starting with 0x
  */
 void
-ee_printmem_be(unsigned char *p_addr, size_t len, char *p_user_header)
+ee_printmem_be(uint8_t *p_addr, uint_fast32_t len, char *p_user_header)
 {
-    size_t   i;
+    uint_fast32_t   i;
     char    *p_header;
     char     b;
 
@@ -195,7 +195,7 @@ ee_printmem_be(unsigned char *p_addr, size_t len, char *p_user_header)
 #if EE_CFG_SELFHOSTED != 1
 
 // This var is used for the generic buffer ee_buffer_* routines
-static size_t g_buffer_pos = 0;
+static uint_fast32_t g_buffer_pos = 0;
 
 /**
  * Some VERY basic buffer manipulation functions for the generic buffer.
@@ -208,7 +208,7 @@ static size_t g_buffer_pos = 0;
  * Add a byte to the current index and increment, wrapping if necessary
  */
 void
-ee_buffer_add(unsigned char byte)
+ee_buffer_add(uint8_t byte)
 {
     (th_buffer_address())[g_buffer_pos] = byte;
     ++g_buffer_pos;
@@ -231,9 +231,9 @@ ee_buffer_rewind(void)
  * Fill the buffer with a byte
  */
 void
-ee_buffer_fill(unsigned char byte)
+ee_buffer_fill(uint8_t byte)
 {
-    size_t i;
+    uint_fast32_t i;
 
     ee_buffer_rewind();
     for (i = 0; i < th_buffer_size(); ++i)
@@ -248,9 +248,9 @@ ee_buffer_fill(unsigned char byte)
 void
 ee_buffer_print(void)
 {
-    unsigned char  *buffer;
-    size_t          buffer_size;
-    size_t          i;
+    uint8_t  *buffer;
+    uint_fast32_t          buffer_size;
+    uint_fast32_t          i;
 
     buffer = th_buffer_address();
     buffer_size = th_buffer_size();
@@ -293,8 +293,8 @@ ee_bench_parse(char *p_command)
     char *p_iter;   // Requested iterations
     char *p_size;   // Requested size of dataset in bytes
 
-    unsigned int i; // iterations
-    unsigned int n; // data size in bytes
+    uint_fast32_t i; // iterations
+    uint_fast32_t n; // data size in bytes
 
     if (th_strncmp(p_command, "bench", EE_CMD_SIZE) != 0)
     {
@@ -324,7 +324,7 @@ ee_bench_parse(char *p_command)
     // Validated the seed
     if (p_seed != NULL)
     {
-        ee_srand((unsigned char)th_atoi(p_seed));
+        ee_srand((uint8_t)th_atoi(p_seed));
     }
     else
     {
@@ -335,7 +335,7 @@ ee_bench_parse(char *p_command)
     // Validate iterations
     if (p_iter)
     {
-        i = (unsigned int)th_atoi(p_iter);
+        i = (uint_fast32_t)th_atoi(p_iter);
 
         if (i == 0)
         {
@@ -352,7 +352,7 @@ ee_bench_parse(char *p_command)
     // Validate datasize
     if (p_size)
     {
-        n = (unsigned int)th_atoi(p_size);
+        n = (uint_fast32_t)th_atoi(p_size);
     }
     else
     {
@@ -364,16 +364,16 @@ ee_bench_parse(char *p_command)
 
     if (th_strncmp(p_subcmd, "sha256", EE_CMD_SIZE) == 0)
     {
-        unsigned char *p_buffer;
-        size_t         buflen;
-        unsigned char *p_in;
-        unsigned char *p_out;
-        size_t         x;
+        uint8_t *p_buffer;
+        uint_fast32_t         buflen;
+        uint8_t *p_in;
+        uint8_t *p_out;
+        uint_fast32_t         x;
 
         //       in         out
         buflen =  n +  SHA_SIZE;
 
-        p_buffer = (unsigned char *)th_malloc(buflen);
+        p_buffer = (uint8_t *)th_malloc(buflen);
 
         if (p_buffer == NULL)
         {
@@ -398,17 +398,17 @@ ee_bench_parse(char *p_command)
     }
     else if (th_strncmp(p_subcmd, "aes128_ecb", EE_CMD_SIZE) == 0)
     {
-        unsigned char *p_buffer;
-        size_t         buflen;
-        unsigned char *p_key;
-        unsigned char *p_in;
-        unsigned char *p_out;
-        size_t         x;
+        uint8_t *p_buffer;
+        uint_fast32_t         buflen;
+        uint8_t *p_key;
+        uint8_t *p_in;
+        uint8_t *p_out;
+        uint_fast32_t         x;
 
         //                key   in  out
         buflen =  AES_KEYSIZE +  n +  n;
 
-        p_buffer = (unsigned char *)th_malloc(buflen);
+        p_buffer = (uint8_t *)th_malloc(buflen);
 
         if (p_buffer == NULL)
         {
@@ -447,19 +447,19 @@ ee_bench_parse(char *p_command)
         th_free(p_buffer);
     }
     else if (th_strncmp(p_subcmd, "aes128_ccm", EE_CMD_SIZE) == 0) {
-        unsigned char *p_buffer;
-        size_t         buflen;
-        unsigned char *p_key;
-        unsigned char *p_iv;
-        unsigned char *p_in;
-        unsigned char *p_tag;
-        unsigned char *p_out;
-        size_t         x;
+        uint8_t *p_buffer;
+        uint_fast32_t         buflen;
+        uint8_t *p_key;
+        uint8_t *p_iv;
+        uint8_t *p_in;
+        uint8_t *p_tag;
+        uint8_t *p_out;
+        uint_fast32_t         x;
 
         //                key           iv  in           tag   out
         buflen =  AES_KEYSIZE + AES_IVSIZE + n + AES_TAGSIZE +   n;
 
-        p_buffer = (unsigned char *)th_malloc(buflen);
+        p_buffer = (uint8_t *)th_malloc(buflen);
 
         if (p_buffer == NULL) {
             th_printf("e-[AES128 CCM malloc() failed, size %d]\r\n", buflen);
@@ -541,9 +541,9 @@ ee_bench_parse(char *p_command)
          * Q.Y        32 (Peer public key uncompressed 32-byte Y valid coord)
          * d          32 (Private key uncompressed 32-byte)
          */
-        unsigned char *p_pub;
-        unsigned char *p_pri;
-        unsigned char  p_shared[ECDH_SIZE]; // don't blow away the th_buffer!
+        uint8_t *p_pub;
+        uint8_t *p_pri;
+        uint8_t  p_shared[ECDH_SIZE]; // don't blow away the th_buffer!
 
         // These were preloaded
         p_pub = th_buffer_address();
@@ -571,14 +571,14 @@ ee_bench_parse(char *p_command)
          * d          32 (Private key uncompressed 32-byte)
          * SHA256     32 (SHA256 Digest to sign)
          */
-        unsigned char *p_pri;
-        unsigned char *p_hmac;
+        uint8_t *p_pri;
+        uint8_t *p_hmac;
 
-        unsigned char *p_sig;
-        unsigned int   slen;
+        uint8_t *p_sig;
+        uint_fast32_t   slen;
 
         slen = 256; // Note: this is also an input to ee_ecdsa_sign
-        p_sig = (unsigned char *)th_malloc(slen); // should be 71, 72 B
+        p_sig = (uint8_t *)th_malloc(slen); // should be 71, 72 B
 
         if (p_sig == NULL)
         {
@@ -651,7 +651,7 @@ ee_buffer_parse(char *p_command)
             }
             else
             {
-                ee_buffer_fill( (unsigned char) hex);
+                ee_buffer_fill( (uint8_t) hex);
             }
         }
         else
@@ -679,7 +679,7 @@ ee_buffer_parse(char *p_command)
                 }
                 else
                 {
-                    ee_buffer_add( (unsigned char) hex);
+                    ee_buffer_add( (uint8_t) hex);
                 }
 
                 p_next = th_strtok(NULL, EE_CMD_DELIMITER);
@@ -743,7 +743,7 @@ ee_profile_parse(char *p_command)
             }
             else
             {
-                ee_srand( (unsigned char) hex);
+                ee_srand( (uint8_t) hex);
             }
         }
     }
