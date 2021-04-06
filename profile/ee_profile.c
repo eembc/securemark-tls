@@ -18,14 +18,14 @@
 #include "ee_variations.h"
 #include "th_util.h"
 
-#define EE_FW_VERSION "SecureMark-TLS Firmware v1.0.4"
+#define EE_FW_VERSION              "SecureMark-TLS Firmware v1.0.4"
 #define EE_PRINTMEM_DEFAULT_HEADER "m-hexdump-";
 
 // What mode we are currently in (perf or verf) [see monitor/th_api/th_lib.c]
 bool g_verify_mode = false;
 
 // These are used for our PRNG ee_rand()
-static uint8_t g_prn = 0x7f;
+static uint8_t g_prn       = 0x7f;
 static uint8_t g_prn_coeff = 0;
 
 /**
@@ -83,7 +83,7 @@ ee_hexdec(char *hex)
 void
 ee_srand(uint8_t seed)
 {
-    g_prn = seed;
+    g_prn       = seed;
     g_prn_coeff = 0;
 }
 
@@ -107,8 +107,8 @@ void
 ee_printmem(uint8_t *addr, uint_fast32_t len, char *user_header)
 {
     uint_fast32_t i;
-    char  *header;
-    char   b;
+    char *        header;
+    char          b;
 
     if (user_header == NULL)
     {
@@ -161,9 +161,9 @@ ee_printmem(uint8_t *addr, uint_fast32_t len, char *user_header)
 void
 ee_printmem_be(uint8_t *p_addr, uint_fast32_t len, char *p_user_header)
 {
-    uint_fast32_t   i;
-    char    *p_header;
-    char     b;
+    uint_fast32_t i;
+    char *        p_header;
+    char          b;
 
     if (p_user_header == NULL)
     {
@@ -248,11 +248,11 @@ ee_buffer_fill(uint8_t byte)
 void
 ee_buffer_print(void)
 {
-    uint8_t  *buffer;
-    uint_fast32_t          buffer_size;
-    uint_fast32_t          i;
+    uint8_t *     buffer;
+    uint_fast32_t buffer_size;
+    uint_fast32_t i;
 
-    buffer = th_buffer_address();
+    buffer      = th_buffer_address();
     buffer_size = th_buffer_size();
 
     th_printf("m-buffer-");
@@ -289,9 +289,9 @@ ee_bench_parse(char *p_command)
 {
     char *p_subcmd; // Subcommand
 
-    char *p_seed;   // srand() seed.
-    char *p_iter;   // Requested iterations
-    char *p_size;   // Requested size of dataset in bytes
+    char *p_seed; // srand() seed.
+    char *p_iter; // Requested iterations
+    char *p_size; // Requested size of dataset in bytes
 
     uint_fast32_t i; // iterations
     uint_fast32_t n; // data size in bytes
@@ -309,10 +309,10 @@ ee_bench_parse(char *p_command)
      * iter   : the decimal positive integer iteration count
      * size   : the number of bytes in the input dataset
      */
-    p_subcmd    = th_strtok(NULL, EE_CMD_DELIMITER);
-    p_seed      = th_strtok(NULL, EE_CMD_DELIMITER);
-    p_iter      = th_strtok(NULL, EE_CMD_DELIMITER);
-    p_size      = th_strtok(NULL, EE_CMD_DELIMITER);
+    p_subcmd = th_strtok(NULL, EE_CMD_DELIMITER);
+    p_seed   = th_strtok(NULL, EE_CMD_DELIMITER);
+    p_iter   = th_strtok(NULL, EE_CMD_DELIMITER);
+    p_size   = th_strtok(NULL, EE_CMD_DELIMITER);
 
     // Test existence of subcommand
     if (p_subcmd == NULL)
@@ -364,14 +364,14 @@ ee_bench_parse(char *p_command)
 
     if (th_strncmp(p_subcmd, "sha256", EE_CMD_SIZE) == 0)
     {
-        uint8_t *p_buffer;
-        uint_fast32_t         buflen;
-        uint8_t *p_in;
-        uint8_t *p_out;
-        uint_fast32_t         x;
+        uint8_t *     p_buffer;
+        uint_fast32_t buflen;
+        uint8_t *     p_in;
+        uint8_t *     p_out;
+        uint_fast32_t x;
 
         //       in         out
-        buflen =  n +  SHA_SIZE;
+        buflen = n + SHA_SIZE;
 
         p_buffer = (uint8_t *)th_malloc(buflen);
 
@@ -398,15 +398,15 @@ ee_bench_parse(char *p_command)
     }
     else if (th_strncmp(p_subcmd, "aes128_ecb", EE_CMD_SIZE) == 0)
     {
-        uint8_t *p_buffer;
-        uint_fast32_t         buflen;
-        uint8_t *p_key;
-        uint8_t *p_in;
-        uint8_t *p_out;
-        uint_fast32_t         x;
+        uint8_t *     p_buffer;
+        uint_fast32_t buflen;
+        uint8_t *     p_key;
+        uint8_t *     p_in;
+        uint8_t *     p_out;
+        uint_fast32_t x;
 
         //                key   in  out
-        buflen =  AES_KEYSIZE +  n +  n;
+        buflen = AES_KEYSIZE + n + n;
 
         p_buffer = (uint8_t *)th_malloc(buflen);
 
@@ -419,10 +419,12 @@ ee_bench_parse(char *p_command)
         p_key = p_buffer;
         p_in  = p_key + AES_KEYSIZE;
         p_out = p_in + n;
-        for (x = 0; x < AES_KEYSIZE; ++x) {
+        for (x = 0; x < AES_KEYSIZE; ++x)
+        {
             p_key[x] = ee_rand();
         }
-        for (x = 0; x < n; ++x) {
+        for (x = 0; x < n; ++x)
+        {
             p_in[x] = ee_rand();
         }
 
@@ -446,22 +448,24 @@ ee_bench_parse(char *p_command)
 
         th_free(p_buffer);
     }
-    else if (th_strncmp(p_subcmd, "aes128_ccm", EE_CMD_SIZE) == 0) {
-        uint8_t *p_buffer;
-        uint_fast32_t         buflen;
-        uint8_t *p_key;
-        uint8_t *p_iv;
-        uint8_t *p_in;
-        uint8_t *p_tag;
-        uint8_t *p_out;
-        uint_fast32_t         x;
+    else if (th_strncmp(p_subcmd, "aes128_ccm", EE_CMD_SIZE) == 0)
+    {
+        uint8_t *     p_buffer;
+        uint_fast32_t buflen;
+        uint8_t *     p_key;
+        uint8_t *     p_iv;
+        uint8_t *     p_in;
+        uint8_t *     p_tag;
+        uint8_t *     p_out;
+        uint_fast32_t x;
 
         //                key           iv  in           tag   out
-        buflen =  AES_KEYSIZE + AES_IVSIZE + n + AES_TAGSIZE +   n;
+        buflen = AES_KEYSIZE + AES_IVSIZE + n + AES_TAGSIZE + n;
 
         p_buffer = (uint8_t *)th_malloc(buflen);
 
-        if (p_buffer == NULL) {
+        if (p_buffer == NULL)
+        {
             th_printf("e-[AES128 CCM malloc() failed, size %d]\r\n", buflen);
             goto error_exit;
         }
@@ -574,10 +578,10 @@ ee_bench_parse(char *p_command)
         uint8_t *p_pri;
         uint8_t *p_hmac;
 
-        uint8_t *p_sig;
-        uint_fast32_t   slen;
+        uint8_t *     p_sig;
+        uint_fast32_t slen;
 
-        slen = 256; // Note: this is also an input to ee_ecdsa_sign
+        slen  = 256; // Note: this is also an input to ee_ecdsa_sign
         p_sig = (uint8_t *)th_malloc(slen); // should be 71, 72 B
 
         if (p_sig == NULL)
@@ -591,7 +595,8 @@ ee_bench_parse(char *p_command)
 
         ee_ecdsa_sign(p_hmac, HMAC_SIZE, p_sig, &slen, p_pri, ECC_DSIZE, i);
 
-        if (g_verify_mode) {
+        if (g_verify_mode)
+        {
             ee_printmem_be(p_pri, ECC_DSIZE, "m-bench-ecdsa-sign-own-private-");
             ee_printmem_be(p_sig, slen, "m-bench-ecdsa-sign-signature-");
             ee_printmem_be(p_hmac, HMAC_SIZE, "m-bench-ecdsa-sign-hash-");
@@ -651,7 +656,7 @@ ee_buffer_parse(char *p_command)
             }
             else
             {
-                ee_buffer_fill( (uint8_t) hex);
+                ee_buffer_fill((uint8_t)hex);
             }
         }
         else
@@ -679,7 +684,7 @@ ee_buffer_parse(char *p_command)
                 }
                 else
                 {
-                    ee_buffer_add( (uint8_t) hex);
+                    ee_buffer_add((uint8_t)hex);
                 }
 
                 p_next = th_strtok(NULL, EE_CMD_DELIMITER);
@@ -743,7 +748,7 @@ ee_profile_parse(char *p_command)
             }
             else
             {
-                ee_srand( (uint8_t) hex);
+                ee_srand((uint8_t)hex);
             }
         }
     }
@@ -753,22 +758,31 @@ ee_profile_parse(char *p_command)
         th_printf("\r\n");
         th_printf("help                : Print this information\r\n");
         th_printf("name                : Print the name of this device\r\n");
-        th_printf("profile             : Print the benchmark profile and version\r\n");
+        th_printf(
+            "profile             : Print the benchmark profile and "
+            "version\r\n");
         th_printf("verify-[0|1]        : Get or set verify mode\r\n");
-        th_printf("srand-XX            : Seed the PSRN with a hex byte, e.g 7F\r\n");
-        th_printf("bench-SUBCMD        : Issue a 'bench' subcommand and paramters\r\n");
+        th_printf(
+            "srand-XX            : Seed the PSRN with a hex byte, e.g 7F\r\n");
+        th_printf(
+            "bench-SUBCMD        : Issue a 'bench' subcommand and "
+            "paramters\r\n");
         th_printf("  sha256-*          : SHA256\r\n");
         th_printf("  aes128_ecb-*      : AES128 ECB encrypt and decrypt\r\n");
         th_printf("  aes128_ccm-*      : AES127 CCM encrypt and decrypt\r\n");
         th_printf("  ecdh-*            : ECDH secret generation\r\n");
         th_printf("  ecdsa-*           : ECDSA sign and verify\r\n");
         th_printf("  var01-*           : Varation #1 (mixed contexts)\r\n");
-        th_printf("  SEED-ITER-SIZE    : Each subcmd takes a PRNG seed, #iter. & #bytes\r\n");
+        th_printf(
+            "  SEED-ITER-SIZE    : Each subcmd takes a PRNG seed, #iter. & "
+            "#bytes\r\n");
         th_printf("buffer-SUBCMD       : Issue a 'buffer' subcommand\r\n");
         th_printf("  fill-XX           : File the buffer with XX hex byte\r\n");
-        th_printf("  add-XX[-XX]*      : Add hex byte(s) XX to current buffer\r\n");
+        th_printf(
+            "  add-XX[-XX]*      : Add hex byte(s) XX to current buffer\r\n");
         th_printf("                      pointer (it will wrap)\r\n");
-        th_printf("  rewind            : Rewind the buffer pointer to the start\r\n");
+        th_printf(
+            "  rewind            : Rewind the buffer pointer to the start\r\n");
         th_printf("  print             : Print ALL buffer bytes (as hex)\r\n");
     }
     else if (ee_bench_parse(p_command) == EE_ARG_CLAIMED)

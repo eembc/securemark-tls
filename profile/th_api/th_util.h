@@ -19,10 +19,10 @@
 // Minimum buffer size
 #define EE_MINBUF 256
 
-void           th_pre(void);
-void           th_post(void);
-void           th_buffer_initialize(void);
-uint8_t *th_buffer_address(void);
-uint_fast32_t         th_buffer_size(void);
+void          th_pre(void);
+void          th_post(void);
+void          th_buffer_initialize(void);
+uint8_t *     th_buffer_address(void);
+uint_fast32_t th_buffer_size(void);
 
 #endif

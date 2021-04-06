@@ -18,11 +18,10 @@
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_ecdh_create(
-    void **p_context // output: portable context
+th_ecdh_create(void **p_context // output: portable context
 )
 {
-    #warning "th_ecdh_create not implemented"
+#warning "th_ecdh_create not implemented"
     return EE_STATUS_OK;
 }
 
@@ -32,16 +31,15 @@ th_ecdh_create(
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_ecdh_init(
-    void           *p_context, // input: portable context
-    ecdh_group_t    group,     // input: see `ecdh_group_t` for options
-    uint8_t  *p_private, // input: private key, from host
-    uint_fast32_t    prilen,    // input: private key length in bytes
-    uint8_t  *p_public,  // input: peer public key, from host
-    uint_fast32_t    publen     // input: peer public key length in bytes
+th_ecdh_init(void *        p_context, // input: portable context
+             ecdh_group_t  group,     // input: see `ecdh_group_t` for options
+             uint8_t *     p_private, // input: private key, from host
+             uint_fast32_t prilen,    // input: private key length in bytes
+             uint8_t *     p_public,  // input: peer public key, from host
+             uint_fast32_t publen     // input: peer public key length in bytes
 )
 {
-    #warning "th_ecdh_init not implemented"
+#warning "th_ecdh_init not implemented"
     return EE_STATUS_OK;
 }
 
@@ -52,12 +50,12 @@ th_ecdh_init(
  */
 ee_status_t
 th_ecdh_calc_secret(
-    void          *p_context,  // input: portable context
-    uint8_t *p_secret,   // output: shared secret
-    uint_fast32_t   slen        // input: length of shared buffer in bytes
+    void *        p_context, // input: portable context
+    uint8_t *     p_secret,  // output: shared secret
+    uint_fast32_t slen       // input: length of shared buffer in bytes
 )
 {
-    #warning "th_ecdh_calc_secret not implemented"
+#warning "th_ecdh_calc_secret not implemented"
     return EE_STATUS_OK;
 }
 
@@ -65,9 +63,8 @@ th_ecdh_calc_secret(
  * Destroy the context created earlier.
  */
 void
-th_ecdh_destroy(
-    void *p_context // input: portable context
+th_ecdh_destroy(void *p_context // input: portable context
 )
 {
-    #warning "th_ecdh_destroy not implemented"
+#warning "th_ecdh_destroy not implemented"
 }

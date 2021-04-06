@@ -20,14 +20,13 @@
  * private key is 32-byte value used in G * m = R (the 'm' value).
  */
 void
-ee_ecdh(
-    uint8_t *p_public,    // input: peer public key, from host
-    uint_fast32_t   publen,      // input: peer public key length in bytes
-    uint8_t *p_private,   // input: private key, from host
-    uint_fast32_t   prilen,      // input: private key length in bytes
-    uint8_t *p_secret,    // output: shared secret
-    uint_fast32_t   seclen,      // input: size of buffer for secret, in bytes
-    uint_fast32_t   iterations   // input: # of test iterations
+ee_ecdh(uint8_t *     p_public,  // input: peer public key, from host
+        uint_fast32_t publen,    // input: peer public key length in bytes
+        uint8_t *     p_private, // input: private key, from host
+        uint_fast32_t prilen,    // input: private key length in bytes
+        uint8_t *     p_secret,  // output: shared secret
+        uint_fast32_t seclen,    // input: size of buffer for secret, in bytes
+        uint_fast32_t iterations // input: # of test iterations
 )
 {
     void *p_context; // Generic context if needed by implementation
@@ -37,14 +36,14 @@ ee_ecdh(
         th_printf("e-ecdh-[Failed to create context]\r\n");
         return;
     }
-    
-    if (th_ecdh_init(p_context, EE_P256R1, p_private, prilen, p_public,
-                     publen) != EE_STATUS_OK)
+
+    if (th_ecdh_init(p_context, EE_P256R1, p_private, prilen, p_public, publen)
+        != EE_STATUS_OK)
     {
         th_printf("e-ecdh-[Failed to initialize]\r\n");
         goto exit;
     }
-    
+
     th_printf("m-ecdh-iterations-%d\r\n", iterations);
     th_printf("m-ecdh-start\r\n");
     th_timestamp();

@@ -13,7 +13,7 @@
 #include "th_util.h"
 
 // NOTE: Feel free to replace the static variable with any allocation scheme
-#define BUFFER_SIZE (1024*4)
+#define BUFFER_SIZE (1024 * 4)
 static uint8_t g_generic_buffer[BUFFER_SIZE];
 
 /**
@@ -48,7 +48,7 @@ th_buffer_initialize(void)
 uint8_t *
 th_buffer_address(void)
 {
-	return g_generic_buffer;
+    return g_generic_buffer;
 }
 
 /**
@@ -57,5 +57,5 @@ th_buffer_address(void)
 uint_fast32_t
 th_buffer_size(void)
 {
-	return BUFFER_SIZE;
+    return BUFFER_SIZE;
 }

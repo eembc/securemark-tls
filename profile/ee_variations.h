@@ -17,9 +17,6 @@
 #include "ee_aes.h"
 #include "ee_sha.h"
 
-void
-ee_variation_001(
-    uint_fast32_t iterations
-);
+void ee_variation_001(uint_fast32_t iterations);
 
 #endif

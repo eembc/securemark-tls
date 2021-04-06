@@ -22,14 +22,11 @@
 
 // Fixed test API
 
-void
-ee_sha256(
-    const uint8_t *p_in,      // input: bytes to hash
-    uint_fast32_t         len,       // input: length of input in bytes
-    uint8_t       *p_result,  // output: resulting digest
-    uint_fast32_t         iterations // input: # of test iterations
-)
-;
+void ee_sha256(const uint8_t *p_in,      // input: bytes to hash
+               uint_fast32_t  len,       // input: length of input in bytes
+               uint8_t *      p_result,  // output: resulting digest
+               uint_fast32_t  iterations // input: # of test iterations
+);
 
 // Implementation API
 
@@ -38,9 +35,7 @@ ee_sha256(
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-ee_status_t
-th_sha256_create(
-    void **p_context // output: portable context
+ee_status_t th_sha256_create(void **p_context // output: portable context
 );
 
 /**
@@ -48,9 +43,7 @@ th_sha256_create(
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-ee_status_t
-th_sha256_init(
-    void *p_context // input: portable context
+ee_status_t th_sha256_init(void *p_context // input: portable context
 );
 
 /**
@@ -58,11 +51,10 @@ th_sha256_init(
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-ee_status_t
-th_sha256_process(
-    void                *p_context, // input: portable context
-    const uint8_t *p_in,      // input: data to hash    
-    uint_fast32_t         len        // input: length of data in bytes
+ee_status_t th_sha256_process(
+    void *         p_context, // input: portable context
+    const uint8_t *p_in,      // input: data to hash
+    uint_fast32_t  len        // input: length of data in bytes
 );
 
 /**
@@ -70,10 +62,8 @@ th_sha256_process(
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-ee_status_t
-th_sha256_done(
-    void          *p_context,   // input: portable context
-    uint8_t *p_result     // output: digest, SHA_SIZE bytes
+ee_status_t th_sha256_done(void *   p_context, // input: portable context
+                           uint8_t *p_result   // output: digest, SHA_SIZE bytes
 );
 
 /**
@@ -81,9 +71,7 @@ th_sha256_done(
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-void
-th_sha256_destroy(
-    void *p_context // input: portable context
+void th_sha256_destroy(void *p_context // input: portable context
 );
 
 #endif // __EE_SHA_H

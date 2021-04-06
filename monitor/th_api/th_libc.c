@@ -24,7 +24,7 @@ th_strncmp(const char *str1, const char *str2, size_t n)
 }
 
 size_t
-th_strlen(const char * str)
+th_strlen(const char *str)
 {
     return strlen(str);
 }
