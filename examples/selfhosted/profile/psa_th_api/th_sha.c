@@ -57,9 +57,9 @@ th_sha256_init(
  */
 ee_status_t
 th_sha256_process(
-	void *context,
-	const unsigned char *in,
-	unsigned int size
+	void          *context,
+	const uint8_t *in,
+	uint_fast32_t  size
 ) {
     psa_hash_update( (psa_hash_operation_t *) context, in, size );
 

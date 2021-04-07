@@ -22,7 +22,7 @@ struct psa_ke_structure
     psa_key_attributes_t *client_attributes;  // own key attributes
     psa_key_handle_t client_key_handle;       // own key handle
     unsigned char *p_public;                  // public key of peer
-    unsigned int publen;                      // peer public key length
+    uint_fast32_t  publen;                    // peer public key length
 };
 
 typedef struct psa_ke_structure psa_ke_structure;
@@ -67,10 +67,10 @@ ee_status_t
 th_ecdh_init(
     void           *p_context, // input: portable context
     ecdh_group_t    group,     // input: see `ecdh_group_t` for options
-    unsigned char  *p_private, // input: private key, from host
-    unsigned int    prilen,    // input: private key length in bytes
-    unsigned char  *p_public,  // input: peer public key, from host
-    unsigned int    publen     // input: peer public key length in bytes
+    uint8_t        *p_private, // input: private key, from host
+    uint_fast32_t   prilen,    // input: private key length in bytes
+    uint8_t        *p_public,  // input: peer public key, from host
+    uint_fast32_t   publen     // input: peer public key length in bytes
 )
 {
     psa_ke_structure *context = (psa_ke_structure *) p_context;
@@ -128,7 +128,7 @@ ee_status_t
 th_ecdh_calc_secret(
     void          *p_context,  // input: portable context
     unsigned char *p_secret,   // output: shared secret
-    unsigned int   slen        // input: length of shared buffer in bytes
+    uint_fast32_t  slen        // input: length of shared buffer in bytes
 )
 {
     size_t                olen;

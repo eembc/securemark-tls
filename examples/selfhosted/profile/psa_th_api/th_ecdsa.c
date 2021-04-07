@@ -213,8 +213,8 @@ ee_status_t
 th_ecdsa_init(
     void            *p_context, // input: portable context
     ecdh_group_t     group,     // input: see `ecdh_group_t` for options
-    unsigned char   *p_private, // input: private key from host
-    size_t           plen       // input: length of private key in bytes
+    uint8_t         *p_private, // input: private key from host
+    uint_fast32_t    plen       // input: length of private key in bytes
 )
 {
     psa_ecdsa_structure *context = (psa_ecdsa_structure *) p_context;
@@ -259,13 +259,13 @@ th_ecdsa_init(
 ee_status_t
 th_ecdsa_sign(
     void          *p_context,   // input: portable context
-    unsigned char *p_hash,      // input: sha256 digest
-    unsigned int   hlen,        // input: length of digest in bytes
-    unsigned char *p_sig,       // output: signature
-    unsigned int  *p_slen       // in/out: input=MAX slen, output=resultant
+    uint8_t       *p_hash,      // input: sha256 digest
+    uint_fast32_t  hlen,        // input: length of digest in bytes
+    uint8_t       *p_sig,       // output: signature
+    uint_fast32_t *p_slen       // in/out: input=MAX slen, output=resultant
 )
 {
-    size_t                 slent;
+    uint_fast32_t                 slent;
     psa_status_t status;
     psa_ecdsa_structure *context = (psa_ecdsa_structure *) p_context;
     int res;
@@ -304,20 +304,20 @@ th_ecdsa_sign(
 ee_status_t
 th_ecdsa_verify(
     void          *p_context,   // input: portable context
-    unsigned char *p_hash,      // input: sha256 digest
-    unsigned int   hlen,        // input: length of digest in bytes
-    unsigned char *p_sig,       // input: signature
-    unsigned int   slen         // input: length of signature in bytes
+    uint8_t       *p_hash,      // input: sha256 digest
+    uint_fast32_t  hlen,        // input: length of digest in bytes
+    uint8_t       *p_sig,       // input: signature
+    uint_fast32_t  slen         // input: length of signature in bytes
 )
 { 
     psa_status_t status;
     psa_ecdsa_structure *context = (psa_ecdsa_structure *) p_context;
 	// Buffer to store the ASN.1 representation of the signature
-    unsigned char buf[30 + 2 * MBEDTLS_ECP_MAX_BYTES];
+    uint8_t buf[30 + 2 * MBEDTLS_ECP_MAX_BYTES];
 	/* Length of binary representation of r and s, respectively. 
 	 * Size for P256r1 curve. 
 	 */
-    size_t signature_part_size = 0x20;
+    uint_fast32_t signature_part_size = 0x20;
     int ret;
 
     if( ( ret = extract_ecdsa_sig( &p_sig, p_sig + slen, // signature start and end

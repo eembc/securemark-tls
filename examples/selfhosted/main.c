@@ -562,7 +562,7 @@ wrap_ecdsa_sign(unsigned int n, unsigned int i)
     unsigned char *privkey;
     unsigned char  hash[HMAC_SIZE];
     unsigned char *sig;
-    unsigned int   slen;
+    uint_fast32_t  slen;
     unsigned int   x;
     uint16_t       crc;
 
@@ -600,7 +600,7 @@ wrap_ecdsa_verify(unsigned int n, unsigned int i)
     unsigned char *privkey;
     unsigned char  hash[HMAC_SIZE];
     unsigned char *sig;
-    unsigned int   slen;
+    uint_fast32_t  slen;
     unsigned int   x;
     uint16_t       crc;
 
