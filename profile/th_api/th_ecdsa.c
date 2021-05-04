@@ -62,7 +62,7 @@ th_ecdsa_sign(void *         p_context, // input: portable context
 }
 
 /**
- * Create a signature using SHA256 hash.
+ * Verify a signature and digest.
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
