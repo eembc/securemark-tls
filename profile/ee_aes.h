@@ -21,7 +21,8 @@
 typedef enum
 {
     AES_ECB = 0,
-    AES_CCM
+    AES_CCM,
+    AES_GCM
 } aes_cipher_mode_t;
 
 typedef enum
@@ -48,6 +49,16 @@ void ee_aes128_ecb(uint8_t *p_key, // input: key
 );
 
 void ee_aes128_ccm(uint8_t *p_key, // input: key
+                   uint8_t *p_iv,  // input: initialization vector
+                   uint8_t *p_in,  // input: pointer to source input (pt or ct)
+                   uint_fast32_t len, // input: length of input in bytes
+                   uint8_t *p_tag, // inout: output in encrypt, input on decrypt
+                   uint8_t *p_out, // output: pointer to output buffer
+                   aes_function_t func,      // input: func (AES_ENC|AES_DEC)
+                   uint_fast32_t  iterations // input: # of test iterations
+);
+
+void ee_aes128_gcm(uint8_t *p_key, // input: key
                    uint8_t *p_iv,  // input: initialization vector
                    uint8_t *p_in,  // input: pointer to source input (pt or ct)
                    uint_fast32_t len, // input: length of input in bytes
@@ -141,6 +152,39 @@ ee_status_t th_aes128_ccm_decrypt(
     uint_fast32_t  ctlen,     // input: length of ciphertext in bytes
     uint8_t *      p_pt,      // output: plaintext
     uint8_t *      p_tag,     // input: tag
+    uint_fast32_t  taglen,    // input: tag length in bytes
+    uint8_t *      p_iv,      // input: initialization vector
+    uint_fast32_t  ivlen      // input: IV length in bytes
+);
+
+/**
+ * Perform an AES/GCM encrypt.
+ *
+ * Return EE_STATUS_OK or EE_STATUS_ERROR.
+ */
+ee_status_t th_aes128_gcm_encrypt(
+    void *         p_context, // input: portable context
+    const uint8_t *p_pt,      // input: plaintext
+    uint_fast32_t  ptlen,     // input: length of plaintext in bytes
+    uint8_t *      p_ct,      // output: ciphertext
+    uint8_t *      p_tag,     // output: tag
+    uint_fast32_t  taglen,    // input: tag length in bytes
+    uint8_t *      p_iv,      // input: initialization vector
+    uint_fast32_t  ivlen      // input: IV length in bytes
+);
+
+/**
+ * Perform a AES/GCM decrypt.
+ *
+ * Return EE_STATUS_OK or EE_STATUS_ERROR.
+ */
+
+ee_status_t th_aes128_gcm_decrypt(
+    void *         p_context, // input: portable context
+    const uint8_t *p_ct,      // input: ciphertext
+    uint_fast32_t  ctlen,     // input: length of plaintext in bytes
+    uint8_t *      p_pt,      // output: plaintext
+    uint8_t *      p_tag,     // output: tag
     uint_fast32_t  taglen,    // input: tag length in bytes
     uint8_t *      p_iv,      // input: initialization vector
     uint_fast32_t  ivlen      // input: IV length in bytes
