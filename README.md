@@ -49,7 +49,7 @@ To obtain the host GUI, user manual, and bill-of-materials for the EEMBC IoTConn
 
 # Licensing
 
-This software is provided under an extended Apache-2.0 license. The extension includes an "Acceptable Use Agreement", which in the shortest possible terms prevents someone from changing the code and calling it SecureMark, which would diminish EEMBC's efforts at standardization. Please review the attached license before you begin.
+This software is provided under an extended Apache-2.0 license. The extension includes an "Acceptable Use Agreement", which in the shortest possible terms prevents someone from changing the code and calling it SecureMark, which would diminish EEMBC's efforts at standardization. Please review the attached license before you begin. A corporate license is required to publish scores in documents such as marketing and PR documents, and to obtain support. Please contact support@eembc.org for information on corporate licensing.
 
 # About EEMBC
 
