@@ -186,6 +186,7 @@ th_ecdsa_create(
 )
 {
     psa_ecdsa_structure *p_ecdsa;
+    psa_status_t status;
 
     p_ecdsa = 
        (psa_ecdsa_structure *)th_malloc(sizeof(psa_ecdsa_structure));
@@ -198,6 +199,14 @@ th_ecdsa_create(
 
     p_ecdsa->attributes = th_malloc(sizeof(psa_key_attributes_t));
     memset(p_ecdsa->attributes, 0, sizeof(psa_key_attributes_t));
+
+    // Initialize the PSA Crypto API
+    status = psa_crypto_init( );
+    if( status != PSA_SUCCESS )
+    {
+        th_printf("e-[psa_crypto_init: -0x%04x]\r\n", -status);
+        return EE_STATUS_ERROR;
+    }
 
     *p_context = (void *)p_ecdsa; 
     return EE_STATUS_OK;
@@ -220,13 +229,7 @@ th_ecdsa_init(
     psa_ecdsa_structure *context = (psa_ecdsa_structure *) p_context;
     psa_status_t status;
 
-    status = psa_crypto_init( );
-    if( status != PSA_SUCCESS )
-    {
-        th_printf("e-[psa_crypto_init: -0x%04x]\r\n", -status);
-        return EE_STATUS_ERROR;
-    }
-
+    // Configure attributes for key
     switch (group)
     { 
         case EE_P256R1:
@@ -282,7 +285,7 @@ th_ecdsa_sign(
         return EE_STATUS_ERROR;
     }
 
-    /* Encode the PSA signature output into the RFC4492 format. */
+    /* Encode the PSA signature output into the RFC 4492 format. */
     res = pk_ecdsa_sig_asn1_from_psa( p_sig, (size_t*) &slent, (size_t) *p_slen );
 
     if (res != 0)
@@ -321,9 +324,9 @@ th_ecdsa_verify(
     int ret;
 
     if( ( ret = extract_ecdsa_sig( &p_sig, p_sig + slen, // signature start and end
-	                               buf,                  // output buffer
+                                   buf,                  // output buffer
                                    signature_part_size   // length of r and s, respectively 
-								 ) ) != 0 )
+                                 ) ) != 0 )
     {
         th_printf("e-[Failed to extract_ecdsa_sig: -0x%04x]\r\n", -ret);
         return EE_STATUS_ERROR;
