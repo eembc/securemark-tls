@@ -40,6 +40,7 @@ th_ecdh_create(
 )
 {
     psa_ke_structure *context;
+    psa_status_t status;
 
     context = 
        (psa_ke_structure *)th_malloc(sizeof(psa_ke_structure));
@@ -53,6 +54,14 @@ th_ecdh_create(
     context->client_attributes = th_malloc(sizeof(psa_key_attributes_t));
     memset(context->client_attributes, 0, sizeof(psa_key_attributes_t));
 
+    // Initialize the PSA Crypto API
+    status = psa_crypto_init( );
+    if( status != PSA_SUCCESS )
+    {
+        th_printf("e-[psa_crypto_init: -0x%04x]\r\n", -status);
+        return EE_STATUS_ERROR;
+    }
+	
     *p_context = context;
 
     return EE_STATUS_OK;
@@ -76,20 +85,12 @@ th_ecdh_init(
     psa_ke_structure *context = (psa_ke_structure *) p_context;
     psa_status_t status;
 
-    status = psa_crypto_init( );
-    if( status != PSA_SUCCESS )
-    {
-        th_printf("e-[psa_crypto_init: -0x%04x]\r\n", -status);
-        return EE_STATUS_ERROR;
-    }
-
     switch (group)
     { 
         case EE_P256R1:
             psa_set_key_usage_flags( context->client_attributes, PSA_KEY_USAGE_DERIVE | PSA_KEY_USAGE_EXPORT );
             psa_set_key_algorithm( context->client_attributes, PSA_ALG_ECDH );
             psa_set_key_type( context->client_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1) );
-
             break; 
         default:
             th_printf("e-[Invalid ECC curve in th_ecdh_init]\r\n");
@@ -103,10 +104,11 @@ th_ecdh_init(
         th_printf("e-[malloc() fail in th_ecdh_init\r\n");
         return EE_STATUS_ERROR;
     }
+
     // First byte for mbedtls_ecp_point_read_binary must be 0x04
     context->p_public[0] = 0x04;
     th_memcpy(&(context->p_public[1]), p_public, publen);
-	context->publen = publen+1;
+    context->publen = publen+1;
 
     // Import own private key
     status = psa_import_key(context->client_attributes, p_private, prilen, &context->client_key_handle );
@@ -131,9 +133,9 @@ th_ecdh_calc_secret(
     uint_fast32_t  slen        // input: length of shared buffer in bytes
 )
 {
-    size_t                olen;
-
+    size_t olen;
     psa_status_t status;
+
     psa_ke_structure *context = (psa_ke_structure *) p_context;
 
     /* Produce ECDHE derived key */
