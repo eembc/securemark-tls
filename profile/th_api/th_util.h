@@ -13,12 +13,14 @@
 #ifndef __TH_UTIL_H
 #define __TH_UTIL_H
 
+#include <ee_main.h>
 #include <stddef.h>
 #include <stdint.h>
 
 // Minimum buffer size
 #define EE_MINBUF 256
 
+ee_status_t   th_profile_initialize(void);
 void          th_pre(void);
 void          th_post(void);
 void          th_buffer_initialize(void);

@@ -802,6 +802,7 @@ void
 ee_profile_initialize(void)
 {
     th_buffer_initialize();
+    th_profile_initialize();
     g_verify_mode = false;
     if (th_buffer_size() < EE_MINBUF)
     {

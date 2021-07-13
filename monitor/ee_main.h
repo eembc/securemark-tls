@@ -24,6 +24,7 @@ typedef enum
     EE_ARG_CLAIMED,
     EE_ARG_UNCLAIMED
 } arg_claimed_t;
+
 typedef enum
 {
     EE_STATUS_OK = 0,

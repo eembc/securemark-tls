@@ -17,6 +17,17 @@
 static uint8_t g_generic_buffer[BUFFER_SIZE];
 
 /**
+ * Most init can happen prior to ee_main(), but if necessary, this function
+ * provides a way to initialize within the ee_* initialization. It is called
+ * from: ee_main() > ee_profile_init() > th_profile_init().
+ */
+ee_status_t
+th_profile_init(void)
+{
+    return EE_STATUS_OK;
+}
+
+/**
  * The pre/post hooks are called immediately before the th_timestamp() and
  * immediately after. These hooks give the developer a chance to turn off
  * certain features (like UART) to save power during the loop.
