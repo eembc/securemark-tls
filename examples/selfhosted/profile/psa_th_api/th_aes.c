@@ -35,7 +35,17 @@ th_aes128_create(
 )
 {
     psa_encryption_structure *context;
+    psa_status_t status;
 
+
+    // Initialize PSA Crypto API
+    status = psa_crypto_init( );
+    if( status != PSA_SUCCESS )
+    {
+        th_printf("e-[psa_crypto_init: -0x%04x]\r\n", -status);
+        return EE_STATUS_ERROR;
+    }  
+    
     context = 
             (psa_encryption_structure *)th_malloc(sizeof(psa_encryption_structure));
 
@@ -106,8 +116,6 @@ th_aes128_init(
 {
     psa_status_t status;
     psa_encryption_structure *context = (psa_encryption_structure *) p_context;
-
-    psa_crypto_init( );
 
     if(context==NULL || context->attributes==NULL) 
     { 
