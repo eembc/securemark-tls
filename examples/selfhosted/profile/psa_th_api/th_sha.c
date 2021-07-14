@@ -23,7 +23,6 @@ th_sha256_create(
    void **context
 ) {
     psa_hash_operation_t *sha256;
-    psa_status_t status;
 
     sha256 = th_malloc(sizeof(psa_hash_operation_t));
     memset(sha256, 0, sizeof(psa_hash_operation_t));
@@ -33,14 +32,6 @@ th_sha256_create(
         return EE_STATUS_ERROR;
     }
     
-    // Initialize PSA Crypto API
-    status = psa_crypto_init( );
-    if( status != PSA_SUCCESS )
-    {
-        th_printf("e-[psa_crypto_init: -0x%04x]\r\n", -status);
-        return EE_STATUS_ERROR;
-    }
- 
     *context = (void *)sha256;
 
     return EE_STATUS_OK;
@@ -125,8 +116,8 @@ void
 th_sha256_destroy(
 	void *context
 ) {
-	if (context != NULL) {
-		th_free(context);
-		context = NULL;
-	}
+    if (context != NULL) {
+        th_free(context);
+        context = NULL;
+    }
 }
