@@ -11,6 +11,7 @@
  */
 
 #include "th_util.h"
+#include "psa/crypto.h"
 
 // NOTE: Feel free to replace the static variable with any allocation scheme
 #define BUFFER_SIZE (1024*4)
@@ -27,6 +28,28 @@ void th_pre(void) {
 
 void th_post(void) {
 }
+
+/**
+ * Most init can happen prior to ee_main(), but if necessary, this function
+ * provides a way to initialize within the ee_* initialization. It is called
+ * from: ee_main() > ee_profile_init() > th_profile_init().
+ */
+ee_status_t
+th_profile_init(void)
+{
+    psa_status_t status;
+
+    // Initialize PSA Crypto API
+    status = psa_crypto_init( );
+    if( status != PSA_SUCCESS )
+    {
+        th_printf("e-[psa_crypto_init: -0x%04x]\r\n", -status);
+        return EE_STATUS_ERROR;
+    }
+	
+    return EE_STATUS_OK;
+}
+
 
 /**
  * PORTME: If you opt to not use the heap, set up the buffer here.
