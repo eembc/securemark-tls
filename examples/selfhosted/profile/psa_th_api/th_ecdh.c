@@ -40,7 +40,6 @@ th_ecdh_create(
 )
 {
     psa_ke_structure *context;
-    psa_status_t status;
 
     context = 
        (psa_ke_structure *)th_malloc(sizeof(psa_ke_structure));
@@ -54,14 +53,6 @@ th_ecdh_create(
     context->client_attributes = th_malloc(sizeof(psa_key_attributes_t));
     memset(context->client_attributes, 0, sizeof(psa_key_attributes_t));
 
-    // Initialize the PSA Crypto API
-    status = psa_crypto_init( );
-    if( status != PSA_SUCCESS )
-    {
-        th_printf("e-[psa_crypto_init: -0x%04x]\r\n", -status);
-        return EE_STATUS_ERROR;
-    }
-	
     *p_context = context;
 
     return EE_STATUS_OK;
@@ -178,8 +169,6 @@ th_ecdh_destroy(
     th_free(context->p_public);
 
     psa_destroy_key( context->client_key_handle );
-
-    mbedtls_psa_crypto_free( );
 
     th_free(p_context);
 }
