@@ -220,13 +220,6 @@ th_ecdsa_init(
     psa_ecdsa_structure *context = (psa_ecdsa_structure *) p_context;
     psa_status_t status;
 
-    status = psa_crypto_init( );
-    if( status != PSA_SUCCESS )
-    {
-        th_printf("e-[psa_crypto_init: -0x%04x]\r\n", -status);
-        return EE_STATUS_ERROR;
-    }
-
     switch (group)
     { 
         case EE_P256R1:
@@ -356,8 +349,6 @@ th_ecdsa_destroy(
     th_free(context->attributes);
 
     psa_destroy_key( context->key_handle );
-
-    mbedtls_psa_crypto_free( );
 
     th_free(p_context);
 }
