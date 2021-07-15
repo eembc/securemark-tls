@@ -14,9 +14,12 @@
 #define __TH_UTIL_H
 
 #include <stddef.h>
+#include <ee_main.h>
 
 void th_pre(void);
 void th_post(void);
+
+ee_status_t   th_profile_initialize(void);
 
 void th_buffer_initialize(void);
 unsigned char * th_buffer_address(void);
