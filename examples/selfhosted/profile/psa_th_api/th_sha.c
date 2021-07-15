@@ -20,18 +20,21 @@
  */
 ee_status_t
 th_sha256_create(
-	void **context
+   void **context
 ) {
     psa_hash_operation_t *sha256;
+
     sha256 = th_malloc(sizeof(psa_hash_operation_t));
     memset(sha256, 0, sizeof(psa_hash_operation_t));
 
-	if (! sha256) {
-		th_printf("e-sha256-?malloc\r\n");
-		return EE_STATUS_ERROR;
-	}
-	*context = (void *)sha256;
-	return EE_STATUS_OK;
+    if (! sha256) {
+        th_printf("e-sha256-?malloc\r\n");
+        return EE_STATUS_ERROR;
+    }
+    
+    *context = (void *)sha256;
+
+    return EE_STATUS_OK;
 }
 
 /**
@@ -43,11 +46,17 @@ ee_status_t
 th_sha256_init(
 	void *context
 ) {
-    psa_crypto_init( );
+    psa_status_t status;
 
-    psa_hash_setup( (psa_hash_operation_t *) context, PSA_ALG_SHA_256 );
+    status = psa_hash_setup( (psa_hash_operation_t *) context, PSA_ALG_SHA_256 );
 
-	return EE_STATUS_OK;
+    if( status != PSA_SUCCESS )
+    {
+        th_printf("e-[psa_hash_setup: -0x%04x]\r\n", -status);
+        return EE_STATUS_ERROR;
+    }
+        
+    return EE_STATUS_OK;
 }
 
 /**
@@ -61,9 +70,17 @@ th_sha256_process(
 	const uint8_t *in,
 	uint_fast32_t  size
 ) {
-    psa_hash_update( (psa_hash_operation_t *) context, in, size );
+    psa_status_t status;
 
-	return EE_STATUS_OK;
+    status = psa_hash_update( (psa_hash_operation_t *) context, in, size );
+
+    if( status != PSA_SUCCESS )
+    {
+        th_printf("e-[psa_hash_update: -0x%04x]\r\n", -status);
+        return EE_STATUS_ERROR;
+    }
+
+    return EE_STATUS_OK;
 }
 
 /**
@@ -76,12 +93,18 @@ th_sha256_done(
 	void *context,
 	unsigned char *result
 ) {
-
     size_t hash_size;
+    psa_status_t status;
 
-    psa_hash_finish( (psa_hash_operation_t *) context, result, 32, &hash_size );
+    status = psa_hash_finish( (psa_hash_operation_t *) context, result, 32, &hash_size );
 
-	return EE_STATUS_OK;
+    if( status != PSA_SUCCESS )
+    {
+        th_printf("e-[psa_hash_finish: -0x%04x]\r\n", -status);
+        return EE_STATUS_ERROR;
+    }
+
+    return EE_STATUS_OK;
 }
 
 /**
@@ -93,8 +116,8 @@ void
 th_sha256_destroy(
 	void *context
 ) {
-	if (context != NULL) {
-		th_free(context);
-		context = NULL;
-	}
+    if (context != NULL) {
+        th_free(context);
+        context = NULL;
+    }
 }
