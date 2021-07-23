@@ -71,6 +71,19 @@ SecureMark-TLS Score is 112677.812 marks
 To compile the SecureMark-TLS benchmark on Windows using Visual Studio open 
 the Visual Studio project file at `visualc/sec-tls/sec-tls.vcxproj`. 
 
+To build with using wolfSSL for crypto (https://github.com/wolfssl/wolfssl)
+install wolfSSL version 4.8.0 or later on the system. On the host a good configure option to use when
+building wolfSSL is "./configure CFLAGS="-DWOLFSSL_AES_DIRECT -DHAVE_AES_ECB -DWOLFSSL_ECDSA_DETERMINISTIC_K" --enable-ecc --enable-keygen --enable-aesccm --enable-sp --enable-sp-asm"
+
+Then run
+
+```
+% mkdir build
+% cd build
+% cmake -DWOLFSSL=1 ..
+% make
+```
+
 # Scoring
 
 This code is provided as an example of how the benchmark operates. In order to
