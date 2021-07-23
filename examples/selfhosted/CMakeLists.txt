@@ -25,8 +25,8 @@ include_directories(../../monitor/th_api)
 include_directories(../../profile)
 
 if (SELFHOSTED)
-    include_directories(profile/th_api)
-    include_directories(profile/th_api/redist)
+    include_directories(profile/mbedtls_th_api)
+    include_directories(profile/mbedtls_th_api/redist)
     set(SOURCE
         ../../profile/ee_aes.c
         ../../profile/ee_ecdsa.c
@@ -34,31 +34,62 @@ if (SELFHOSTED)
         ../../profile/ee_ecdh.c
         ../../profile/ee_profile.c
         ../../profile/ee_sha.c
-        profile/th_api/th_aes.c
-        profile/th_api/redist/mbedtls/aes.c
-        profile/th_api/redist/mbedtls/ecdh.c
-        profile/th_api/redist/mbedtls/cipher_wrap.c
-        profile/th_api/redist/mbedtls/hmac_drbg.c
-        profile/th_api/redist/mbedtls/asn1parse.c
-        profile/th_api/redist/mbedtls/asn1write.c
-        profile/th_api/redist/mbedtls/ccm.c
-        profile/th_api/redist/mbedtls/bignum.c
-        profile/th_api/redist/mbedtls/md_wrap.c
-        profile/th_api/redist/mbedtls/ecp.c
-        profile/th_api/redist/mbedtls/sha256.c
-        profile/th_api/redist/mbedtls/ecp_curves.c
-        profile/th_api/redist/mbedtls/md.c
-        profile/th_api/redist/mbedtls/cipher.c
-        profile/th_api/redist/mbedtls/ecdsa.c
-        profile/th_api/th_util.c
-        profile/th_api/th_ecdh.c
-        profile/th_api/th_ecdsa.c
-        profile/th_api/th_sha.c
+        profile/mbedtls_th_api/th_aes.c
+        profile/mbedtls_th_api/redist/mbedtls/aes.c
+        profile/mbedtls_th_api/redist/mbedtls/ecdh.c
+        profile/mbedtls_th_api/redist/mbedtls/cipher_wrap.c
+        profile/mbedtls_th_api/redist/mbedtls/hmac_drbg.c
+        profile/mbedtls_th_api/redist/mbedtls/asn1parse.c
+        profile/mbedtls_th_api/redist/mbedtls/asn1write.c
+        profile/mbedtls_th_api/redist/mbedtls/ccm.c
+        profile/mbedtls_th_api/redist/mbedtls/bignum.c
+        profile/mbedtls_th_api/redist/mbedtls/md_wrap.c
+        profile/mbedtls_th_api/redist/mbedtls/ecp.c
+        profile/mbedtls_th_api/redist/mbedtls/sha256.c
+        profile/mbedtls_th_api/redist/mbedtls/ecp_curves.c
+        profile/mbedtls_th_api/redist/mbedtls/md.c
+        profile/mbedtls_th_api/redist/mbedtls/cipher.c
+        profile/mbedtls_th_api/redist/mbedtls/ecdsa.c
+        profile/mbedtls_th_api/th_util.c
+        profile/mbedtls_th_api/th_ecdh.c
+        profile/mbedtls_th_api/th_ecdsa.c
+        profile/mbedtls_th_api/th_sha.c
         ../../monitor/ee_main.c
         ../../monitor/th_api/th_lib.c
         ../../monitor/th_api/th_libc.c
         main.c
     )
+    add_definitions(-DEE_CFG_SELFHOSTED=1)
+    add_definitions(-DEE_CFG_QUIET=1)
+    add_executable(sec-tls ${SOURCE})
+elseif(WOLFSSL)
+    include_directories(profile/wolfssl_th_api)
+    set(SOURCE
+        ../../profile/ee_aes.c
+        ../../profile/ee_ecdsa.c
+        ../../profile/ee_variations.c
+        ../../profile/ee_ecdh.c
+        ../../profile/ee_profile.c
+        ../../profile/ee_sha.c
+        profile/wolfssl_th_api/th_aes.c
+        profile/wolfssl_th_api/th_util.c
+        profile/wolfssl_th_api/th_ecdh.c
+        profile/wolfssl_th_api/th_ecdsa.c
+        profile/wolfssl_th_api/th_sha.c
+        ../../monitor/ee_main.c
+        ../../monitor/th_api/th_lib.c
+        ../../monitor/th_api/th_libc.c
+        main.c
+    )
+    find_path(WOLFSSL_INCLUDE wolfssl/options.h)
+    find_library(WOLFSSL_LIB wolfssl)
+
+    include_directories(${WOLFSSL_INCLUDE})
+    link_libraries(${WOLFSSL_LIB})
+
+    message("WOLFSSL_INCLUDE = ${WOLFSSL_INCLUDE}")
+    message("WOLFSSL_LIB = ${WOLFSSL_LIB}")
+
     add_definitions(-DEE_CFG_SELFHOSTED=1)
     add_definitions(-DEE_CFG_QUIET=1)
     add_executable(sec-tls ${SOURCE})
