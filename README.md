@@ -16,7 +16,7 @@ The monitor provides a basic set of platform requirements to communicate with th
 
 The profile contains the components from which the final benchmark score is comprised. By calling these components with different configurations, the SecureMark-TLS benchmark emulates a TLS handshake and data transfer using the following cryptoprimitives:
 
-* Ephemeral ECDH key exchange,
+* Ephemeral ECDH key exchange (deterministic),
 * ECDSA with a SHA256 HMAC,
 * SHA256 hashing, and
 * both AES 128 CCM and ECB exchanges 
@@ -28,6 +28,25 @@ In order to analyze energy efficiency, the API provides a thin layer to each pri
 A TLS handshake with this configuration has 14 steps and generates over a dozen different contexts with various-sized payloads. The firmware API allows the host software to configure and execute these primitives with different input data sizes in order to both emulate the handshake for an official score, and to provide exploration and analysis outside the scope of the benchmark. (The host GUI provides additional dynamic configuration options than the self-hosted code.)
 
 The high-level wrapper for each primitive is implemented in the `profile/ee_*` files. The `profiles/th_api/th_*` files provide the user implementation. In the `examples` folder, the self-hosted code implements the `th_*` functionality with Arm's mbedTLS(tm) library. A version of mbedTLS has been provided for completeness, but this is just one possible implementation. A developer could use wolfSSL or LibTomCrypt, or the hardware acceleration libraries found on many Arm-based MCU and SoC products. The EEMBC API makes porting quick and easy.
+
+The 14 subphases in the test consist of:
+
+| Phase | Description                |
+|-------|----------------------------|
+| 1     | AES128 ECB Encrypt [144B]  |
+| 2     | AES128 ECB Encrypt [224B]  |
+| 3     | AES128 ECB Encrypt [320B]  |
+| 4     | AES128 CCM Encrypt [52B]   |
+| 5     | AES128 CCM Decrypt [168B]  |
+| 6     | ECDH p256r1 Secret Mix     |
+| 7     | ECDSA p256r1 Sign          |
+| 8     | ECDSA p256r1 Verify        |
+| 9     | SHA256 [23B]               |
+| 10    | SHA256 [57B]               |
+| 11    | SHA256 [384B]              |
+| 12    | SHA256+AES Multi Mix       |
+| 13    | SHA256 [4224B]             |
+| 14    | Data Tx (AES ENC) [2KB]    |  
 
 ## Scoring
 
