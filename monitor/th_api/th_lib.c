@@ -36,6 +36,9 @@ th_timestamp_initialize(void)
     // USER CODE 1 END
     // Always print this message
     th_printf(EE_MSG_TIMESTAMP_MODE);
+    /* Always call the timestamp on initialize so that the open-drain output
+       is set to "1" (so that we catch a falling edge) */
+    th_timestamp();
 }
 
 /**
