@@ -12,10 +12,7 @@
 
 #include "th_lib.h"
 
-#if EE_CFG_ENERGY_MODE == 1
-#else
 extern bool g_verify_mode; // see th_timestamp()
-#endif
 
 #if EE_CFG_SELFHOSTED != 1
 
@@ -39,9 +36,6 @@ th_timestamp_initialize(void)
     // USER CODE 1 END
     // Always print this message
     th_printf(EE_MSG_TIMESTAMP_MODE);
-    /* Always call the timestamp on initialize so that the open-drain output
-       is set to "1" (so that we catch a falling edge) */
-    th_timestamp();
 }
 
 /**
@@ -53,23 +47,20 @@ th_timestamp_initialize(void)
 void
 th_timestamp(void)
 {
+    // Don't print timestamps during verification mode!
+    if (g_verify_mode != 0)
+    {
+        return;
+    }
     #warning "th_timestamp() not implemented"
     #if EE_CFG_ENERGY_MODE==1
     // 1. pull pin low
     // 2. wait at least 62.5ns
     // 3. set pin high
     #else
-    // Don't print timestamps during verification mode!
-    if (g_verify_mode != 0)
-    {
-        return;
-    }
-    else
-    {
-        uint32_t elapsedMicroSeconds = 0;
-        // Print out the timestamp in this exact format:
-        th_printf(EE_MSG_TIMESTAMP, elapsedMicroSeconds);
-    }
+    uint32_t elapsedMicroSeconds = 0;
+    // Print out the timestamp in this exact format:
+    th_printf(EE_MSG_TIMESTAMP, elapsedMicroSeconds);
     #endif
 }
 
