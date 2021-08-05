@@ -10,7 +10,7 @@
  * effective EEMBC Benchmark License Agreement, you must discontinue use.
  */
 
-#include "mbedtls/config.h"
+#include "mbedtls/mbedtls_config.h"
 #include "mbedtls/aes.h"
 #include "mbedtls/ccm.h"
 
@@ -146,8 +146,11 @@ th_aes128_ecb_encrypt(
     unsigned char       *p_ct       // output: ciphertext (AES_BLOCKSIZE bytes)
 )
 {
-    mbedtls_aes_encrypt((mbedtls_aes_context *)p_context, p_pt, p_ct);
-    return EE_STATUS_OK;
+    return mbedtls_aes_crypt_ecb((mbedtls_aes_context *)p_context,
+                                 MBEDTLS_AES_ENCRYPT,
+                                 p_pt,
+                                 p_ct)
+      == 0 ? EE_STATUS_OK : EE_STATUS_ERROR;
 }
 
 /**
@@ -162,9 +165,11 @@ th_aes128_ecb_decrypt(
     unsigned char       *p_pt       // output: plaintext (AES_BLOCKSIZE bytes)
 )
 {
-    mbedtls_aes_decrypt((mbedtls_aes_context *)p_context, p_ct, p_pt);
-
-    return EE_STATUS_OK;
+    return mbedtls_aes_crypt_ecb((mbedtls_aes_context *)p_context,
+                                 MBEDTLS_AES_DECRYPT,
+                                 p_ct,
+                                 p_pt)
+      == 0 ? EE_STATUS_OK : EE_STATUS_ERROR;
 }
 
 /**

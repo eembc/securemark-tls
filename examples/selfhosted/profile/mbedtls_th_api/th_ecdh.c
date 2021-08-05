@@ -10,7 +10,7 @@
  * effective EEMBC Benchmark License Agreement, you must discontinue use.
  */
 
-#include "mbedtls/config.h"
+#include "mbedtls/mbedtls_config.h"
 #include "mbedtls/ecdh.h"
 #include "mbedtls/ecp.h" 
 
@@ -168,7 +168,6 @@ th_ecdh_init(
             th_printf("e-[Invalid ECC curve in th_ecdh_init]\r\n");
             return EE_STATUS_ERROR;
     }
-    
     ret = load_public_peer_key(p_context, p_public, publen);
     if (ret != EE_STATUS_OK)
     {

@@ -10,7 +10,7 @@
  * effective EEMBC Benchmark License Agreement, you must discontinue use.
  */
 
-#include "mbedtls/config.h"
+#include "mbedtls/mbedtls_config.h"
 #include "mbedtls/ecdsa.h"
 
 #include "ee_ecdh.h"
@@ -108,6 +108,7 @@ th_ecdsa_sign(
         p_hash,
         hlen,
         p_sig,
+        slent,
         &slent,
         NULL,
         NULL

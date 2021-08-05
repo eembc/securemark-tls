@@ -694,7 +694,9 @@ main(void)
     for (i = 0; i < g_numtasks; ++i)
     {
         // First, compute the correct # of iterations for each primitive
-        iterations = tune_iterations(g_task[i].n, g_task[i].func);
+        //iterations = tune_iterations(g_task[i].n, g_task[i].func);
+        printf("FORCING to 10 ITERATIONS FOR DEBUGGING\n\n\n");
+        iterations = 10;
         // Compute a CRC from a single iteration, also warm up the test
         ee_srand(0); // CRCs are computed with seed 0
         g_task[i].actual_crc = (*g_task[i].func)(g_task[i].n, 1);
@@ -711,6 +713,7 @@ main(void)
          * increasing score), and then multiplied by 1000 to scale into an
          * integer range.
          */
+        // BUGBUG: If ips=inf due to bug, component score = 0 
         component_score = g_task[i].weight / g_task[i].ips;
         score += component_score;
         printf("Component #%02zu ips=%15.3f crc=0x%04x expected_crc=0x%04x",

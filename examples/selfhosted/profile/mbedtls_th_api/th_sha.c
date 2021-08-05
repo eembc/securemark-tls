@@ -10,7 +10,7 @@
  * effective EEMBC Benchmark License Agreement, you must discontinue use.
  */
 
-#include "mbedtls/config.h"
+#include "mbedtls/mbedtls_config.h"
 #include "mbedtls/sha256.h"
 
 #include "ee_sha.h"

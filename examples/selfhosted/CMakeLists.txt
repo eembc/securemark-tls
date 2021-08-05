@@ -28,35 +28,37 @@ if (SELFHOSTED)
     include_directories(profile/mbedtls_th_api)
     include_directories(profile/mbedtls_th_api/redist)
     set(SOURCE
-        ../../profile/ee_aes.c
-        ../../profile/ee_ecdsa.c
-        ../../profile/ee_variations.c
-        ../../profile/ee_ecdh.c
-        ../../profile/ee_profile.c
-        ../../profile/ee_sha.c
-        profile/mbedtls_th_api/th_aes.c
-        profile/mbedtls_th_api/redist/mbedtls/aes.c
-        profile/mbedtls_th_api/redist/mbedtls/ecdh.c
-        profile/mbedtls_th_api/redist/mbedtls/cipher_wrap.c
-        profile/mbedtls_th_api/redist/mbedtls/hmac_drbg.c
-        profile/mbedtls_th_api/redist/mbedtls/asn1parse.c
-        profile/mbedtls_th_api/redist/mbedtls/asn1write.c
-        profile/mbedtls_th_api/redist/mbedtls/ccm.c
-        profile/mbedtls_th_api/redist/mbedtls/bignum.c
-        profile/mbedtls_th_api/redist/mbedtls/md_wrap.c
-        profile/mbedtls_th_api/redist/mbedtls/ecp.c
-        profile/mbedtls_th_api/redist/mbedtls/sha256.c
-        profile/mbedtls_th_api/redist/mbedtls/ecp_curves.c
-        profile/mbedtls_th_api/redist/mbedtls/md.c
-        profile/mbedtls_th_api/redist/mbedtls/cipher.c
-        profile/mbedtls_th_api/redist/mbedtls/ecdsa.c
-        profile/mbedtls_th_api/th_util.c
-        profile/mbedtls_th_api/th_ecdh.c
-        profile/mbedtls_th_api/th_ecdsa.c
-        profile/mbedtls_th_api/th_sha.c
         ../../monitor/ee_main.c
         ../../monitor/th_api/th_lib.c
         ../../monitor/th_api/th_libc.c
+        ../../profile/ee_aes.c
+        ../../profile/ee_ecdh.c
+        ../../profile/ee_ecdsa.c
+        ../../profile/ee_profile.c
+        ../../profile/ee_sha.c
+        ../../profile/ee_variations.c
+        profile/mbedtls_th_api/redist/mbedtls/aes.c
+        profile/mbedtls_th_api/redist/mbedtls/aesni.c
+        profile/mbedtls_th_api/redist/mbedtls/asn1parse.c
+        profile/mbedtls_th_api/redist/mbedtls/asn1write.c
+        profile/mbedtls_th_api/redist/mbedtls/bignum.c
+        profile/mbedtls_th_api/redist/mbedtls/ccm.c
+        profile/mbedtls_th_api/redist/mbedtls/cipher.c
+        profile/mbedtls_th_api/redist/mbedtls/cipher_wrap.c
+        profile/mbedtls_th_api/redist/mbedtls/ecdh.c
+        profile/mbedtls_th_api/redist/mbedtls/ecdsa.c
+        profile/mbedtls_th_api/redist/mbedtls/ecp.c
+        profile/mbedtls_th_api/redist/mbedtls/ecp_curves.c
+        profile/mbedtls_th_api/redist/mbedtls/hmac_drbg.c
+        profile/mbedtls_th_api/redist/mbedtls/md.c
+        profile/mbedtls_th_api/redist/mbedtls/nist_kw.c
+        profile/mbedtls_th_api/redist/mbedtls/platform_util.c
+        profile/mbedtls_th_api/redist/mbedtls/sha256.c
+        profile/mbedtls_th_api/th_aes.c
+        profile/mbedtls_th_api/th_ecdh.c
+        profile/mbedtls_th_api/th_ecdsa.c
+        profile/mbedtls_th_api/th_sha.c
+        profile/mbedtls_th_api/th_util.c
         main.c
     )
     add_definitions(-DEE_CFG_SELFHOSTED=1)
