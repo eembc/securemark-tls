@@ -14,7 +14,9 @@
 #include "mbedtls/ecdsa.h"
 
 #include "ee_ecdh.h"
-#include "ee_ecdsa.h" 
+#include "ee_ecdsa.h"
+#include "ee_random.h"
+
 
 // helper function defined in th_ecdh.h; not mandatory but very useful!
 int load_private_key(void *, unsigned char *, size_t);
@@ -110,7 +112,7 @@ th_ecdsa_sign(
         p_sig,
         slent,
         &slent,
-        NULL,
+        ee_random,
         NULL
     );
 

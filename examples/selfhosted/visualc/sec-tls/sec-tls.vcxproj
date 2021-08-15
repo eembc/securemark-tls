@@ -88,7 +88,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;EE_CFG_SELFHOSTED=1;EE_CFG_QUIET=1</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../../../monitor;../../../../monitor/th_api;../../../../profile;../../profile/th_api;../../profile/th_api/redist</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../../monitor;../../../../monitor/th_api;../../../../profile;../../profile/mbedtls_th_api;../../profile/mbedtls_th_api/redist</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,29 +147,33 @@
     <ClCompile Include="..\..\..\..\profile\ee_ecdh.c" />
     <ClCompile Include="..\..\..\..\profile\ee_ecdsa.c" />
     <ClCompile Include="..\..\..\..\profile\ee_profile.c" />
+    <ClCompile Include="..\..\..\..\profile\ee_random.c" />
     <ClCompile Include="..\..\..\..\profile\ee_sha.c" />
     <ClCompile Include="..\..\..\..\profile\ee_variations.c" />
     <ClCompile Include="..\..\main.c" />
-    <ClCompile Include="..\..\profile\th_api\redist\mbedtls\aes.c" />
-    <ClCompile Include="..\..\profile\th_api\redist\mbedtls\asn1parse.c" />
-    <ClCompile Include="..\..\profile\th_api\redist\mbedtls\asn1write.c" />
-    <ClCompile Include="..\..\profile\th_api\redist\mbedtls\bignum.c" />
-    <ClCompile Include="..\..\profile\th_api\redist\mbedtls\ccm.c" />
-    <ClCompile Include="..\..\profile\th_api\redist\mbedtls\cipher.c" />
-    <ClCompile Include="..\..\profile\th_api\redist\mbedtls\cipher_wrap.c" />
-    <ClCompile Include="..\..\profile\th_api\redist\mbedtls\ecdh.c" />
-    <ClCompile Include="..\..\profile\th_api\redist\mbedtls\ecdsa.c" />
-    <ClCompile Include="..\..\profile\th_api\redist\mbedtls\ecp.c" />
-    <ClCompile Include="..\..\profile\th_api\redist\mbedtls\ecp_curves.c" />
-    <ClCompile Include="..\..\profile\th_api\redist\mbedtls\hmac_drbg.c" />
-    <ClCompile Include="..\..\profile\th_api\redist\mbedtls\md.c" />
-    <ClCompile Include="..\..\profile\th_api\redist\mbedtls\md_wrap.c" />
-    <ClCompile Include="..\..\profile\th_api\redist\mbedtls\sha256.c" />
-    <ClCompile Include="..\..\profile\th_api\th_aes.c" />
-    <ClCompile Include="..\..\profile\th_api\th_ecdh.c" />
-    <ClCompile Include="..\..\profile\th_api\th_ecdsa.c" />
-    <ClCompile Include="..\..\profile\th_api\th_sha.c" />
-    <ClCompile Include="..\..\profile\th_api\th_util.c" />
+    <ClCompile Include="..\..\profile\mbedtls_th_api\redist\mbedtls\aes.c" />
+    <ClCompile Include="..\..\profile\mbedtls_th_api\redist\mbedtls\asn1parse.c" />
+    <ClCompile Include="..\..\profile\mbedtls_th_api\redist\mbedtls\asn1write.c" />
+    <ClCompile Include="..\..\profile\mbedtls_th_api\redist\mbedtls\bignum.c" />
+    <ClCompile Include="..\..\profile\mbedtls_th_api\redist\mbedtls\ccm.c" />
+    <ClCompile Include="..\..\profile\mbedtls_th_api\redist\mbedtls\cipher.c" />
+    <ClCompile Include="..\..\profile\mbedtls_th_api\redist\mbedtls\cipher_wrap.c" />
+    <ClCompile Include="..\..\profile\mbedtls_th_api\redist\mbedtls\ecdh.c" />
+    <ClCompile Include="..\..\profile\mbedtls_th_api\redist\mbedtls\ecdsa.c" />
+    <ClCompile Include="..\..\profile\mbedtls_th_api\redist\mbedtls\ecp.c" />
+    <ClCompile Include="..\..\profile\mbedtls_th_api\redist\mbedtls\ecp_curves.c" />
+    <ClCompile Include="..\..\profile\mbedtls_th_api\redist\mbedtls\hmac_drbg.c" />
+    <ClCompile Include="..\..\profile\mbedtls_th_api\redist\mbedtls\md.c" />
+    <ClCompile Include="..\..\profile\mbedtls_th_api\redist\mbedtls\sha256.c" />
+    <ClCompile Include="..\..\profile\mbedtls_th_api\redist\mbedtls\platform_util.c" />
+    <ClCompile Include="..\..\profile\mbedtls_th_api\th_aes.c" />
+    <ClCompile Include="..\..\profile\mbedtls_th_api\th_ecdh.c" />
+    <ClCompile Include="..\..\profile\mbedtls_th_api\th_ecdsa.c" />
+    <ClCompile Include="..\..\profile\mbedtls_th_api\th_sha.c" />
+    <ClCompile Include="..\..\profile\mbedtls_th_api\th_util.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\profile\ee_random.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
