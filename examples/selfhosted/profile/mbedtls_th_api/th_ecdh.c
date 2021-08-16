@@ -13,6 +13,7 @@
 #include "mbedtls/mbedtls_config.h"
 #include "mbedtls/ecdh.h"
 #include "mbedtls/ecp.h" 
+#include "ee_random.h"
 
 #include "ee_ecdh.h"
 
@@ -122,7 +123,7 @@ load_private_key(
         &p_ecdh->Q, // R <-- this value will be computed as P * m
         &p_ecdh->d, // m
         &p_grp->G,  // P
-        NULL,
+        ee_random,  // random function
         0
     );
     if (ret != 0)
@@ -212,7 +213,12 @@ th_ecdh_calc_secret(
         th_printf("e-[Secret buffer too small: %u < 32]\r\n", slen);
         return EE_STATUS_ERROR;
     }
-    ret = mbedtls_ecdh_calc_secret(p_ecdh, &olen, p_secret, slen, NULL, NULL);
+    ret = mbedtls_ecdh_calc_secret( p_ecdh,
+                                    &olen,
+                                    p_secret,
+                                    slen,
+                                    ee_random,  // random function
+                                    NULL);
     if (ret != 0)
     {
         th_printf("e-[mbedtls_ecdh_calc_secret: -0x%04x]\r\n", -ret);
