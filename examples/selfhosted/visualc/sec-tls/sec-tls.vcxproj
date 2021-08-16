@@ -147,7 +147,6 @@
     <ClCompile Include="..\..\..\..\profile\ee_ecdh.c" />
     <ClCompile Include="..\..\..\..\profile\ee_ecdsa.c" />
     <ClCompile Include="..\..\..\..\profile\ee_profile.c" />
-    <ClCompile Include="..\..\..\..\profile\ee_random.c" />
     <ClCompile Include="..\..\..\..\profile\ee_sha.c" />
     <ClCompile Include="..\..\..\..\profile\ee_variations.c" />
     <ClCompile Include="..\..\main.c" />
@@ -171,9 +170,6 @@
     <ClCompile Include="..\..\profile\mbedtls_th_api\th_ecdsa.c" />
     <ClCompile Include="..\..\profile\mbedtls_th_api\th_sha.c" />
     <ClCompile Include="..\..\profile\mbedtls_th_api\th_util.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\..\profile\ee_random.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
