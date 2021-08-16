@@ -15,7 +15,7 @@
 
 #include "ee_ecdh.h"
 #include "ee_ecdsa.h"
-#include "ee_random.h"
+#include "th_util.h"
 
 
 // helper function defined in th_ecdh.h; not mandatory but very useful!
@@ -112,7 +112,7 @@ th_ecdsa_sign(
         p_sig,
         slent,
         &slent,
-        ee_random,
+        mbedtls_fake_random,
         NULL
     );
 

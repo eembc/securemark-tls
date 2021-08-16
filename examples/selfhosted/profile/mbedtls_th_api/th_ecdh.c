@@ -13,7 +13,7 @@
 #include "mbedtls/mbedtls_config.h"
 #include "mbedtls/ecdh.h"
 #include "mbedtls/ecp.h" 
-#include "ee_random.h"
+#include "th_util.h"
 
 #include "ee_ecdh.h"
 
@@ -123,7 +123,7 @@ load_private_key(
         &p_ecdh->Q, // R <-- this value will be computed as P * m
         &p_ecdh->d, // m
         &p_grp->G,  // P
-        ee_random,  // random function
+        mbedtls_fake_random,  // random function
         0
     );
     if (ret != 0)
@@ -217,7 +217,7 @@ th_ecdh_calc_secret(
                                     &olen,
                                     p_secret,
                                     slen,
-                                    ee_random,  // random function
+                                    mbedtls_fake_random,
                                     NULL);
     if (ret != 0)
     {
