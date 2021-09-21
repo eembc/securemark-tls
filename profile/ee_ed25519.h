@@ -17,6 +17,7 @@
 #include "th_lib.h"
 #include "th_libc.h"
 #include "th_util.h"
+#include "ee_ecdh.h"
 
 // Fixed test API
 

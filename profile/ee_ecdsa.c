@@ -20,7 +20,8 @@
  * PRIVATE: 32B secret
  */
 void
-ee_ecdsa_sign(uint8_t *      p_hash, // input: sha256 digest
+ee_ecdsa_sign(ecdh_group_t   group,  // input: see `ecdh_group_t`
+              uint8_t *      p_hash, // input: sha256 digest
               uint_fast32_t  hlen,   // input: length of digest in bytes
               uint8_t *      p_sig,  // output: signature
               uint_fast32_t *p_slen, // in/out: input=MAX slen, output=resultant
@@ -37,7 +38,7 @@ ee_ecdsa_sign(uint8_t *      p_hash, // input: sha256 digest
         return;
     }
 
-    if (th_ecdsa_init(p_context, EE_P256R1, p_private, plen) != EE_STATUS_OK)
+    if (th_ecdsa_init(p_context, group, p_private, plen) != EE_STATUS_OK)
     {
         th_printf("e-ecdsa_sign-[Failed to initialize]\r\n");
         return;
@@ -72,7 +73,8 @@ exit:
  * PRIVATE: 32B secret
  */
 void
-ee_ecdsa_verify(uint8_t *     p_hash,    // input: sha256 digest
+ee_ecdsa_verify(ecdh_group_t  group,     // input: see `ecdh_group_t`
+                uint8_t *     p_hash,    // input: sha256 digest
                 uint_fast32_t hlen,      // input: length of digest in bytes
                 uint8_t *     p_sig,     // input: signature
                 uint_fast32_t slen,      // input: length of signature in bytes
@@ -89,7 +91,7 @@ ee_ecdsa_verify(uint8_t *     p_hash,    // input: sha256 digest
         return;
     }
 
-    if (th_ecdsa_init(p_context, EE_P256R1, p_private, plen) != EE_STATUS_OK)
+    if (th_ecdsa_init(p_context, group, p_private, plen) != EE_STATUS_OK)
     {
         th_printf("e-ecdsa_verify-[Failed to initialize]\r\n");
         return;

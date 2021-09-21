@@ -121,16 +121,23 @@ else()
     include_directories(../../profile/th_api)
     set(SOURCE
         ../../profile/ee_aes.c
-        ../../profile/ee_ecdsa.c
-        ../../profile/ee_variations.c
+        ../../profile/ee_bench.c
+        ../../profile/ee_buffer.c
+        ../../profile/ee_chachapoly.c
         ../../profile/ee_ecdh.c
+        ../../profile/ee_ecdsa.c
+        ../../profile/ee_ed25519.c
         ../../profile/ee_profile.c
         ../../profile/ee_sha.c
+        ../../profile/ee_util.c
+        ../../profile/ee_variations.c
         ../../profile/th_api/th_aes.c
-        ../../profile/th_api/th_sha.c
-        ../../profile/th_api/th_util.c
+        ../../profile/th_api/th_chachapoly.c
         ../../profile/th_api/th_ecdh.c
         ../../profile/th_api/th_ecdsa.c
+        ../../profile/th_api/th_ed25519.c
+        ../../profile/th_api/th_sha.c
+        ../../profile/th_api/th_util.c
         ../../monitor/ee_main.c
         ../../monitor/th_api/th_lib.c
         ../../monitor/th_api/th_libc.c

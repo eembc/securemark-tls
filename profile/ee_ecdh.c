@@ -20,7 +20,8 @@
  * private key is 32-byte value used in G * m = R (the 'm' value).
  */
 void
-ee_ecdh(uint8_t *     p_public,  // input: peer public key, from host
+ee_ecdh(uint8_t *     p_public, // input: peer public key, from host
+        ecdh_group_t  group, // input: input: see `ecdh_group_t` for options
         uint_fast32_t publen,    // input: peer public key length in bytes
         uint8_t *     p_private, // input: private key, from host
         uint_fast32_t prilen,    // input: private key length in bytes
@@ -37,7 +38,7 @@ ee_ecdh(uint8_t *     p_public,  // input: peer public key, from host
         return;
     }
 
-    if (th_ecdh_init(p_context, EE_P256R1, p_private, prilen, p_public, publen)
+    if (th_ecdh_init(p_context, group, p_private, prilen, p_public, publen)
         != EE_STATUS_OK)
     {
         th_printf("e-ecdh-[Failed to initialize]\r\n");

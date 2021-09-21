@@ -20,7 +20,8 @@
 
 typedef enum
 {
-    EE_P256R1 = 0
+    EE_P256R1 = 0,
+    EE_C25519 = 1,
 } ecdh_group_t;
 
 #define HMAC_SIZE 32 // expected HMAC size (using sha256)
@@ -30,7 +31,8 @@ typedef enum
 
 // Fixed test API
 
-void ee_ecdh(uint8_t *     p_public,  // input: peer public key, from host
+void ee_ecdh(uint8_t *    p_public, // input: peer public key, from host
+             ecdh_group_t group, // input: input: see `ecdh_group_t` for options
              uint_fast32_t publen,    // input: peer public key length in bytes
              uint8_t *     p_private, // input: private key, from host
              uint_fast32_t prilen,    // input: private key length in bytes

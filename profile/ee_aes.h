@@ -48,24 +48,30 @@ void ee_aes128_ecb(uint8_t *p_key, // input: key
                    uint_fast32_t  iterations // input: # of test iterations
 );
 
-void ee_aes128_ccm(uint8_t *p_key, // input: key
-                   uint8_t *p_iv,  // input: initialization vector
-                   uint8_t *p_in,  // input: pointer to source input (pt or ct)
-                   uint_fast32_t len, // input: length of input in bytes
-                   uint8_t *p_tag, // inout: output in encrypt, input on decrypt
-                   uint8_t *p_out, // output: pointer to output buffer
-                   aes_function_t func,      // input: func (AES_ENC|AES_DEC)
-                   uint_fast32_t  iterations // input: # of test iterations
+void ee_aes128_ccm(
+    uint8_t *      p_key,     // input: key
+    const uint8_t *p_add,     // input: additional authentication data
+    uint_fast32_t  addlen,    // input: length of AAD in bytes
+    uint8_t *      p_iv,      // input: initialization vector
+    uint8_t *      p_in,      // input: pointer to source input (pt or ct)
+    uint_fast32_t  len,       // input: length of input in bytes
+    uint8_t *      p_tag,     // inout: output in encrypt, input on decrypt
+    uint8_t *      p_out,     // output: pointer to output buffer
+    aes_function_t func,      // input: func (AES_ENC|AES_DEC)
+    uint_fast32_t  iterations // input: # of test iterations
 );
 
-void ee_aes128_gcm(uint8_t *p_key, // input: key
-                   uint8_t *p_iv,  // input: initialization vector
-                   uint8_t *p_in,  // input: pointer to source input (pt or ct)
-                   uint_fast32_t len, // input: length of input in bytes
-                   uint8_t *p_tag, // inout: output in encrypt, input on decrypt
-                   uint8_t *p_out, // output: pointer to output buffer
-                   aes_function_t func,      // input: func (AES_ENC|AES_DEC)
-                   uint_fast32_t  iterations // input: # of test iterations
+void ee_aes128_gcm(
+    uint8_t *      p_key,     // input: key
+    const uint8_t *p_add,     // input: additional authentication data
+    uint_fast32_t  addlen,    // input: length of AAD in bytes
+    uint8_t *      p_iv,      // input: initialization vector
+    uint8_t *      p_in,      // input: pointer to source input (pt or ct)
+    uint_fast32_t  len,       // input: length of input in bytes
+    uint8_t *      p_tag,     // inout: output in encrypt, input on decrypt
+    uint8_t *      p_out,     // output: pointer to output buffer
+    aes_function_t func,      // input: func (AES_ENC|AES_DEC)
+    uint_fast32_t  iterations // input: # of test iterations
 );
 
 // Implementation API
@@ -132,6 +138,8 @@ ee_status_t th_aes128_ecb_decrypt(
  */
 ee_status_t th_aes128_ccm_encrypt(
     void *         p_context, // input: portable context
+    const uint8_t *p_aad,     // input: Additional Authentication Data
+    uint_fast32_t  aadlen,    // input: Length of AAD in bytes
     const uint8_t *p_pt,      // input: plaintext
     uint_fast32_t  ptlen,     // input: length of plaintext in bytes
     uint8_t *      p_ct,      // output: ciphertext
@@ -148,6 +156,8 @@ ee_status_t th_aes128_ccm_encrypt(
  */
 ee_status_t th_aes128_ccm_decrypt(
     void *         p_context, // input: portable context
+    const uint8_t *p_aad,     // input: Additional Authentication Data
+    uint_fast32_t  aadlen,    // input: Length of AAD in bytes
     const uint8_t *p_ct,      // input: ciphertext
     uint_fast32_t  ctlen,     // input: length of ciphertext in bytes
     uint8_t *      p_pt,      // output: plaintext
@@ -164,6 +174,8 @@ ee_status_t th_aes128_ccm_decrypt(
  */
 ee_status_t th_aes128_gcm_encrypt(
     void *         p_context, // input: portable context
+    const uint8_t *p_aad,     // input: Additional Authentication Data
+    uint_fast32_t  aadlen,    // input: Length of AAD in bytes
     const uint8_t *p_pt,      // input: plaintext
     uint_fast32_t  ptlen,     // input: length of plaintext in bytes
     uint8_t *      p_ct,      // output: ciphertext
@@ -181,6 +193,8 @@ ee_status_t th_aes128_gcm_encrypt(
 
 ee_status_t th_aes128_gcm_decrypt(
     void *         p_context, // input: portable context
+    const uint8_t *p_aad,     // input: Additional Authentication Data
+    uint_fast32_t  aadlen,    // input: Length of AAD in bytes
     const uint8_t *p_ct,      // input: ciphertext
     uint_fast32_t  ctlen,     // input: length of plaintext in bytes
     uint8_t *      p_pt,      // output: plaintext

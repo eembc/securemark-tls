@@ -30,14 +30,17 @@ typedef enum
 
 // Fixed test API
 
-void ee_chachapoly(uint8_t *p_key, // input: key
-                   uint8_t *p_iv,  // input: initialization vector
-                   uint8_t *p_in,  // input: pointer to source input (pt or ct)
-                   uint_fast32_t len, // input: length of input in bytes
-                   uint8_t *p_tag, // inout: output in encrypt, input on decrypt
-                   uint8_t *p_out, // output: pointer to output buffer
-                   chachapoly_func_t func,      // input: CHACHAPOLY_(ENC|DEC)
-                   uint_fast32_t     iterations // input: # of test iterations
+void ee_chachapoly(
+    uint8_t *         p_key,     // input: key
+    const uint8_t *   p_add,     // input: additional authentication data
+    uint_fast32_t     addlen,    // input: length of AAD in bytes
+    uint8_t *         p_iv,      // input: initialization vector
+    uint8_t *         p_in,      // input: pointer to source input (pt or ct)
+    uint_fast32_t     len,       // input: length of input in bytes
+    uint8_t *         p_tag,     // inout: output in encrypt, input on decrypt
+    uint8_t *         p_out,     // output: pointer to output buffer
+    chachapoly_func_t func,      // input: CHACHAPOLY_(ENC|DEC)
+    uint_fast32_t     iterations // input: # of test iterations
 );
 
 // Implementation API
@@ -75,6 +78,8 @@ void th_chachapoly_deinit(void *p_context,       // input: portable context
  */
 ee_status_t th_chachapoly_encrypt(
     void *         p_context, // input: portable context
+    const uint8_t *p_add,     // input: additional authentication data
+    uint_fast32_t  addlen,    // input: length of AAD in bytes
     const uint8_t *p_pt,      // input: plaintext
     uint_fast32_t  ptlen,     // input: length of plaintext in bytes
     uint8_t *      p_ct,      // output_ ciphertext
@@ -91,6 +96,8 @@ ee_status_t th_chachapoly_encrypt(
  */
 ee_status_t th_chachapoly_decrypt(
     void *         p_context, // input: portable context
+    const uint8_t *p_add,     // input: additional authentication data
+    uint_fast32_t  addlen,    // input: length of AAD in bytes
     const uint8_t *p_ct,      // input: ciphertext
     uint_fast32_t  ctlen,     // input: length of ciphertext in bytes
     uint8_t *      p_pt,      // output_ plaintext

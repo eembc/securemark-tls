@@ -10,18 +10,21 @@
  * effective EEMBC Benchmark License Agreement, you must discontinue use.
  */
 
+#include "ee_main.h"
 #include "ee_chachapoly.h"
 
 /**
  * Perform a ChaCha20/Poly1305 operation a given number of times.
  */
 void
-ee_chachapoly(uint8_t *     p_key, // input: key
-              uint8_t *     p_iv,  // input: initialization vector
-              uint8_t *     p_in,  // input: pointer to source input (pt or ct)
-              uint_fast32_t len,   // input: length of input in bytes
-              uint8_t *     p_tag, // inout: output in encrypt, input on decrypt
-              uint8_t *     p_out, // output: pointer to output buffer
+ee_chachapoly(uint8_t *      p_key,  // input: key
+              const uint8_t *p_add,  // input: additional authentication data
+              uint_fast32_t  addlen, // input: length of AAD in bytes
+              uint8_t *      p_iv,   // input: initialization vector
+              uint8_t *      p_in, // input: pointer to source input (pt or ct)
+              uint_fast32_t  len,  // input: length of input in bytes
+              uint8_t *p_tag,      // inout: output in encrypt, input on decrypt
+              uint8_t *p_out,      // output: pointer to output buffer
               chachapoly_func_t func,      // input: CHACHAPOLY_(ENC|DEC)
               uint_fast32_t     iterations // input: # of test iterations
 )
@@ -53,11 +56,13 @@ ee_chachapoly(uint8_t *     p_key, // input: key
                 goto exit;
             }
             if (th_chachapoly_encrypt(p_context,
+                                      p_add,
+                                      addlen,
                                       p_in,
                                       len,
                                       p_out,
                                       p_tag,
-                                      CHACHAPOLY_KEYSIZE,
+                                      CHACHAPOLY_TAGSIZE,
                                       p_iv,
                                       CHACHAPOLY_IVSIZE)
                 != EE_STATUS_OK)
@@ -88,11 +93,13 @@ ee_chachapoly(uint8_t *     p_key, // input: key
                 goto exit;
             }
             if (th_chachapoly_decrypt(p_context,
+                                      p_add,
+                                      addlen,
                                       p_in,
                                       len,
                                       p_out,
                                       p_tag,
-                                      CHACHAPOLY_KEYSIZE,
+                                      CHACHAPOLY_TAGSIZE,
                                       p_iv,
                                       CHACHAPOLY_IVSIZE)
                 != EE_STATUS_OK)

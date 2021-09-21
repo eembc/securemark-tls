@@ -31,6 +31,7 @@
  * Note: slen is bidirectional depending on the operation, can denote MAX len
  */
 void ee_ecdsa_sign(
+    ecdh_group_t   group,     // input: see `ecdh_group_t`
     uint8_t *      p_hash,    // input: sha256 digest
     uint_fast32_t  hlen,      // input: length of digest in bytes
     uint8_t *      p_sig,     // output: signature
@@ -47,7 +48,8 @@ void ee_ecdsa_sign(
  * SIGNATURE: ASN.1 or raw R/S (32B each)
  * PRIVATE: 32B secret
  */
-void ee_ecdsa_verify(uint8_t *     p_hash, // input: sha256 digest
+void ee_ecdsa_verify(ecdh_group_t  group,  // input: see `ecdh_group_t`
+                     uint8_t *     p_hash, // input: sha256 digest
                      uint_fast32_t hlen,   // input: length of digest in bytes
                      uint8_t *     p_sig,  // input: signature
                      uint_fast32_t slen, // input: length of signature in bytes
