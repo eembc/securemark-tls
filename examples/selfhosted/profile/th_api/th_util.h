@@ -19,9 +19,9 @@
 void th_pre(void);
 void th_post(void);
 
-void th_buffer_initialize(void);
-unsigned char * th_buffer_address(void);
-size_t th_buffer_size(void);
+void           th_buffer_initialize(void);
+unsigned char *th_buffer_address(void);
+size_t         th_buffer_size(void);
 
 /* mbedTLS 3.0.0 requires a random function for ECC, we don't
  * care about how good it is. */

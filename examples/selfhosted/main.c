@@ -33,10 +33,10 @@
 #include "ee_sha.h"
 #include "ee_variations.h"
 
-#include <inttypes.h> 
- 
+#include <inttypes.h>
+
 // There are several POSIX assumptions in this implementation.
-#ifdef __linux__ 
+#ifdef __linux__
 #include <time.h>
 #elif _WIN32
 #include <sys\timeb.h>
@@ -202,20 +202,20 @@ void
 th_timestamp(void)
 {
     // --- BEGIN USER CODE 1
-#ifdef __linux__ 	
+#ifdef __linux__
     struct timespec t;
 
     /*@-unrecog*/
     clock_gettime(CLOCK_REALTIME, &t);
 #elif _WIN32
     struct timeb t;
-    uint64_t elapsedMicroSeconds;
+    uint64_t     elapsedMicroSeconds;
 
     ftime(&t);
 #else
 #error "Operating system not recognized"
 #endif
-	
+
     // --- END USER CODE 1
     if (g_verify_mode)
     {
@@ -224,7 +224,7 @@ th_timestamp(void)
     else
     {
         // --- BEGIN USER CODE 2
-#ifdef __linux__ 		
+#ifdef __linux__
         const unsigned long NSEC_PER_SEC      = 1000000000UL;
         const unsigned long TIMER_RES_DIVIDER = 1000UL;
         uint64_t            elapsedMicroSeconds;
@@ -232,11 +232,12 @@ th_timestamp(void)
         elapsedMicroSeconds = t.tv_sec * (NSEC_PER_SEC / TIMER_RES_DIVIDER)
                               + t.tv_nsec / TIMER_RES_DIVIDER;
 #elif _WIN32
-        elapsedMicroSeconds = ( (uint64_t) t.time ) * 1000 * 1000 + ( (uint64_t) t.millitm ) * 1000;
+        elapsedMicroSeconds
+            = ((uint64_t)t.time) * 1000 * 1000 + ((uint64_t)t.millitm) * 1000;
 #else
 #error "Operating system not recognized"
 #endif
-							  
+
         // --- END USER CODE 2
         th_printf(EE_MSG_TIMESTAMP, elapsedMicroSeconds);
         push_timestamp(elapsedMicroSeconds);
@@ -411,7 +412,7 @@ wrap_aes_ccm_decrypt(unsigned int n, unsigned int i)
     buflen = AES_KEYSIZE + AES_IVSIZE + n + n + AES_TAGSIZE;
     buffer = (unsigned char *)th_malloc(buflen);
     assert(buffer != NULL);
-    memset(buffer,0x0,buflen);
+    memset(buffer, 0x0, buflen);
     key = buffer;
     iv  = key + AES_KEYSIZE;
     in  = iv + AES_IVSIZE;
@@ -460,7 +461,7 @@ wrap_aes_ecb_encrypt(unsigned int n, unsigned int i)
     buflen = AES_KEYSIZE + n + n;
     buffer = (unsigned char *)th_malloc(buflen);
     assert(buffer != NULL);
-    memset(buffer,0x0,buflen);
+    memset(buffer, 0x0, buflen);
     // Assign the helper points to the region of the buffer
     key = buffer;
     in  = key + AES_KEYSIZE;
@@ -497,7 +498,7 @@ wrap_aes_ecb_decrypt(unsigned int n, unsigned int i)
     buflen = AES_KEYSIZE + n + n;
     buffer = (unsigned char *)th_malloc(buflen);
     assert(buffer != NULL);
-    memset(buffer,0x0,buflen);
+    memset(buffer, 0x0, buflen);
     // Assign the helper points to the region of the buffer
     key = buffer;
     in  = key + AES_KEYSIZE;
@@ -534,11 +535,18 @@ wrap_ecdh(unsigned int n, unsigned int i)
     unsigned int   x;
     uint16_t       crc;
 
-    n            = 0; // unused
-    peerPublicXY = g_ecc_peer_public_key;
-    privkey      = g_ecc_private_key;
+    n             = 0; // unused
+    peerPublicXY  = g_ecc_peer_public_key;
+    privkey       = g_ecc_private_key;
     g_verify_mode = false;
-    ee_ecdh(peerPublicXY, EE_P256R1, ECC_QSIZE, privkey, ECC_DSIZE, shared, ECC_DSIZE, i);
+    ee_ecdh(peerPublicXY,
+            EE_P256R1,
+            ECC_QSIZE,
+            privkey,
+            ECC_DSIZE,
+            shared,
+            ECC_DSIZE,
+            i);
     for (crc = 0, x = 0; x < ECC_DSIZE; ++x)
     {
         crc = crcu16(crc, (uint8_t)shared[x]);
@@ -571,12 +579,13 @@ wrap_ecdsa_sign(unsigned int n, unsigned int i)
         hash[x] = ee_rand();
     }
     slen = 256; // Note: this is also an input to ee_ecdsa_sign
-    sig  = (unsigned char *)th_malloc(slen); 
+    sig  = (unsigned char *)th_malloc(slen);
     assert(sig != NULL);
-    memset(sig,0x0,slen);
-    privkey = g_ecc_private_key;
+    memset(sig, 0x0, slen);
+    privkey       = g_ecc_private_key;
     g_verify_mode = false;
-    ee_ecdsa_sign(EE_P256R1, hash, HMAC_SIZE, sig, &slen, privkey, ECC_DSIZE, i);
+    ee_ecdsa_sign(
+        EE_P256R1, hash, HMAC_SIZE, sig, &slen, privkey, ECC_DSIZE, i);
     for (crc = 0, x = 0; x < slen; ++x)
     {
         crc = crcu16(crc, (uint8_t)sig[x]);
@@ -611,17 +620,19 @@ wrap_ecdsa_verify(unsigned int n, unsigned int i)
         hash[x] = ee_rand();
     }
     slen = 256; // Note: this is also an input to ee_ecdsa_sign
-    sig  = (unsigned char *)th_malloc(slen); 
+    sig  = (unsigned char *)th_malloc(slen);
     assert(sig != NULL);
-    memset(sig,0x0,slen);
+    memset(sig, 0x0, slen);
     privkey = g_ecc_private_key;
     // Do NOT record timestamps during encrypt! (see th_timestamp())
     g_verify_mode = true;
     // Only need one iteration to create the signature; save time!
-    ee_ecdsa_sign(EE_P256R1, hash, HMAC_SIZE, sig, &slen, privkey, ECC_DSIZE, 1);
+    ee_ecdsa_sign(
+        EE_P256R1, hash, HMAC_SIZE, sig, &slen, privkey, ECC_DSIZE, 1);
     // Turn on recording timestamps
     g_verify_mode = false;
-    ee_ecdsa_verify(EE_P256R1, hash, HMAC_SIZE, sig, slen, privkey, ECC_DSIZE, i);
+    ee_ecdsa_verify(
+        EE_P256R1, hash, HMAC_SIZE, sig, slen, privkey, ECC_DSIZE, i);
     for (crc = 0, x = 0; x < slen; ++x)
     {
         crc = crcu16(crc, (uint8_t)sig[x]);
@@ -633,7 +644,7 @@ wrap_ecdsa_verify(unsigned int n, unsigned int i)
 uint16_t
 wrap_variation_001(unsigned int n, unsigned int i)
 {
-    n = 0; // unused
+    n             = 0; // unused
     g_verify_mode = false;
     ee_variation_001(i);
     /**
@@ -648,18 +659,18 @@ wrap_variation_001(unsigned int n, unsigned int i)
 
 /**
  * The benchmark wrappers all take an datasize, n, and a number of
- * iterations, i. This function increases i by a proportional amount 
+ * iterations, i. This function increases i by a proportional amount
  * computed from the current iterations per second and returns the number
  * of iterations required by the benchmark.
  */
 size_t
 tune_iterations(unsigned int n, wrapper_function_t *func)
 {
-    size_t        iter;
-    size_t        total_iter;
-    uint64_t      total_us;
-    float         ipus;
-    float         delta;
+    size_t   iter;
+    size_t   total_iter;
+    uint64_t total_us;
+    float    ipus;
+    float    delta;
 
     iter       = MIN_ITER;
     total_iter = 0;
@@ -672,10 +683,10 @@ tune_iterations(unsigned int n, wrapper_function_t *func)
         total_us += g_timestamps[1] - g_timestamps[0];
         if (total_us > 0)
         {
-            ipus = (float)total_iter / total_us;
-            delta = (float) MIN_RUNTIME_USEC - total_us;
-            iter = (size_t)(ipus * delta);
-            iter = iter == 0 ? 1 : iter;
+            ipus  = (float)total_iter / total_us;
+            delta = (float)MIN_RUNTIME_USEC - total_us;
+            iter  = (size_t)(ipus * delta);
+            iter  = iter == 0 ? 1 : iter;
         }
         else
         {
@@ -708,8 +719,8 @@ main(void)
         // Now do a run with the correct number of iterations to get ips
         clear_timestamps();
         (*g_task[i].func)(g_task[i].n, iterations);
-        g_task[i].ips = (float)iterations /
-                        ((g_timestamps[1] - g_timestamps[0]) / 1e6f);
+        g_task[i].ips
+            = (float)iterations / ((g_timestamps[1] - g_timestamps[0]) / 1e6f);
         /**
          * Generate the component and final scores.
          *
@@ -733,7 +744,8 @@ main(void)
     }
     score = 1000.0f / score;
     printf("SecureMark-TLS Score is %.3f marks\n", score);
-    printf("Disclaimer: this is not an official score. In order to submit an\n"
-           "official score, please contact support@eembc.org.\n");
+    printf(
+        "Disclaimer: this is not an official score. In order to submit an\n"
+        "official score, please contact support@eembc.org.\n");
     return 0;
 }
