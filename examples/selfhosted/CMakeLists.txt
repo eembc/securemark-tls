@@ -27,95 +27,109 @@ include_directories(../../profile)
 if (SELFHOSTED)
 	if(MBEDTLS)
 		include_directories(profile/th_api)
-		include_directories(profile/th_api/redist)
+		include_directories(profile/th_api/redist/mbedtls-3.0.0/include)
 		set(SOURCE
 			../../profile/ee_aes.c
-			../../profile/ee_ecdsa.c
-			../../profile/ee_variations.c
+			../../profile/ee_bench.c
+			../../profile/ee_buffer.c
+			../../profile/ee_chachapoly.c
 			../../profile/ee_ecdh.c
+			../../profile/ee_ecdsa.c
 			../../profile/ee_profile.c
 			../../profile/ee_sha.c
+			../../profile/ee_util.c
+			../../profile/ee_variations.c
+
 			profile/th_api/th_aes.c
-			profile/th_api/redist/mbedtls/aes.c
-			profile/th_api/redist/mbedtls/ecdh.c
-			profile/th_api/redist/mbedtls/cipher_wrap.c
-			profile/th_api/redist/mbedtls/hmac_drbg.c
-			profile/th_api/redist/mbedtls/asn1parse.c
-			profile/th_api/redist/mbedtls/asn1write.c
-			profile/th_api/redist/mbedtls/ccm.c
-			profile/th_api/redist/mbedtls/bignum.c
-			profile/th_api/redist/mbedtls/md_wrap.c
-			profile/th_api/redist/mbedtls/ecp.c
-			profile/th_api/redist/mbedtls/sha256.c
-			profile/th_api/redist/mbedtls/ecp_curves.c
-			profile/th_api/redist/mbedtls/md.c
-			profile/th_api/redist/mbedtls/cipher.c
-			profile/th_api/redist/mbedtls/ecdsa.c
-			profile/th_api/th_util.c
+			profile/th_api/th_chachapoly.c
 			profile/th_api/th_ecdh.c
 			profile/th_api/th_ecdsa.c
 			profile/th_api/th_sha.c
+			profile/th_api/th_util.c
+
 			../../monitor/ee_main.c
 			../../monitor/th_api/th_lib.c
 			../../monitor/th_api/th_libc.c
+
+			profile/th_api/redist/mbedtls-3.0.0/library/aes.c
+			profile/th_api/redist/mbedtls-3.0.0/library/aesni.c
+			profile/th_api/redist/mbedtls-3.0.0/library/aria.c
+			profile/th_api/redist/mbedtls-3.0.0/library/asn1parse.c
+			profile/th_api/redist/mbedtls-3.0.0/library/asn1write.c
+			profile/th_api/redist/mbedtls-3.0.0/library/base64.c
+			profile/th_api/redist/mbedtls-3.0.0/library/bignum.c
+			profile/th_api/redist/mbedtls-3.0.0/library/camellia.c
+			profile/th_api/redist/mbedtls-3.0.0/library/ccm.c
+			profile/th_api/redist/mbedtls-3.0.0/library/chacha20.c
+			profile/th_api/redist/mbedtls-3.0.0/library/chachapoly.c
+			profile/th_api/redist/mbedtls-3.0.0/library/cipher.c
+			profile/th_api/redist/mbedtls-3.0.0/library/cipher_wrap.c
+			profile/th_api/redist/mbedtls-3.0.0/library/cmac.c
+			profile/th_api/redist/mbedtls-3.0.0/library/ctr_drbg.c
+			profile/th_api/redist/mbedtls-3.0.0/library/debug.c
+			profile/th_api/redist/mbedtls-3.0.0/library/des.c
+			profile/th_api/redist/mbedtls-3.0.0/library/dhm.c
+			profile/th_api/redist/mbedtls-3.0.0/library/ecdh.c
+			profile/th_api/redist/mbedtls-3.0.0/library/ecdsa.c
+			profile/th_api/redist/mbedtls-3.0.0/library/ecjpake.c
+			profile/th_api/redist/mbedtls-3.0.0/library/ecp.c
+			profile/th_api/redist/mbedtls-3.0.0/library/ecp_curves.c
+			profile/th_api/redist/mbedtls-3.0.0/library/entropy.c
+			profile/th_api/redist/mbedtls-3.0.0/library/entropy_poll.c
+			profile/th_api/redist/mbedtls-3.0.0/library/gcm.c
+			profile/th_api/redist/mbedtls-3.0.0/library/hkdf.c
+			profile/th_api/redist/mbedtls-3.0.0/library/hmac_drbg.c
+			profile/th_api/redist/mbedtls-3.0.0/library/md5.c
+			profile/th_api/redist/mbedtls-3.0.0/library/md.c
+			profile/th_api/redist/mbedtls-3.0.0/library/memory_buffer_alloc.c
+			profile/th_api/redist/mbedtls-3.0.0/library/mps_reader.c
+			profile/th_api/redist/mbedtls-3.0.0/library/mps_trace.c
+			profile/th_api/redist/mbedtls-3.0.0/library/net_sockets.c
+			profile/th_api/redist/mbedtls-3.0.0/library/nist_kw.c
+			profile/th_api/redist/mbedtls-3.0.0/library/oid.c
+			profile/th_api/redist/mbedtls-3.0.0/library/padlock.c
+			profile/th_api/redist/mbedtls-3.0.0/library/pem.c
+			profile/th_api/redist/mbedtls-3.0.0/library/pk.c
+			profile/th_api/redist/mbedtls-3.0.0/library/pkcs12.c
+			profile/th_api/redist/mbedtls-3.0.0/library/pkcs5.c
+			profile/th_api/redist/mbedtls-3.0.0/library/pkparse.c
+			profile/th_api/redist/mbedtls-3.0.0/library/pk_wrap.c
+			profile/th_api/redist/mbedtls-3.0.0/library/pkwrite.c
+			profile/th_api/redist/mbedtls-3.0.0/library/platform.c
+			profile/th_api/redist/mbedtls-3.0.0/library/platform_util.c
+			profile/th_api/redist/mbedtls-3.0.0/library/poly1305.c
+			profile/th_api/redist/mbedtls-3.0.0/library/ripemd160.c
+			profile/th_api/redist/mbedtls-3.0.0/library/rsa_alt_helpers.c
+			profile/th_api/redist/mbedtls-3.0.0/library/rsa.c
+			profile/th_api/redist/mbedtls-3.0.0/library/sha1.c
+			profile/th_api/redist/mbedtls-3.0.0/library/sha256.c
+			profile/th_api/redist/mbedtls-3.0.0/library/sha512.c
+			profile/th_api/redist/mbedtls-3.0.0/library/ssl_cache.c
+			profile/th_api/redist/mbedtls-3.0.0/library/ssl_ciphersuites.c
+			profile/th_api/redist/mbedtls-3.0.0/library/ssl_cli.c
+			profile/th_api/redist/mbedtls-3.0.0/library/ssl_cookie.c
+			profile/th_api/redist/mbedtls-3.0.0/library/ssl_msg.c
+			profile/th_api/redist/mbedtls-3.0.0/library/ssl_srv.c
+			profile/th_api/redist/mbedtls-3.0.0/library/ssl_ticket.c
+			profile/th_api/redist/mbedtls-3.0.0/library/ssl_tls13_keys.c
+			profile/th_api/redist/mbedtls-3.0.0/library/ssl_tls.c
+			profile/th_api/redist/mbedtls-3.0.0/library/threading.c
+			profile/th_api/redist/mbedtls-3.0.0/library/timing.c
+			profile/th_api/redist/mbedtls-3.0.0/library/version.c
+			profile/th_api/redist/mbedtls-3.0.0/library/x509.c
+			profile/th_api/redist/mbedtls-3.0.0/library/x509_create.c
+			profile/th_api/redist/mbedtls-3.0.0/library/x509_crl.c
+			profile/th_api/redist/mbedtls-3.0.0/library/x509_crt.c
+			profile/th_api/redist/mbedtls-3.0.0/library/x509_csr.c
+			profile/th_api/redist/mbedtls-3.0.0/library/x509write_crt.c
+			profile/th_api/redist/mbedtls-3.0.0/library/x509write_csr.c
+
 			main.c
 		)
 		add_definitions(-DEE_CFG_SELFHOSTED=1)
 		add_definitions(-DEE_CFG_QUIET=1)
 		add_executable(sec-tls ${SOURCE})
-	elseif(PSA_CRYPTO)
-		include_directories(profile/psa_th_api)
-	
-		option(USE_PKCS11_HELPER_LIBRARY "Build mbed TLS with the pkcs11-helper library." OFF)
-		option(ENABLE_ZLIB_SUPPORT "Build mbed TLS with zlib library." OFF)
-		option(ENABLE_PROGRAMS "Build mbed TLS programs." OFF)
-		option(ENABLE_TESTING "Build mbed TLS tests." OFF)
-		
-		# Enable PSA Crypto in the Mbed TLS Implementation
-		add_definitions(-DMBEDTLS_PSA_CRYPTO_CONFIG=1)
-
-		set(CMAKE_INSTALL_NAME_DIR ${CMAKE_INSTALL_FULL_LIBDIR}/lib)
-		include_directories(profile/psa_th_api/mbedtls/include)
-		add_subdirectory(profile/psa_th_api/mbedtls mbedtls)
-		
-		option(USE_STATIC_MBEDTLS_LIBRARY "Build mbed TLS static library." off)
-		option(USE_SHARED_MBEDTLS_LIBRARY "Build mbed TLS shared library." on)
-		
-		if (CMAKE_SYSTEM MATCHES "OpenBSD")
-			option(LINK_WITH_PTHREAD "Explicitly link mbed TLS library to pthread." on)
-		endif()
-		
-		set(MBEDTLS_LIBRARIES "mbedtls" "mbedx509" "mbedcrypto")
-
-		# The following directives are used in the EEMBC benchmark.
-		add_definitions(-DEE_CFG_SELFHOSTED=1)
-		add_definitions(-DCRYPTO_PSA=1) 
-		add_definitions(-DEE_CFG_QUIET=1) 
-	 
-		set(SOURCE
-			../../profile/ee_aes.c
-			../../profile/ee_ecdsa.c
-			../../profile/ee_variations.c
-			../../profile/ee_ecdh.c
-			../../profile/ee_profile.c
-			../../profile/ee_sha.c
-			profile/psa_th_api/th_aes.c
-			profile/psa_th_api/th_util.c
-			profile/psa_th_api/th_ecdh.c
-			profile/psa_th_api/th_ecdsa.c
-			profile/psa_th_api/th_sha.c
-			../../monitor/ee_main.c
-			../../monitor/th_api/th_lib.c
-			../../monitor/th_api/th_libc.c
-			main.c
-		)
-		
-		add_executable(sec-tls ${SOURCE})
-
-		target_link_libraries(sec-tls ${MBEDTLS_LIBRARIES})
-		set_target_properties(sec-tls PROPERTIES INSTALL_RPATH mbedtls)
-		
-	endif()	
+	endif()
 else()
     include_directories(../../monitor/th_api)
     include_directories(../../profile/th_api)
@@ -126,7 +140,6 @@ else()
         ../../profile/ee_chachapoly.c
         ../../profile/ee_ecdh.c
         ../../profile/ee_ecdsa.c
-        ../../profile/ee_ed25519.c
         ../../profile/ee_profile.c
         ../../profile/ee_sha.c
         ../../profile/ee_util.c
@@ -135,7 +148,6 @@ else()
         ../../profile/th_api/th_chachapoly.c
         ../../profile/th_api/th_ecdh.c
         ../../profile/th_api/th_ecdsa.c
-        ../../profile/th_api/th_ed25519.c
         ../../profile/th_api/th_sha.c
         ../../profile/th_api/th_util.c
         ../../monitor/ee_main.c

@@ -10,10 +10,10 @@
  * effective EEMBC Benchmark License Agreement, you must discontinue use.
  */
 
-#include "mbedtls/config.h"
+#include "mbedtls/mbedtls_config.h"
 #include "mbedtls/aes.h"
 #include "mbedtls/ccm.h"
-
+#include "mbedtls/gcm.h"
 #include "ee_aes.h"
 
 /**
@@ -37,6 +37,11 @@ th_aes128_create(
         *p_context = 
             (mbedtls_ccm_context *)th_malloc(sizeof(mbedtls_ccm_context));
     }
+    else if (mode == AES_GCM)
+    {
+        *p_context = 
+            (mbedtls_gcm_context *)th_malloc(sizeof(mbedtls_gcm_context));
+    }
     else
     {
         th_printf("e-[Unknown mode in th_aes128_create\r\n");
@@ -58,19 +63,19 @@ th_aes128_create(
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_aes128_init(
-    void                *p_context, // input: portable context
-    const unsigned char *p_key,     // input: key
-    unsigned int         keylen,    // input: length of key in bytes
-    unsigned int         rounds,    // input: number of AES rounds
-    aes_function_t       func,      // input: AES_ENC or AES_DEC
-    aes_cipher_mode_t    mode       // input: AES_ECB or AES_CCM
+th_aes128_init(void *            p_context, // input: portable context
+               const uint8_t *   p_key,     // input: key
+               uint_fast32_t     keylen,    // input: length of key in bytes
+               uint_fast32_t     rounds,    // input: number of AES rounds
+               aes_function_t    func,      // input: AES_ENC or AES_DEC
+               aes_cipher_mode_t mode       // input: AES_ECB|CCM|GCM
 )
 {
     int                  ret;
     int                  keybits;
     mbedtls_aes_context *p_ecb;
     mbedtls_ccm_context *p_ccm;
+    mbedtls_gcm_context *p_gcm;
 
     keybits = keylen    * 8;
     
@@ -108,6 +113,17 @@ th_aes128_init(
             return EE_STATUS_ERROR;
         }
     }
+    else if (mode == AES_GCM)
+    {
+        p_gcm = (mbedtls_gcm_context *)p_context;
+        mbedtls_gcm_init(p_gcm);
+        ret = mbedtls_gcm_setkey(p_gcm, MBEDTLS_CIPHER_ID_AES, p_key, keybits);
+        if (ret != 0)
+        {
+            th_printf("e-[Failed to set GCM key: -0x%04x]\r\n", -ret);
+            return EE_STATUS_ERROR;
+        }
+    }
     else
     {
         th_printf("e-[Unknown mode in th_aes128_init\r\n");
@@ -126,11 +142,16 @@ th_aes128_init(
 void
 th_aes128_deinit(
     void              *p_context,   // input: portable context
-    aes_cipher_mode_t  mode         // input: AES_ECB or AES_CCM
+    aes_cipher_mode_t  mode         // input: AES_ECB|CCM|GCM
 )
 {
-    if (mode == AES_CCM) {
+    if (mode == AES_CCM)
+    {
         mbedtls_ccm_free((mbedtls_ccm_context *)p_context);
+    }
+    else if (mode == AES_GCM)
+    {
+        mbedtls_gcm_free((mbedtls_gcm_context *)p_context);
     }
 }
 
@@ -139,15 +160,14 @@ th_aes128_deinit(
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-ee_status_t
-th_aes128_ecb_encrypt(
-    void                *p_context, // input: portable context
-    const unsigned char *p_pt,      // input: plaintext (AES_BLOCKSIZE bytes)
-    unsigned char       *p_ct       // output: ciphertext (AES_BLOCKSIZE bytes)
+ee_status_t th_aes128_ecb_encrypt(
+    void *         p_context, // input: portable context
+    const uint8_t *p_pt,      // input: plaintext (AES_BLOCKSIZE bytes)
+    uint8_t *      p_ct       // output: ciphertext (AES_BLOCKSIZE bytes)
 )
 {
-    mbedtls_aes_encrypt((mbedtls_aes_context *)p_context, p_pt, p_ct);
-    return EE_STATUS_OK;
+    return mbedtls_aes_crypt_ecb((mbedtls_aes_context *)p_context,
+        MBEDTLS_AES_ENCRYPT, p_pt, p_ct) == 0 ? EE_STATUS_OK : EE_STATUS_ERROR;
 }
 
 /**
@@ -157,14 +177,16 @@ th_aes128_ecb_encrypt(
  */
 ee_status_t
 th_aes128_ecb_decrypt(
-    void                *p_context, // input: portable context
-    const unsigned char *p_ct,      // input: ciphertext (AES_BLOCKSIZE bytes)
-    unsigned char       *p_pt       // output: plaintext (AES_BLOCKSIZE bytes)
+    void *         p_context, // input: portable context
+    const uint8_t *p_ct,      // input: ciphertext (AES_BLOCKSIZE bytes)
+    uint8_t *      p_pt       // output: plaintext (AES_BLOCKSIZE bytes)
 )
 {
-    mbedtls_aes_decrypt((mbedtls_aes_context *)p_context, p_ct, p_pt);
-
-    return EE_STATUS_OK;
+    return mbedtls_aes_crypt_ecb((mbedtls_aes_context *)p_context,
+                                 MBEDTLS_AES_DECRYPT,
+                                 p_ct,
+                                 p_pt)
+      == 0 ? EE_STATUS_OK : EE_STATUS_ERROR;
 }
 
 /**
@@ -174,21 +196,20 @@ th_aes128_ecb_decrypt(
  */
 ee_status_t
 th_aes128_ccm_encrypt(
-    void                *p_context, // input: portable context
-    const unsigned char *p_pt,      // input: plaintext
-    unsigned int         ptlen,     // input: length of plaintext in bytes
-    unsigned char       *p_ct,      // output: ciphertext
-    unsigned char       *p_tag,     // output: tag
-    unsigned int         taglen,    // input: tag length in bytes
-    unsigned char       *p_iv,      // input: initialization vector
-    unsigned int         ivlen      // input: IV length in bytes
+    void *         p_context, // input: portable context
+    const uint8_t *p_aad,     // input: additional authentication data
+    uint_fast32_t  aadlen,    // input: length of AAD in bytes
+    const uint8_t *p_pt,      // input: plaintext
+    uint_fast32_t  ptlen,     // input: length of plaintext in bytes
+    uint8_t *      p_ct,      // output: ciphertext
+    uint8_t *      p_tag,     // output: tag
+    uint_fast32_t  taglen,    // input: tag length in bytes
+    uint8_t *      p_iv,      // input: initialization vector
+    uint_fast32_t  ivlen      // input: IV length in bytes
 )
 {
-    mbedtls_ccm_context *p_ctx = (mbedtls_ccm_context *)p_context;
-    int                  ret;
-
-    ret = mbedtls_ccm_encrypt_and_tag(
-        p_ctx,      // CCM context
+    return mbedtls_ccm_encrypt_and_tag(
+        (mbedtls_ccm_context *)p_context,      // CCM context
         ptlen,      // length of the input data in bytes
         p_iv,       // nonce (initialization vector)
         ivlen,      // length of IV in bytes
@@ -198,15 +219,7 @@ th_aes128_ccm_encrypt(
         p_ct,       // buffer holding the output data
         p_tag,      // buffer holding the tag
         taglen      // length of the tag to generate in bytes
-    ); 
-
-    if (ret != 0)
-    {
-        th_printf("e-[Failed perform CCM encrypt: -0x%04x]\r\n", -ret);
-        return EE_STATUS_ERROR;
-    }
-
-    return EE_STATUS_OK;
+    ) == 0 ? EE_STATUS_OK : EE_STATUS_ERROR;
 }
 
 /**
@@ -216,39 +229,97 @@ th_aes128_ccm_encrypt(
  */
 ee_status_t
 th_aes128_ccm_decrypt(
-    void                *p_context, // input: portable context
-    const unsigned char *p_ct,      // input: ciphertext
-    unsigned int         ctlen,     // input: length of ciphertext in bytes
-    unsigned char       *p_pt,      // output: plaintext
-    unsigned char       *p_tag,     // input: tag
-    unsigned int         taglen,    // input: tag length in bytes
-    unsigned char       *p_iv,      // input: initialization vector
-    unsigned int         ivlen      // input: IV length in bytes
+    void *         p_context, // input: portable context
+    const uint8_t *p_aad,     // input: additional authentication data
+    uint_fast32_t  aadlen,    // input: length of AAD in bytes
+    const uint8_t *p_ct,      // input: ciphertext
+    uint_fast32_t  ctlen,     // input: length of ciphertext in bytes
+    uint8_t *      p_pt,      // output: plaintext
+    uint8_t *      p_tag,     // input: tag
+    uint_fast32_t  taglen,    // input: tag length in bytes
+    uint8_t *      p_iv,      // input: initialization vector
+    uint_fast32_t  ivlen      // input: IV length in bytes
 )
 {
-    mbedtls_ccm_context *p_ctx = (mbedtls_ccm_context *)p_context;
-    int                  ret;
-
-    ret = mbedtls_ccm_auth_decrypt(
-        p_ctx,      // CCM context 
+    return mbedtls_ccm_auth_decrypt(
+        (mbedtls_ccm_context *)p_context,      // CCM context 
         ctlen,      // length of the input data, 
         p_iv,       // nonce (initialization vector)
         ivlen,      // length of IV in bytes
-        NULL,       // additional data
-        0,          // length of additional data in bytes
+        p_aad,      // additional data
+        aadlen,     // length of additional data in bytes
         p_ct,       // buffer holding the input data
         p_pt,       // buffer holding the output data
         p_tag,      // buffer holding the tag
         taglen      // length of the tag to generate in bytes
-    );
+    ) == 0 ? EE_STATUS_OK : EE_STATUS_ERROR;
+}
 
-    if (ret != 0)
-    {
-        th_printf("e-[Failed perform CCM decrypt: -0x%04x]\r\n", -ret);
-        return EE_STATUS_ERROR;
-    }
+/**
+ * Perform an AES/GCM encrypt.
+ *
+ * Return EE_STATUS_OK or EE_STATUS_ERROR.
+ */
+ee_status_t
+th_aes128_gcm_encrypt(
+    void *         p_context, // input: portable context
+    const uint8_t *p_aad,     // input: additional authentication data
+    uint_fast32_t  aadlen,    // input: length of AAD in bytes
+    const uint8_t *p_pt,      // input: plaintext
+    uint_fast32_t  ptlen,     // input: length of plaintext in bytes
+    uint8_t *      p_ct,      // output: ciphertext
+    uint8_t *      p_tag,     // output: tag
+    uint_fast32_t  taglen,    // input: tag length in bytes
+    uint8_t *      p_iv,      // input: initialization vector
+    uint_fast32_t  ivlen      // input: IV length in bytes
+)
+{
+    return mbedtls_gcm_crypt_and_tag(
+        (mbedtls_gcm_context *)p_context,      // GCM context
+        MBEDTLS_GCM_ENCRYPT,
+        ptlen,      // length of the input data in bytes
+        p_iv,       // nonce (initialization vector)
+        ivlen,      // length of IV in bytes
+        p_aad,      // additional data
+        aadlen,     // length of additional data in bytes
+        p_pt,       // buffer holding the input data
+        p_ct,       // buffer holding the output data
+        taglen,     // length of the tag to generate in bytes
+        p_tag       // buffer holding the tag
+    ) == 0 ? EE_STATUS_OK : EE_STATUS_ERROR;
+}
 
-    return EE_STATUS_OK;
+/**
+ * Perform an AES/GCM decrypt.
+ *
+ * Return EE_STATUS_OK or EE_STATUS_ERROR.
+ */
+ee_status_t
+th_aes128_gcm_decrypt(
+    void *         p_context, // input: portable context
+    const uint8_t *p_aad,     // input: additional authentication data
+    uint_fast32_t  aadlen,    // input: length of AAD in bytes
+    const uint8_t *p_ct,      // input: ciphertext
+    uint_fast32_t  ctlen,     // input: length of plaintext in bytes
+    uint8_t *      p_pt,      // output: plaintext
+    uint8_t *      p_tag,     // output: tag
+    uint_fast32_t  taglen,    // input: tag length in bytes
+    uint8_t *      p_iv,      // input: initialization vector
+    uint_fast32_t  ivlen      // input: IV length in bytes
+)
+{
+    return mbedtls_gcm_auth_decrypt(
+        (mbedtls_gcm_context *)p_context,      // GCM context 
+        ctlen,      // length of the input data, 
+        p_iv,       // nonce (initialization vector)
+        ivlen,      // length of IV in bytes
+        p_aad,      // additional data
+        aadlen,     // length of additional data in bytes
+        p_tag,      // buffer holding the tag
+        taglen,     // length of the tag to generate in bytes
+        p_ct,       // buffer holding the input data
+        p_pt        // buffer holding the output data
+    ) == 0 ? EE_STATUS_OK : EE_STATUS_ERROR;
 }
 
 /**
@@ -259,12 +330,16 @@ th_aes128_ccm_decrypt(
 void
 th_aes128_destroy(
     void              *p_context,   // input: portable context
-    aes_cipher_mode_t  mode         // input: AES_ECB or AES_CCM
+    aes_cipher_mode_t  mode         // input: AES_ECB|CCM|GCM
 )
 {
     if (mode == AES_CCM)
     {
         mbedtls_ccm_free((mbedtls_ccm_context *)p_context);
+    }
+    else if (mode == AES_GCM)
+    {
+        mbedtls_gcm_free((mbedtls_gcm_context *)p_context);
     }
     th_free(p_context);
 }

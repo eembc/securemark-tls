@@ -10,11 +10,13 @@
  * effective EEMBC Benchmark License Agreement, you must discontinue use.
  */
 
-#include "mbedtls/config.h"
+#include "mbedtls/mbedtls_config.h"
 #include "mbedtls/ecdsa.h"
 
 #include "ee_ecdh.h"
-#include "ee_ecdsa.h" 
+#include "ee_ecdsa.h"
+#include "th_util.h"
+
 
 // helper function defined in th_ecdh.h; not mandatory but very useful!
 int load_private_key(void *, unsigned char *, size_t);
@@ -86,11 +88,11 @@ th_ecdsa_init(
  */
 ee_status_t
 th_ecdsa_sign(
-    void          *p_context,   // input: portable context
-    unsigned char *p_hash,      // input: sha256 digest
-    unsigned int   hlen,        // input: length of digest in bytes
-    unsigned char *p_sig,       // output: signature
-    unsigned int  *p_slen       // in/out: input=MAX slen, output=resultant
+    void *         p_context, // input: portable context
+    uint8_t *      p_hash,    // input: sha256 digest
+    uint_fast32_t  hlen,      // input: length of digest in bytes
+    uint8_t *      p_sig,     // output: signature
+    uint_fast32_t *p_slen     // in/out: input=MAX slen, output=resultant
 )
 {
     mbedtls_ecdsa_context *p_ecdsa;
@@ -108,8 +110,9 @@ th_ecdsa_sign(
         p_hash,
         hlen,
         p_sig,
+        slent,
         &slent,
-        NULL,
+        mbedtls_fake_random,
         NULL
     );
 
@@ -130,11 +133,11 @@ th_ecdsa_sign(
  */
 ee_status_t
 th_ecdsa_verify(
-    void          *p_context,   // input: portable context
-    unsigned char *p_hash,      // input: sha256 digest
-    unsigned int   hlen,        // input: length of digest in bytes
-    unsigned char *p_sig,       // output: signature
-    unsigned int   slen         // input: length of signature in bytes
+    void *        p_context, // input: portable context
+    uint8_t *     p_hash,    // input: sha256 digest
+    uint_fast32_t hlen,      // input: length of digest in bytes
+    uint8_t *     p_sig,     // output: signature
+    uint_fast32_t slen       // input: length of signature in bytes
 )
 { 
     mbedtls_ecdsa_context *p_ecdsa;

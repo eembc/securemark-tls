@@ -386,7 +386,7 @@ wrap_aes_ccm_encrypt(unsigned int n, unsigned int i)
     }
     g_verify_mode = false;
 
-    ee_aes128_ccm(key, iv, in, n, tag, out, AES_ENC, i);
+    ee_aes128_ccm(key, NULL, 0, iv, in, n, tag, out, AES_ENC, i);
     for (crc = 0, x = 0; x < n; ++x)
     {
         crc = crcu16(crc, (uint8_t)out[x]);
@@ -434,10 +434,10 @@ wrap_aes_ccm_decrypt(unsigned int n, unsigned int i)
     // Do NOT record timestamps during encrypt! (see th_timestamp())
     g_verify_mode = true;
     // Only need one iteration to create the ciphertext; save time!
-    ee_aes128_ccm(key, iv, in, n, tag, out, AES_ENC, 1);
+    ee_aes128_ccm(key, NULL, 0, iv, in, n, tag, out, AES_ENC, 1);
     // Turn on recording timestamps
     g_verify_mode = false;
-    ee_aes128_ccm(key, iv, out, n, tag, in, AES_DEC, i);
+    ee_aes128_ccm(key, NULL, 0, iv, out, n, tag, in, AES_DEC, i);
     for (crc = 0, x = 0; x < n; ++x)
     {
         crc = crcu16(crc, (uint8_t)out[x]);
@@ -538,7 +538,7 @@ wrap_ecdh(unsigned int n, unsigned int i)
     peerPublicXY = g_ecc_peer_public_key;
     privkey      = g_ecc_private_key;
     g_verify_mode = false;
-    ee_ecdh(peerPublicXY, ECC_QSIZE, privkey, ECC_DSIZE, shared, ECC_DSIZE, i);
+    ee_ecdh(peerPublicXY, EE_P256R1, ECC_QSIZE, privkey, ECC_DSIZE, shared, ECC_DSIZE, i);
     for (crc = 0, x = 0; x < ECC_DSIZE; ++x)
     {
         crc = crcu16(crc, (uint8_t)shared[x]);
@@ -576,7 +576,7 @@ wrap_ecdsa_sign(unsigned int n, unsigned int i)
     memset(sig,0x0,slen);
     privkey = g_ecc_private_key;
     g_verify_mode = false;
-    ee_ecdsa_sign(hash, HMAC_SIZE, sig, &slen, privkey, ECC_DSIZE, i);
+    ee_ecdsa_sign(EE_P256R1, hash, HMAC_SIZE, sig, &slen, privkey, ECC_DSIZE, i);
     for (crc = 0, x = 0; x < slen; ++x)
     {
         crc = crcu16(crc, (uint8_t)sig[x]);
@@ -618,10 +618,10 @@ wrap_ecdsa_verify(unsigned int n, unsigned int i)
     // Do NOT record timestamps during encrypt! (see th_timestamp())
     g_verify_mode = true;
     // Only need one iteration to create the signature; save time!
-    ee_ecdsa_sign(hash, HMAC_SIZE, sig, &slen, privkey, ECC_DSIZE, 1);
+    ee_ecdsa_sign(EE_P256R1, hash, HMAC_SIZE, sig, &slen, privkey, ECC_DSIZE, 1);
     // Turn on recording timestamps
     g_verify_mode = false;
-    ee_ecdsa_verify(hash, HMAC_SIZE, sig, slen, privkey, ECC_DSIZE, i);
+    ee_ecdsa_verify(EE_P256R1, hash, HMAC_SIZE, sig, slen, privkey, ECC_DSIZE, i);
     for (crc = 0, x = 0; x < slen; ++x)
     {
         crc = crcu16(crc, (uint8_t)sig[x]);

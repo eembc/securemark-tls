@@ -10,7 +10,7 @@
  * effective EEMBC Benchmark License Agreement, you must discontinue use.
  */
 
-#include "mbedtls/config.h"
+#include "mbedtls/mbedtls_config.h"
 #include "mbedtls/sha256.h"
 
 #include "ee_sha.h"
@@ -55,11 +55,11 @@ th_sha256_init(
  */
 ee_status_t
 th_sha256_process(
-	void *context,
-	const unsigned char *in,
-	unsigned int size
+    void *         p_context, // input: portable context
+    const uint8_t *p_in,      // input: data to hash
+    uint_fast32_t  len        // input: length of data in bytes
 ) {
-	mbedtls_sha256_update((mbedtls_sha256_context *)context, in, size);
+	mbedtls_sha256_update((mbedtls_sha256_context *)p_context, p_in, len);
 	return EE_STATUS_OK;
 }
 

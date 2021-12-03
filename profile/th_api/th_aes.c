@@ -37,7 +37,7 @@ th_aes128_init(void *            p_context, // input: portable context
                uint_fast32_t     keylen,    // input: length of key in bytes
                uint_fast32_t     rounds,    // input: number of AES rounds
                aes_function_t    func,      // input: AES_ENC or AES_DEC
-               aes_cipher_mode_t mode       // input: AES_ECB or AES_CCM
+               aes_cipher_mode_t mode       // input: AES_ECB|CCM|GCM
 )
 {
 #warning "th_aes128_init not implemented"
@@ -52,7 +52,7 @@ th_aes128_init(void *            p_context, // input: portable context
  */
 void
 th_aes128_deinit(void *            p_context, // input: portable context
-                 aes_cipher_mode_t mode       // input: AES_ECB or AES_CCM
+                 aes_cipher_mode_t mode       // input: AES_ECB|CCM|GCM
 ) {
 #warning "th_aes128_deinit not implemented"
 }
@@ -187,7 +187,7 @@ th_aes128_gcm_decrypt(
  */
 void
 th_aes128_destroy(void *            p_context, // input: portable context
-                  aes_cipher_mode_t mode       // input: AES_ECB or AES_CCM
+                  aes_cipher_mode_t mode       // input: AES_ECB|CCM|GCM
 )
 {
 #warning "th_aes128_destroy not implemented"

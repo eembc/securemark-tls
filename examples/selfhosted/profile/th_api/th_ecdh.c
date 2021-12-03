@@ -10,9 +10,10 @@
  * effective EEMBC Benchmark License Agreement, you must discontinue use.
  */
 
-#include "mbedtls/config.h"
+#include "mbedtls/mbedtls_config.h"
 #include "mbedtls/ecdh.h"
 #include "mbedtls/ecp.h" 
+#include "th_util.h"
 
 #include "ee_ecdh.h"
 
@@ -122,7 +123,7 @@ load_private_key(
         &p_ecdh->Q, // R <-- this value will be computed as P * m
         &p_ecdh->d, // m
         &p_grp->G,  // P
-        NULL,
+        mbedtls_fake_random,  // random function
         0
     );
     if (ret != 0)
@@ -141,12 +142,12 @@ load_private_key(
  */
 ee_status_t
 th_ecdh_init(
-    void           *p_context, // input: portable context
-    ecdh_group_t    group,     // input: see `ecdh_group_t` for options
-    unsigned char  *p_private, // input: private key, from host
-    unsigned int    prilen,    // input: private key length in bytes
-    unsigned char  *p_public,  // input: peer public key, from host
-    unsigned int    publen     // input: peer public key length in bytes
+    void *        p_context, // input: portable context
+    ecdh_group_t  group,     // input: see `ecdh_group_t` for options
+    uint8_t *     p_private, // input: private key, from host
+    uint_fast32_t prilen,    // input: private key length in bytes
+    uint8_t *     p_public,  // input: peer public key, from host
+    uint_fast32_t publen     // input: peer public key length in bytes
 )
 {
     mbedtls_ecdh_context *p_ecdh;
@@ -168,7 +169,6 @@ th_ecdh_init(
             th_printf("e-[Invalid ECC curve in th_ecdh_init]\r\n");
             return EE_STATUS_ERROR;
     }
-    
     ret = load_public_peer_key(p_context, p_public, publen);
     if (ret != EE_STATUS_OK)
     {
@@ -193,9 +193,9 @@ th_ecdh_init(
  */
 ee_status_t
 th_ecdh_calc_secret(
-    void          *p_context,  // input: portable context
-    unsigned char *p_secret,   // output: shared secret
-    unsigned int   slen        // input: length of shared buffer in bytes
+    void *        p_context, // input: portable context
+    uint8_t *     p_secret,  // output: shared secret
+    uint_fast32_t slen       // input: length of shared buffer in bytes
 )
 {
     mbedtls_ecdh_context *p_ecdh;
@@ -213,7 +213,12 @@ th_ecdh_calc_secret(
         th_printf("e-[Secret buffer too small: %u < 32]\r\n", slen);
         return EE_STATUS_ERROR;
     }
-    ret = mbedtls_ecdh_calc_secret(p_ecdh, &olen, p_secret, slen, NULL, NULL);
+    ret = mbedtls_ecdh_calc_secret( p_ecdh,
+                                    &olen,
+                                    p_secret,
+                                    slen,
+                                    mbedtls_fake_random,
+                                    NULL);
     if (ret != 0)
     {
         th_printf("e-[mbedtls_ecdh_calc_secret: -0x%04x]\r\n", -ret);
