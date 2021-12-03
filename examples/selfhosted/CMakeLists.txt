@@ -25,6 +25,7 @@ include_directories(../../monitor/th_api)
 include_directories(../../profile)
 
 if (SELFHOSTED)
+	set(CMAKE_C_FLAGS "-pedantic -Wall -O3 -DEE_CFG_SELFHOSTED=1")
 	if(MBEDTLS)
 		include_directories(profile/th_api)
 		include_directories(profile/th_api/redist/mbedtls-3.0.0/include)

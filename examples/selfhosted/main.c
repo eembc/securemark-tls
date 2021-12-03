@@ -66,6 +66,13 @@ wrapper_function_t wrap_ecdsa_sign;
 wrapper_function_t wrap_ecdsa_verify;
 wrapper_function_t wrap_sha256;
 wrapper_function_t wrap_variation_001;
+// TODO: V2 wrappers, preliminary (work in progress, this is for testing)
+wrapper_function_t wrap_aes_gcm_encrypt;
+wrapper_function_t wrap_aes_gcm_decrypt;
+wrapper_function_t wrap_ecdh_ed25519;
+wrapper_function_t wrap_ecdsa_sign_ed25519;
+wrapper_function_t wrap_ecdsa_verify_ed25519;
+wrapper_function_t warp_chachapoly;
 
 // We tune each function independently by using a table entry for each wrapper:
 typedef struct
@@ -99,6 +106,7 @@ typedef struct
 // clang-format off
 static task_entry_t g_task[] =
 {
+#if 0
     { wrap_aes_ecb_encrypt,  144, 0.0f,  1.0f, 0x0, 0xc7b0 }, /*  0 */
     { wrap_aes_ecb_encrypt,  224, 0.0f,  1.0f, 0x0, 0x5481 }, /*  1 */
     { wrap_aes_ecb_encrypt,  320, 0.0f,  1.0f, 0x0, 0x998a }, /*  2 */
@@ -113,6 +121,12 @@ static task_entry_t g_task[] =
     { wrap_variation_001  ,    0, 0.0f,  3.0f, 0x0, 0x0000 }, /* 11 */
     { wrap_sha256         , 4224, 0.0f,  4.0f, 0x0, 0x9284 }, /* 12 */
     { wrap_aes_ecb_encrypt, 2048, 0.0f, 10.0f, 0x0, 0x989e }, /* 13 */
+
+    { wrap_aes_gcm_encrypt,  256, 0.0f,  1.0f, 0x0, 0x989e }, /* 14 */
+    { wrap_aes_gcm_decrypt,  256, 0.0f,  1.0f, 0x0, 0x989e }, /* 15 */
+#endif
+    { wrap_ecdh_ed25519   ,    0, 0.0f,  1.0f, 0x0, 0xb659 }, /*  5 */
+
 };
 // clang-format on
 static const size_t g_numtasks = sizeof(g_task) / sizeof(task_entry_t);
@@ -260,6 +274,22 @@ th_printf(const char *fmt, ...)
     /*@-retvalint*/
     th_vprintf(fmt, args);
     va_end(args);
+    // Emulate the GUI and fail on error message.
+    if (fmt[0] == 'e' && fmt[1] == '-')
+    {
+        exit(1);
+    }
+#else
+    // If quiet mode is on, at least print the error (see README.md).
+    if (fmt[0] == 'e' && fmt[1] == '-')
+    {
+        va_list args;
+        va_start(args, fmt);
+        /*@-retvalint*/
+        th_vprintf(fmt, args);
+        va_end(args);
+        exit(1);
+    }
 #endif
 }
 
@@ -655,6 +685,131 @@ wrap_variation_001(unsigned int n, unsigned int i)
     return (uint16_t)0;
 }
 
+uint16_t
+wrap_aes_gcm_encrypt(unsigned int n, unsigned int i)
+{
+    unsigned char *buffer;
+    unsigned int   buflen;
+    unsigned char *key;
+    unsigned char *iv;
+    unsigned char *in;
+    unsigned char *tag;
+    unsigned char *out;
+    unsigned int   x;
+    uint16_t       crc;
+
+    buflen = AES_KEYSIZE + AES_IVSIZE + n + n + AES_TAGSIZE;
+    buffer = (unsigned char *)th_malloc(buflen);
+    assert(buffer != NULL);
+    key = buffer;
+    iv  = key + AES_KEYSIZE;
+    in  = iv + AES_IVSIZE;
+    out = in + n;
+    tag = out + n;
+
+    // Fill the key, iv, and plaintext with random values
+    for (x = 0; x < AES_KEYSIZE; ++x)
+    {
+        key[x] = ee_rand();
+    }
+    for (x = 0; x < AES_IVSIZE; ++x)
+    {
+        iv[x] = ee_rand();
+    }
+    for (x = 0; x < n; ++x)
+    {
+        in[x] = ee_rand();
+    }
+    g_verify_mode = false;
+
+    ee_aes128_gcm(key, NULL, 0, iv, in, n, tag, out, AES_ENC, i);
+    for (crc = 0, x = 0; x < n; ++x)
+    {
+        crc = crcu16(crc, (uint8_t)out[x]);
+    }
+    th_free(buffer);
+    return crc;
+}
+
+uint16_t
+wrap_aes_gcm_decrypt(unsigned int n, unsigned int i)
+{
+    unsigned char *buffer;
+    unsigned int   buflen;
+    unsigned char *key;
+    unsigned char *iv;
+    unsigned char *in;
+    unsigned char *tag;
+    unsigned char *out;
+    unsigned int   x;
+    uint16_t       crc;
+
+    buflen = AES_KEYSIZE + AES_IVSIZE + n + n + AES_TAGSIZE;
+    buffer = (unsigned char *)th_malloc(buflen);
+    assert(buffer != NULL);
+    memset(buffer, 0x0, buflen);
+    key = buffer;
+    iv  = key + AES_KEYSIZE;
+    in  = iv + AES_IVSIZE;
+    out = in + n;
+    tag = out + n;
+
+    // Fill the key, iv, and plaintext with random values
+    for (x = 0; x < AES_KEYSIZE; ++x)
+    {
+        key[x] = ee_rand();
+    }
+    for (x = 0; x < AES_IVSIZE; ++x)
+    {
+        iv[x] = ee_rand();
+    }
+    for (x = 0; x < n; ++x)
+    {
+        in[x] = ee_rand();
+    }
+    // Do NOT record timestamps during encrypt! (see th_timestamp())
+    g_verify_mode = true;
+    // Only need one iteration to create the ciphertext; save time!
+    ee_aes128_gcm(key, NULL, 0, iv, in, n, tag, out, AES_ENC, 1);
+    // Turn on recording timestamps
+    g_verify_mode = false;
+    ee_aes128_gcm(key, NULL, 0, iv, out, n, tag, in, AES_DEC, i);
+    for (crc = 0, x = 0; x < n; ++x)
+    {
+        crc = crcu16(crc, (uint8_t)out[x]);
+    }
+    th_free(buffer);
+    return crc;
+}
+
+uint16_t
+wrap_ecdh_ed25519(unsigned int n, unsigned int i)
+{
+    unsigned char *peerPublicXY;
+    unsigned char *privkey;
+    unsigned char  shared[ECC_DSIZE];
+    unsigned int   x;
+    uint16_t       crc;
+
+    n             = 0; // unused
+    peerPublicXY  = g_ecc_peer_public_key;
+    privkey       = g_ecc_private_key;
+    g_verify_mode = false;
+    ee_ecdh(peerPublicXY,
+            EE_C25519,
+            ECC_QSIZE,
+            privkey,
+            ECC_DSIZE,
+            shared,
+            ECC_DSIZE,
+            i);
+    for (crc = 0, x = 0; x < ECC_DSIZE; ++x)
+    {
+        crc = crcu16(crc, (uint8_t)shared[x]);
+    }
+    return crc;
+}
+
 /** TUNING FUNCTION ***********************************************************/
 
 /**
@@ -712,7 +867,8 @@ main(void)
     for (i = 0; i < g_numtasks; ++i)
     {
         // First, compute the correct # of iterations for each primitive
-        iterations = tune_iterations(g_task[i].n, g_task[i].func);
+        //       iterations = tune_iterations(g_task[i].n, g_task[i].func);
+        iterations = 1;
         // Compute a CRC from a single iteration, also warm up the test
         ee_srand(0); // CRCs are computed with seed 0
         g_task[i].actual_crc = (*g_task[i].func)(g_task[i].n, 1);

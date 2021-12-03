@@ -37,7 +37,6 @@ ee_ecdh(uint8_t *     p_public, // input: peer public key, from host
         th_printf("e-ecdh-[Failed to create context]\r\n");
         return;
     }
-
     if (th_ecdh_init(p_context, group, p_private, prilen, p_public, publen)
         != EE_STATUS_OK)
     {

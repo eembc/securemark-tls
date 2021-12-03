@@ -17,6 +17,12 @@ a set of wrapper functions in `main.c` prepare the primitives for local
 execution. Keys, plaintext, and ciphertext are all generated randomly with
 `ee_srand()` which is seeded with zero for each primitive invocation.
 
+Since this firmware is designed to be run from the Host GUI runner, the `ee_*`
+functions to return a status value. Instead they print an error message `e-`
+which causes the GUI to abort. The `EE_CFG_QUIET` variable turns of `th_printf`,
+effectively disabling error messages. If you are experience problems, it might
+help to disable `EE_CFG_QUIET` in the cmake file and recompile.
+
 The `th_timestamp` function is implemented with the POSIX `clock_gettime`
 function, which reports elapsed time down to nanoseconds (if supported). If
 your compiler does not support this function, edit the `th_timestamp` function
@@ -44,7 +50,7 @@ well as `main.c`).
 ```
 % mkdir build
 % cd build
-% cmake -DSELFHOSTED=1 ..
+% cmake -DSELFHOSTED=1 -DMBEDTLS=1|-DWOLFSSL=1..
 % make
 :
 :
