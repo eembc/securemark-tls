@@ -28,6 +28,7 @@
  */
 #include "ee_main.h"
 #include "ee_aes.h"
+#include "ee_chachapoly.h"
 #include "ee_ecdh.h"
 #include "ee_ecdsa.h"
 #include "ee_sha.h"
@@ -69,10 +70,11 @@ wrapper_function_t wrap_variation_001;
 // TODO: V2 wrappers, preliminary (work in progress, this is for testing)
 wrapper_function_t wrap_aes_gcm_encrypt;
 wrapper_function_t wrap_aes_gcm_decrypt;
+wrapper_function_t wrap_chachapoly_seal;
+wrapper_function_t wrap_chachapoly_read;
 wrapper_function_t wrap_ecdh_ed25519;
 wrapper_function_t wrap_ecdsa_sign_ed25519;
 wrapper_function_t wrap_ecdsa_verify_ed25519;
-wrapper_function_t warp_chachapoly;
 
 // We tune each function independently by using a table entry for each wrapper:
 typedef struct
@@ -106,7 +108,6 @@ typedef struct
 // clang-format off
 static task_entry_t g_task[] =
 {
-#if 0
     { wrap_aes_ecb_encrypt,  144, 0.0f,  1.0f, 0x0, 0xc7b0 }, /*  0 */
     { wrap_aes_ecb_encrypt,  224, 0.0f,  1.0f, 0x0, 0x5481 }, /*  1 */
     { wrap_aes_ecb_encrypt,  320, 0.0f,  1.0f, 0x0, 0x998a }, /*  2 */
@@ -121,11 +122,11 @@ static task_entry_t g_task[] =
     { wrap_variation_001  ,    0, 0.0f,  3.0f, 0x0, 0x0000 }, /* 11 */
     { wrap_sha256         , 4224, 0.0f,  4.0f, 0x0, 0x9284 }, /* 12 */
     { wrap_aes_ecb_encrypt, 2048, 0.0f, 10.0f, 0x0, 0x989e }, /* 13 */
-
+    // TODO: V2 preliminary
     { wrap_aes_gcm_encrypt,  256, 0.0f,  1.0f, 0x0, 0x989e }, /* 14 */
     { wrap_aes_gcm_decrypt,  256, 0.0f,  1.0f, 0x0, 0x989e }, /* 15 */
-#endif
-    { wrap_ecdh_ed25519   ,    0, 0.0f,  1.0f, 0x0, 0xb659 }, /*  5 */
+    { wrap_chachapoly_seal,  256, 0.0f,  1.0f, 0x0, 0x989e }, /* 16 */
+    { wrap_chachapoly_read,  256, 0.0f,  1.0f, 0x0, 0x989e }, /* 17 */
 
 };
 // clang-format on
@@ -810,6 +811,106 @@ wrap_ecdh_ed25519(unsigned int n, unsigned int i)
     return crc;
 }
 
+uint16_t
+wrap_chachapoly_seal(unsigned int n, unsigned int i)
+{
+    unsigned char *buffer;
+    unsigned int   buflen;
+    unsigned char *key;
+    unsigned char *iv;
+    unsigned char *in;
+    unsigned char *tag;
+    unsigned char *out;
+    unsigned int   x;
+    uint16_t       crc;
+
+    buflen
+        = CHACHAPOLY_KEYSIZE + CHACHAPOLY_IVSIZE + n + n + CHACHAPOLY_TAGSIZE;
+    buffer = (unsigned char *)th_malloc(buflen);
+    assert(buffer != NULL);
+    memset(buffer, 0x0, buflen);
+    key = buffer;
+    iv  = key + CHACHAPOLY_KEYSIZE;
+    in  = iv + CHACHAPOLY_IVSIZE;
+    out = in + n;
+    tag = out + n;
+
+    // Fill the key, iv, and plaintext with random values
+    for (x = 0; x < CHACHAPOLY_KEYSIZE; ++x)
+    {
+        key[x] = ee_rand();
+    }
+    for (x = 0; x < CHACHAPOLY_IVSIZE; ++x)
+    {
+        iv[x] = ee_rand();
+    }
+    for (x = 0; x < n; ++x)
+    {
+        in[x] = ee_rand();
+    }
+    g_verify_mode = false;
+
+    ee_chachapoly(key, NULL, 0, iv, in, n, tag, out, CHACHAPOLY_ENC, i);
+    for (crc = 0, x = 0; x < n; ++x)
+    {
+        crc = crcu16(crc, (uint8_t)out[x]);
+    }
+    th_free(buffer);
+    return crc;
+}
+
+uint16_t
+wrap_chachapoly_read(unsigned int n, unsigned int i)
+{
+    unsigned char *buffer;
+    unsigned int   buflen;
+    unsigned char *key;
+    unsigned char *iv;
+    unsigned char *in;
+    unsigned char *tag;
+    unsigned char *out;
+    unsigned int   x;
+    uint16_t       crc;
+
+    buflen
+        = CHACHAPOLY_KEYSIZE + CHACHAPOLY_IVSIZE + n + n + CHACHAPOLY_TAGSIZE;
+    buffer = (unsigned char *)th_malloc(buflen);
+    assert(buffer != NULL);
+    memset(buffer, 0x0, buflen);
+    key = buffer;
+    iv  = key + CHACHAPOLY_KEYSIZE;
+    in  = iv + CHACHAPOLY_IVSIZE;
+    out = in + n;
+    tag = out + n;
+
+    // Fill the key, iv, and plaintext with random values
+    for (x = 0; x < CHACHAPOLY_KEYSIZE; ++x)
+    {
+        key[x] = ee_rand();
+    }
+    for (x = 0; x < CHACHAPOLY_IVSIZE; ++x)
+    {
+        iv[x] = ee_rand();
+    }
+    for (x = 0; x < n; ++x)
+    {
+        in[x] = ee_rand();
+    }
+    // Do NOT record timestamps during encrypt! (see th_timestamp())
+    g_verify_mode = true;
+    // Only need one iteration to create the ciphertext; save time!
+    ee_chachapoly(key, NULL, 0, iv, in, n, tag, out, CHACHAPOLY_ENC, 1);
+    // Turn on recording timestamps
+    g_verify_mode = false;
+    ee_chachapoly(key, NULL, 0, iv, out, n, tag, in, CHACHAPOLY_DEC, i);
+    for (crc = 0, x = 0; x < n; ++x)
+    {
+        crc = crcu16(crc, (uint8_t)out[x]);
+    }
+    th_free(buffer);
+    return crc;
+}
+
 /** TUNING FUNCTION ***********************************************************/
 
 /**
@@ -867,8 +968,8 @@ main(void)
     for (i = 0; i < g_numtasks; ++i)
     {
         // First, compute the correct # of iterations for each primitive
-        //       iterations = tune_iterations(g_task[i].n, g_task[i].func);
-        iterations = 1;
+        iterations = tune_iterations(g_task[i].n, g_task[i].func);
+        // iterations = 1;
         // Compute a CRC from a single iteration, also warm up the test
         ee_srand(0); // CRCs are computed with seed 0
         g_task[i].actual_crc = (*g_task[i].func)(g_task[i].n, 1);

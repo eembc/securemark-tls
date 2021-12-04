@@ -10,6 +10,7 @@
  * effective EEMBC Benchmark License Agreement, you must discontinue use.
  */
 
+#include "mbedtls/chachapoly.h"
 #include "ee_chachapoly.h"
 
 /**
@@ -21,7 +22,8 @@ ee_status_t
 th_chachapoly_create(void **pp_context // output: portable context
 )
 {
-#warning "th_chachapoly_create not implemented"
+    *pp_context = (mbedtls_chachapoly_context *)th_malloc(
+        sizeof(mbedtls_chachapoly_context));
     return EE_STATUS_OK;
 }
 
@@ -37,7 +39,22 @@ th_chachapoly_init(void *            p_context, // input: portable context
                    chachapoly_func_t func       // input: CHACHAPOLY_(ENC|DEC)
 )
 {
-#warning "th_chachapoly_init not implemented"
+    // mbedtls doesn't use func_t on init.
+    int                         ret;
+    mbedtls_chachapoly_context *context
+        = (mbedtls_chachapoly_context *)p_context;
+    mbedtls_chachapoly_init(context);
+    if (keylen != CHACHAPOLY_KEYSIZE)
+    {
+        th_printf("e-[mbedtls expects a 32-byte key size for ChaChaPoly\r\n");
+        return EE_STATUS_ERROR;
+    }
+    ret = mbedtls_chachapoly_setkey(p_context, p_key);
+    if (ret != 0)
+    {
+        th_printf("e-[mbedtls failed to set ChaChaPoly key: %d\r\n", ret);
+        return EE_STATUS_ERROR;
+    }
     return EE_STATUS_OK;
 }
 
@@ -47,8 +64,11 @@ th_chachapoly_init(void *            p_context, // input: portable context
 void
 th_chachapoly_deinit(void *            p_context, // input: portable context
                      chachapoly_func_t func       // input: CHACHAPOLY_(ENC|DEC)
-) {
-#warning "th_chachapoly_deinit not implemented"
+)
+{
+    // mbedtls doesn't care about enc/dec on deinit
+    // TODO: Can we remove func_t?
+    mbedtls_chachapoly_free((mbedtls_chachapoly_context *)p_context);
 }
 
 /**
@@ -56,7 +76,8 @@ th_chachapoly_deinit(void *            p_context, // input: portable context
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-ee_status_t th_chachapoly_encrypt(
+ee_status_t
+th_chachapoly_encrypt(
     void *         p_context, // input: portable context
     const uint8_t *p_aad,     // input: Additional Authentication Data
     uint_fast32_t  aadlen,    // input: Length of AAD in bytes
@@ -69,8 +90,28 @@ ee_status_t th_chachapoly_encrypt(
     uint_fast32_t  ivlen      // input: IV length in bytes
 )
 {
-#warning "th_chachapoly_encrypt not implemented"
-    return EE_STATUS_OK;
+    if (ivlen != CHACHAPOLY_IVSIZE)
+    {
+        th_printf("e-[mbedtls expects a 12-byte nonce for ChaChaPoly\r\n");
+        return EE_STATUS_ERROR;
+    }
+    if (taglen != CHACHAPOLY_TAGSIZE)
+    {
+        th_printf("e-[mbedtls expects a 16-byte tag for ChaChaPoly\r\n");
+        return EE_STATUS_ERROR;
+    }
+    return mbedtls_chachapoly_encrypt_and_tag(
+               (mbedtls_chachapoly_context *)p_context,
+               ptlen,
+               p_iv,
+               p_aad,
+               aadlen,
+               p_pt,
+               p_ct,
+               p_tag)
+                   == 0
+               ? EE_STATUS_OK
+               : EE_STATUS_ERROR;
 }
 
 /**
@@ -92,8 +133,28 @@ th_chachapoly_decrypt(
     uint_fast32_t  ivlen      // input: IV length in bytes
 )
 {
-#warning "th_chachapoly_decrypt not implemented"
-    return EE_STATUS_OK;
+    if (ivlen != CHACHAPOLY_IVSIZE)
+    {
+        th_printf("e-[mbedtls expects a 12-byte nonce for ChaChaPoly\r\n");
+        return EE_STATUS_ERROR;
+    }
+    if (taglen != CHACHAPOLY_TAGSIZE)
+    {
+        th_printf("e-[mbedtls expects a 16-byte tag for ChaChaPoly\r\n");
+        return EE_STATUS_ERROR;
+    }
+    return mbedtls_chachapoly_auth_decrypt(
+               (mbedtls_chachapoly_context *)p_context,
+               ctlen,
+               p_iv,
+               p_aad,
+               aadlen,
+               p_tag,
+               p_ct,
+               p_pt)
+                   == 0
+               ? EE_STATUS_OK
+               : EE_STATUS_ERROR;
 }
 
 /**
@@ -103,5 +164,6 @@ void
 th_chachapoly_destroy(void *p_context // input: portable context
 )
 {
-#warning "th_chachapoly_destroy not implemented"
+    mbedtls_chachapoly_free((mbedtls_chachapoly_context *)p_context);
+    th_free(p_context);
 }
