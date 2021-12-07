@@ -34,14 +34,14 @@ To build the benchmark with the PSA Crypto API (see `https://armmbed.github.io/m
 Here are the commands to build the benchmark based on the PSA Crypto API:
 
 ```
-% git clone https://github.com/hannestschofenig/securemark-tls.git
+% git clone https://github.com/eembc/securemark-tls.git
 % cd securemark-tls/
-% git checkout psa-crypto-api
+% git checkout v2
 % git submodule init
 % git submodule update
 % mkdir build
 % cd build
-% cmake -DSELFHOSTED=1 -DPSA_CRYPTO=1 ../examples/selfhosted/
+% cmake -DSELFHOSTED=1 -DMBEDTLS=1 ../examples/selfhosted/
 % make
 ```
 
