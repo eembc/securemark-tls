@@ -45,7 +45,8 @@ th_chachapoly_init(void *            p_context, // input: portable context
 {
     if (keylen != CHACHA20_POLY1305_AEAD_KEYSIZE)
     {
-        th_printf("e-[wolfSSL expects a %d-byte tag for ChaChaPoly\r\n", CHACHA20_POLY1305_AEAD_KEYSIZE);
+        th_printf("e-[wolfSSL expects a %d-byte tag for ChaChaPoly\r\n",
+                  CHACHA20_POLY1305_AEAD_KEYSIZE);
     }
     th_memcpy(g_localKey, p_key, CHACHA20_POLY1305_AEAD_KEYSIZE);
     // wolfCrypt creates uses a local context in its chachapoly functions
@@ -83,14 +84,8 @@ th_chachapoly_encrypt(
 )
 {
     return wc_ChaCha20Poly1305_Encrypt(
-        g_localKey,
-        p_iv,
-        p_aad,
-        aadlen,
-        p_pt,
-        ptlen,
-        p_ct,
-        p_tag) == 0
+               g_localKey, p_iv, p_aad, aadlen, p_pt, ptlen, p_ct, p_tag)
+                   == 0
                ? EE_STATUS_OK
                : EE_STATUS_ERROR;
 }
@@ -115,14 +110,8 @@ th_chachapoly_decrypt(
 )
 {
     return wc_ChaCha20Poly1305_Decrypt(
-        g_localKey,
-        p_iv,
-        p_aad,
-        aadlen,
-        p_ct,
-        ctlen,
-        p_tag,
-        p_pt) == 0
+               g_localKey, p_iv, p_aad, aadlen, p_ct, ctlen, p_tag, p_pt)
+                   == 0
                ? EE_STATUS_OK
                : EE_STATUS_ERROR;
 }
