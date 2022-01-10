@@ -5,6 +5,8 @@ project(sec-tls
 	VERSION 1.0.2)
 
 option(SELFHOSTED "Set to '1' to build self-hosted binary, '0' by default makes a library" 0)
+option(MBEDTLS "If self-hosting, use mbedTLS" 0)
+option(WOLFSSL "If self-hosting, use wolfSSL" 0)
 
 include(cmake/splint.cmake)
 
@@ -130,6 +132,42 @@ if (SELFHOSTED)
 		add_definitions(-DEE_CFG_SELFHOSTED=1)
 		add_definitions(-DEE_CFG_QUIET=1)
 		add_executable(sec-tls ${SOURCE})
+	elseif(WOLFSSL)
+		include_directories(profile/wolfssl_th_api)
+		set(SOURCE
+			../../profile/ee_aes.c
+			../../profile/ee_chachapoly.c
+			../../profile/ee_ecdh.c
+			../../profile/ee_ecdsa.c
+			../../profile/ee_profile.c
+			../../profile/ee_sha.c
+			../../profile/ee_util.c
+			../../profile/ee_variations.c
+			profile/wolfssl_th_api/th_aes.c
+			profile/wolfssl_th_api/th_chachapoly.c
+			profile/wolfssl_th_api/th_util.c
+			profile/wolfssl_th_api/th_ecdh.c
+			profile/wolfssl_th_api/th_ecdsa.c
+			profile/wolfssl_th_api/th_sha.c
+			../../monitor/ee_main.c
+			../../monitor/th_api/th_lib.c
+			../../monitor/th_api/th_libc.c
+			main.c
+		)
+		find_path(WOLFSSL_INCLUDE wolfssl/options.h)
+		find_library(WOLFSSL_LIB wolfssl)
+
+		include_directories(${WOLFSSL_INCLUDE})
+		link_libraries(${WOLFSSL_LIB})
+
+		message("WOLFSSL_INCLUDE = ${WOLFSSL_INCLUDE}")
+		message("WOLFSSL_LIB = ${WOLFSSL_LIB}")
+
+		add_definitions(-DEE_CFG_SELFHOSTED=1)
+		add_definitions(-DEE_CFG_QUIET=1)
+		add_executable(sec-tls ${SOURCE})
+	else()
+		message(FATAL_ERROR "Specify -DMBEDTLS=1 or -DWOLFSSL=1 when self-hosting")
 	endif()
 else()
     include_directories(../../monitor/th_api)

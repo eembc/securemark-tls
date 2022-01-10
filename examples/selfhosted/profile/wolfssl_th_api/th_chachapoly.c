@@ -10,8 +10,13 @@
  * effective EEMBC Benchmark License Agreement, you must discontinue use.
  */
 
-#include "mbedtls/chachapoly.h"
+#include <wolfssl/options.h>
+#include <wolfssl/wolfcrypt/chacha20_poly1305.h>
+
 #include "ee_chachapoly.h"
+
+// Set during our init call since there's no portable context for enc/dec
+uint8_t g_localKey[CHACHA20_POLY1305_AEAD_KEYSIZE];
 
 /**
  * Create a context.
@@ -22,8 +27,7 @@ ee_status_t
 th_chachapoly_create(void **pp_context // output: portable context
 )
 {
-    *pp_context = (mbedtls_chachapoly_context *)th_malloc(
-        sizeof(mbedtls_chachapoly_context));
+    // wolfCrypt creates uses a local context in its chachapoly functions
     return EE_STATUS_OK;
 }
 
@@ -39,17 +43,12 @@ th_chachapoly_init(void *            p_context, // input: portable context
                    chachapoly_func_t func       // input: CHACHAPOLY_(ENC|DEC)
 )
 {
-    // mbedtls doesn't use func_t on init.
-    int                         ret;
-    mbedtls_chachapoly_context *context
-        = (mbedtls_chachapoly_context *)p_context;
-    mbedtls_chachapoly_init(context);
-    ret = mbedtls_chachapoly_setkey(p_context, p_key);
-    if (ret != 0)
+    if (keylen != CHACHA20_POLY1305_AEAD_KEYSIZE)
     {
-        th_printf("e-[mbedtls failed to set ChaChaPoly key: %d\r\n", ret);
-        return EE_STATUS_ERROR;
+        th_printf("e-[wolfSSL expects a %d-byte tag for ChaChaPoly\r\n", CHACHA20_POLY1305_AEAD_KEYSIZE);
     }
+    th_memcpy(g_localKey, p_key, CHACHA20_POLY1305_AEAD_KEYSIZE);
+    // wolfCrypt creates uses a local context in its chachapoly functions
     return EE_STATUS_OK;
 }
 
@@ -61,9 +60,7 @@ th_chachapoly_deinit(void *            p_context, // input: portable context
                      chachapoly_func_t func       // input: CHACHAPOLY_(ENC|DEC)
 )
 {
-    // mbedtls doesn't care about enc/dec on deinit
-    // TODO: Can we remove func_t?
-    mbedtls_chachapoly_free((mbedtls_chachapoly_context *)p_context);
+    // wolfCrypt creates uses a local context in its chachapoly functions
 }
 
 /**
@@ -85,16 +82,15 @@ th_chachapoly_encrypt(
     uint_fast32_t  ivlen      // input: IV length in bytes
 )
 {
-    return mbedtls_chachapoly_encrypt_and_tag(
-               (mbedtls_chachapoly_context *)p_context,
-               ptlen,
-               p_iv,
-               p_aad,
-               aadlen,
-               p_pt,
-               p_ct,
-               p_tag)
-                   == 0
+    return wc_ChaCha20Poly1305_Encrypt(
+        g_localKey,
+        p_iv,
+        p_aad,
+        aadlen,
+        p_pt,
+        ptlen,
+        p_ct,
+        p_tag) == 0
                ? EE_STATUS_OK
                : EE_STATUS_ERROR;
 }
@@ -118,16 +114,15 @@ th_chachapoly_decrypt(
     uint_fast32_t  ivlen      // input: IV length in bytes
 )
 {
-    return mbedtls_chachapoly_auth_decrypt(
-               (mbedtls_chachapoly_context *)p_context,
-               ctlen,
-               p_iv,
-               p_aad,
-               aadlen,
-               p_tag,
-               p_ct,
-               p_pt)
-                   == 0
+    return wc_ChaCha20Poly1305_Decrypt(
+        g_localKey,
+        p_iv,
+        p_aad,
+        aadlen,
+        p_ct,
+        ctlen,
+        p_tag,
+        p_pt) == 0
                ? EE_STATUS_OK
                : EE_STATUS_ERROR;
 }
@@ -139,6 +134,5 @@ void
 th_chachapoly_destroy(void *p_context // input: portable context
 )
 {
-    mbedtls_chachapoly_free((mbedtls_chachapoly_context *)p_context);
-    th_free(p_context);
+    // wolfCrypt creates uses a local context in its chachapoly functions
 }
