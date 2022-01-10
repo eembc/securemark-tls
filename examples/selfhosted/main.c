@@ -123,10 +123,10 @@ static task_entry_t g_task[] =
     { wrap_sha256         , 4224, 0.0f,  4.0f, 0x0, 0x9284 }, /* 12 */
     { wrap_aes_ecb_encrypt, 2048, 0.0f, 10.0f, 0x0, 0x989e }, /* 13 */
     // TODO: V2 preliminary
-    { wrap_aes_gcm_encrypt,  256, 0.0f,  1.0f, 0x0, 0x989e }, /* 14 */
-    { wrap_aes_gcm_decrypt,  256, 0.0f,  1.0f, 0x0, 0x989e }, /* 15 */
-    { wrap_chachapoly_seal,  256, 0.0f,  1.0f, 0x0, 0x989e }, /* 16 */
-    { wrap_chachapoly_read,  256, 0.0f,  1.0f, 0x0, 0x989e }, /* 17 */
+    { wrap_aes_gcm_encrypt,  256, 0.0f,  1.0f, 0x0, 0x325b }, /* 14 */
+    { wrap_aes_gcm_decrypt,  256, 0.0f,  1.0f, 0x0, 0x325b }, /* 15 */
+    { wrap_chachapoly_seal,  256, 0.0f,  1.0f, 0x0, 0xd80d }, /* 16 */
+    { wrap_chachapoly_read,  256, 0.0f,  1.0f, 0x0, 0xd80d }, /* 17 */
 
 };
 // clang-format on
