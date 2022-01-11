@@ -12,6 +12,7 @@
 
 #include <wolfssl/options.h>
 #include <wolfssl/wolfcrypt/ecc.h>
+#include <wolfssl/wolfcrypt/ed25519.h>
 
 /* can be set for static memory use */
 #define HEAP_HINT NULL
@@ -31,18 +32,122 @@ int load_private_key(void *, unsigned char *, size_t);
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_ecdsa_create(void **p_context // output: portable context
+th_ecdsa_create(void **      p_context, // output: portable context
+                ecdh_group_t group      // input: see `ecdh_group_t` for options
 )
 {
-    ecc_key *p_ecdsa;
+    void *ptr = NULL;
 
-    p_ecdsa = (ecc_key *)th_malloc(sizeof(ecc_key));
-    if (p_ecdsa == NULL)
+    switch (group)
+    {
+        case EE_C25519:
+            ptr = th_malloc(sizeof(ed25519_key));
+            break;
+        case EE_P256R1:
+            ptr = th_malloc(sizeof(ecc_key));
+            break;
+        default:
+            th_printf("e-[Invalid ECC curve in th_ecdsa_create]\r\n");
+            return EE_STATUS_ERROR;
+    }
+    if (ptr == NULL)
     {
         th_printf("e-[malloc() fail in th_ecdsa_create\r\n");
         return EE_STATUS_ERROR;
     }
-    *p_context = (void *)p_ecdsa;
+    *p_context = ptr;
+
+    return EE_STATUS_OK;
+}
+
+ee_status_t
+init_ecc(ecc_key *p_key, uint8_t *p_private, uint_fast32_t plen)
+{
+    int ret;
+
+    ret = wc_ecc_init_ex(p_key, HEAP_HINT, DEVID);
+    if (ret != 0)
+    {
+        th_printf("e-[Failed to intialize key init_ecc : -0x%04x]\r\n", -ret);
+        return EE_STATUS_ERROR;
+    }
+    // In the future if we offer more curves, pass the group
+    ret = wc_ecc_import_private_key_ex(
+        p_private, plen, NULL, 0, p_key, ECC_SECP256R1);
+    if (ret != 0)
+    {
+        th_printf("e-[loading group key failed init_ecc : -0x%04x]\r\n", -ret);
+        return EE_STATUS_ERROR;
+    }
+    ret = wc_ecc_make_pub(p_key, NULL);
+    if (ret != 0)
+    {
+        th_printf(
+            "e-[error generating public EC key from private init_ecc :"
+            " -0x%04x]\r\n",
+            -ret);
+        return EE_STATUS_ERROR;
+    }
+
+#ifdef WOLFSSL_ECDSA_DETERMINISTIC_K
+    /* set deterministic k value */
+    ret = wc_ecc_set_deterministic(p_key, 1);
+    if (ret != 0)
+    {
+        th_printf(
+            "e-[Failed to set deterministic flag for ECC signing: -0x%04x]\r\n",
+            -ret);
+        return EE_STATUS_ERROR;
+    }
+#else
+#error compile wolfSSL with WOLFSSL_ECDSA_DETERMINISTIC_K
+#endif
+    return EE_STATUS_OK;
+}
+
+ee_status_t
+init_ed25519(ed25519_key *p_key, uint8_t *p_private, uint_fast32_t plen)
+{
+    int     ret;
+    uint8_t tmp_public[ED25519_PUB_KEY_SIZE];
+    ret = wc_ed25519_init_ex(p_key, HEAP_HINT, DEVID);
+    if (ret != 0)
+    {
+        th_printf("e-[Failed to intialize key init_ed25519 : -0x%04x]\r\n",
+                  -ret);
+        return EE_STATUS_ERROR;
+    }
+    /**
+     * We're not using import_private_key because it expects a 64 bit buffer
+     * of private concat public, which requires more conditionals in the upper
+     * level wrappers.
+     */
+    // ret = wc_ed25519_import_private_key(p_private, plen, NULL, 0, p_key);
+    ret = wc_ed25519_import_private_only(p_private, plen, p_key);
+    if (ret != 0)
+    {
+        th_printf("e-[loading group key failed init_ed25519 : -0x%04x]\r\n",
+                  ret);
+        return EE_STATUS_ERROR;
+    }
+    ret = wc_ed25519_make_public(p_key, tmp_public, ED25519_PUB_KEY_SIZE);
+    if (ret != 0)
+    {
+        th_printf(
+            "e-[error generating public EC key from private init_ed25519 :"
+            " -0x%04x]\r\n",
+            -ret);
+        return EE_STATUS_ERROR;
+    }
+    ret = wc_ed25519_import_public(tmp_public, ED25519_PUB_KEY_SIZE, p_key);
+    if (ret != 0)
+    {
+        th_printf(
+            "e-[Failed to import public init_ed25519 :"
+            " -0x%04x]\r\n",
+            -ret);
+        return EE_STATUS_ERROR;
+    }
     return EE_STATUS_OK;
 }
 
@@ -59,58 +164,63 @@ th_ecdsa_init(void *        p_context, // input: portable context
               uint_fast32_t plen       // input: length of private key in bytes
 )
 {
-    ecc_key *p_ecdsa;
-    int      ret, curveId;
-
-    p_ecdsa = (ecc_key *)p_context;
-    ret     = wc_ecc_init_ex(p_ecdsa, HEAP_HINT, DEVID);
-    if (ret != 0)
-    {
-        th_printf("e-[Failed to intialize key : -0x%04x]\r\n", -ret);
-        return EE_STATUS_ERROR;
-    }
-
     switch (group)
     {
         case EE_P256R1:
-            curveId = ECC_SECP256R1;
-            break;
+            return init_ecc((ecc_key *)p_context, p_private, plen);
+        case EE_C25519:
+            return init_ed25519((ed25519_key *)p_context, p_private, plen);
         default:
             th_printf("e-[Invalid ECC curve in th_ecdsa_init]\r\n");
             return EE_STATUS_ERROR;
     }
+}
 
-    ret = wc_ecc_import_private_key_ex(
-        p_private, plen, NULL, 0, p_ecdsa, curveId);
+ee_status_t
+sign_ecc(ecc_key *      p_context, // input: portable context
+         uint8_t *      p_hash,    // input: sha256 digest
+         uint_fast32_t  hlen,      // input: length of digest in bytes
+         uint8_t *      p_sig,     // output: signature
+         uint_fast32_t *p_slen     // in/out: input=MAX slen, output=resultant
+)
+{
+    int    ret;
+    WC_RNG rng;
+
+    ret = wc_InitRng_ex(&rng, HEAP_HINT, DEVID);
     if (ret != 0)
     {
-        th_printf("e-[loading group key failed : -0x%04x]\r\n", -ret);
+        th_printf("e-[Failed to create RNG for ECC sign_ecc: -0x%04x]\r\n",
+                  -ret);
         return EE_STATUS_ERROR;
     }
-
-    ret = wc_ecc_make_pub(p_ecdsa, NULL);
+    ret = wc_ecc_sign_hash(p_hash, hlen, p_sig, p_slen, &rng, p_context);
     if (ret != 0)
     {
-        th_printf(
-            "e-[error generating public EC key from private :"
-            " -0x%04x]\r\n",
-            -ret);
+        th_printf("e-[Failed to sign in sign_ecc: -0x%04x]\r\n", -ret);
         return EE_STATUS_ERROR;
     }
+    wc_FreeRng(&rng);
+    return EE_STATUS_OK;
+}
 
-#ifdef WOLFSSL_ECDSA_DETERMINISTIC_K
-    /* set deterministic k value */
-    ret = wc_ecc_set_deterministic(p_ecdsa, 1);
+ee_status_t
+sign_ed25519(ed25519_key *  p_context, // input: portable context
+             uint8_t *      p_hash,    // input: sha256 digest
+             uint_fast32_t  hlen,      // input: length of digest in bytes
+             uint8_t *      p_sig,     // output: signature
+             uint_fast32_t *p_slen // in/out: input=MAX slen, output=resultant
+)
+{
+    int ret;
+
+    ret = wc_ed25519ph_sign_hash(
+        p_hash, hlen, p_sig, p_slen, p_context, NULL, 0);
     if (ret != 0)
     {
-        th_printf(
-            "e-[Failed to set deterministic flag for ECC signing: -0x%04x]\r\n",
-            -ret);
+        th_printf("e-[Failed to sign in sign_ed25519: -0x%04x]\r\n", -ret);
         return EE_STATUS_ERROR;
     }
-#else
-#error compile wolfSSL with WOLFSSL_ECDSA_DETERMINISTIC_K
-#endif
     return EE_STATUS_OK;
 }
 
@@ -121,33 +231,64 @@ th_ecdsa_init(void *        p_context, // input: portable context
  */
 ee_status_t
 th_ecdsa_sign(void *         p_context, // input: portable context
-              unsigned char *p_hash,    // input: sha256 digest
-              unsigned int   hlen,      // input: length of digest in bytes
-              unsigned char *p_sig,     // output: signature
-              unsigned int * p_slen // in/out: input=MAX slen, output=resultant
+              ecdh_group_t   group,     // input: see `ecdh_group_t` for options
+              uint8_t *      p_hash,    // input: sha256 digest
+              uint_fast32_t  hlen,      // input: length of digest in bytes
+              uint8_t *      p_sig,     // output: signature
+              uint_fast32_t *p_slen // in/out: input=MAX slen, output=resultant
 )
 {
-    ecc_key *p_ecdsa;
-    int      ret;
-    WC_RNG   rng;
-
-    p_ecdsa = (ecc_key *)p_context;
-    ret     = wc_InitRng_ex(&rng, HEAP_HINT, DEVID);
-    if (ret != 0)
+    switch (group)
     {
-        th_printf("e-[Failed to create RNG for ECC signing: -0x%04x]\r\n",
-                  -ret);
+        case EE_P256R1:
+            return sign_ecc((ecc_key *)p_context, p_hash, hlen, p_sig, p_slen);
+        case EE_C25519:
+            return sign_ed25519(
+                (ed25519_key *)p_context, p_hash, hlen, p_sig, p_slen);
+        default:
+            th_printf("e-[Invalid ECC curve in th_ecdsa_sign]\r\n");
+            return EE_STATUS_ERROR;
+    }
+}
+
+ee_status_t
+verify_ecc(ecc_key *     p_context,
+           uint8_t *     p_hash, // input: sha256 digest
+           uint_fast32_t hlen,   // input: length of digest in bytes
+           uint8_t *     p_sig,  // output: signature
+           uint_fast32_t slen    // input: length of signature in bytes
+)
+{
+    int ret;
+    int verify;
+
+    ret = wc_ecc_verify_hash(p_sig, slen, p_hash, hlen, &verify, p_context);
+    if (ret != 0 || verify != 1)
+    {
+        th_printf("e-[Failed to verify in verify_ecc: -0x%04x]\r\n", -ret);
         return EE_STATUS_ERROR;
     }
+    return EE_STATUS_OK;
+}
 
-    ret = wc_ecc_sign_hash(p_hash, hlen, p_sig, p_slen, &rng, p_ecdsa);
-    if (ret != 0)
+ee_status_t
+verify_ed25519(ed25519_key * p_context,
+               uint8_t *     p_hash, // input: sha256 digest
+               uint_fast32_t hlen,   // input: length of digest in bytes
+               uint8_t *     p_sig,  // output: signature
+               uint_fast32_t slen    // input: length of signature in bytes
+)
+{
+    int ret;
+    int verify;
+
+    ret = wc_ed25519ph_verify_hash(
+        p_sig, slen, p_hash, hlen, &verify, p_context, NULL, 0);
+    if (ret != 0 || verify != 1)
     {
-        th_printf("e-[Failed to sign in th_ecdsa_sign: -0x%04x]\r\n", -ret);
+        th_printf("e-[Failed to verify in verify_ed25519: -0x%04x]\r\n", -ret);
         return EE_STATUS_ERROR;
     }
-    wc_FreeRng(&rng);
-
     return EE_STATUS_OK;
 }
 
@@ -157,33 +298,45 @@ th_ecdsa_sign(void *         p_context, // input: portable context
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_ecdsa_verify(void *         p_context, // input: portable context
-                unsigned char *p_hash,    // input: sha256 digest
-                unsigned int   hlen,      // input: length of digest in bytes
-                unsigned char *p_sig,     // output: signature
-                unsigned int   slen       // input: length of signature in bytes
+th_ecdsa_verify(void *        p_context, // input: portable context
+                ecdh_group_t  group,  // input: see `ecdh_group_t` for options
+                uint8_t *     p_hash, // input: sha256 digest
+                uint_fast32_t hlen,   // input: length of digest in bytes
+                uint8_t *     p_sig,  // output: signature
+                uint_fast32_t slen    // input: length of signature in bytes
 )
 {
-    ecc_key *p_ecdsa;
-    int      ret, verify;
-
-    p_ecdsa = (ecc_key *)p_context;
-    ret     = wc_ecc_verify_hash(p_sig, slen, p_hash, hlen, &verify, p_ecdsa);
-    if (ret != 0 || verify != 1)
+    switch (group)
     {
-        th_printf("e-[Failed to verify in th_ecdsa_verify: -0x%04x]\r\n", -ret);
-        return EE_STATUS_ERROR;
+        case EE_P256R1:
+            return verify_ecc((ecc_key *)p_context, p_hash, hlen, p_sig, slen);
+        case EE_C25519:
+            return verify_ed25519(
+                (ed25519_key *)p_context, p_hash, hlen, p_sig, slen);
+        default:
+            th_printf("e-[Invalid ECC curve in th_ecdsa_verify]\r\n");
+            return EE_STATUS_ERROR;
     }
-    return EE_STATUS_OK;
 }
 
 /**
  * Destroy the context created earlier.
  */
 void
-th_ecdsa_destroy(void *p_context // portable context
+th_ecdsa_destroy(void *       p_context, // portable context
+                 ecdh_group_t group // input: see `ecdh_group_t` for options
 )
 {
-    wc_ecc_free((ecc_key *)p_context);
-    th_free(p_context);
+    switch (group)
+    {
+        case EE_P256R1:
+            wc_ecc_free((ecc_key *)p_context);
+            break;
+        case EE_C25519:
+            wc_ed25519_free((ed25519_key *)p_context);
+            break;
+        default:
+            th_printf("e-[Invalid ECC curve in th_ecdsa_destroy]\r\n");
+            break;
+    }
 }

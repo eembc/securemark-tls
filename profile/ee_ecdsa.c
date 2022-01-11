@@ -32,7 +32,7 @@ ee_ecdsa_sign(ecdh_group_t   group,  // input: see `ecdh_group_t`
 {
     void *p_context; // Generic context if needed by implementation
 
-    if (th_ecdsa_create(&p_context) != EE_STATUS_OK)
+    if (th_ecdsa_create(&p_context, group) != EE_STATUS_OK)
     {
         th_printf("e-ecdsa_sign-[Failed to create context]\r\n");
         return;
@@ -50,7 +50,7 @@ ee_ecdsa_sign(ecdh_group_t   group,  // input: see `ecdh_group_t`
     th_pre();
     while (iterations-- > 0)
     {
-        if (th_ecdsa_sign(p_context, p_hash, hlen, p_sig, p_slen)
+        if (th_ecdsa_sign(p_context, group, p_hash, hlen, p_sig, p_slen)
             != EE_STATUS_OK)
         {
             th_post();
@@ -62,7 +62,7 @@ ee_ecdsa_sign(ecdh_group_t   group,  // input: see `ecdh_group_t`
     th_timestamp();
     th_printf("m-ecdsa_sign-finish\r\n");
 exit:
-    th_ecdsa_destroy(p_context);
+    th_ecdsa_destroy(p_context, group);
 }
 
 /**
@@ -85,7 +85,7 @@ ee_ecdsa_verify(ecdh_group_t  group,     // input: see `ecdh_group_t`
 {
     void *p_context; // Generic context if needed by implementation
 
-    if (th_ecdsa_create(&p_context) != EE_STATUS_OK)
+    if (th_ecdsa_create(&p_context, group) != EE_STATUS_OK)
     {
         th_printf("e-ecdsa_verify-[Failed to create context]\r\n");
         return;
@@ -103,7 +103,7 @@ ee_ecdsa_verify(ecdh_group_t  group,     // input: see `ecdh_group_t`
     th_pre();
     while (iterations-- > 0)
     {
-        if (th_ecdsa_verify(p_context, p_hash, hlen, p_sig, slen)
+        if (th_ecdsa_verify(p_context, group, p_hash, hlen, p_sig, slen)
             != EE_STATUS_OK)
         {
             th_post();
@@ -115,5 +115,5 @@ ee_ecdsa_verify(ecdh_group_t  group,     // input: see `ecdh_group_t`
     th_timestamp();
     th_printf("m-ecdsa_verify-finish\r\n");
 exit:
-    th_ecdsa_destroy(p_context);
+    th_ecdsa_destroy(p_context, group);
 }

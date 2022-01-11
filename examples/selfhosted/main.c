@@ -85,6 +85,7 @@ typedef struct
     float               weight;       // equation scaling weight
     uint16_t            actual_crc;   // CRC computed for 1 iter. seed 0
     uint16_t            expected_crc; // Precomputed CRC by EEMBC
+    char *              name;
 } task_entry_t;
 
 /**
@@ -106,28 +107,28 @@ typedef struct
  * Q/d ECC keys will break the CRC.
  */
 // clang-format off
+#define TASK(name, n, w, crc) { name, n, 0.0, (float)w, 0x0, crc, #name },
 static task_entry_t g_task[] =
 {
-    { wrap_aes_ecb_encrypt,  144, 0.0f,  1.0f, 0x0, 0xc7b0 }, /*  0 */
-    { wrap_aes_ecb_encrypt,  224, 0.0f,  1.0f, 0x0, 0x5481 }, /*  1 */
-    { wrap_aes_ecb_encrypt,  320, 0.0f,  1.0f, 0x0, 0x998a }, /*  2 */
-    { wrap_aes_ccm_encrypt,   52, 0.0f,  1.0f, 0x0, 0xd82d }, /*  3 */
-    { wrap_aes_ccm_decrypt,  168, 0.0f,  1.0f, 0x0, 0x005b }, /*  4 */
-    { wrap_ecdh           ,    0, 0.0f,  1.0f, 0x0, 0xb659 }, /*  5 */
-    { wrap_ecdsa_sign     ,    0, 0.0f,  1.0f, 0x0, 0x3a47 }, /*  6 */
-    { wrap_ecdsa_verify   ,    0, 0.0f,  2.0f, 0x0, 0x3a47 }, /*  7 */
-    { wrap_sha256         ,   23, 0.0f,  3.0f, 0x0, 0x2151 }, /*  8 */
-    { wrap_sha256         ,   57, 0.0f,  1.0f, 0x0, 0x3b3c }, /*  9 */
-    { wrap_sha256         ,  384, 0.0f,  1.0f, 0x0, 0x1d3f }, /* 10 */
-    { wrap_variation_001  ,    0, 0.0f,  3.0f, 0x0, 0x0000 }, /* 11 */
-    { wrap_sha256         , 4224, 0.0f,  4.0f, 0x0, 0x9284 }, /* 12 */
-    { wrap_aes_ecb_encrypt, 2048, 0.0f, 10.0f, 0x0, 0x989e }, /* 13 */
+    TASK(wrap_aes_ecb_encrypt      ,  320,  1.0f, 0x998a)
+    TASK(wrap_aes_ccm_encrypt      ,   52,  1.0f, 0xd82d)
+    TASK(wrap_aes_ccm_decrypt      ,  168,  1.0f, 0x005b)
+    TASK(wrap_ecdh                 ,    0,  1.0f, 0xb659)
+    TASK(wrap_ecdsa_sign           ,    0,  1.0f, 0x3a47)
+    TASK(wrap_ecdsa_verify         ,    0,  2.0f, 0x3a47)
+    TASK(wrap_sha256               ,   23,  3.0f, 0x2151)
+    TASK(wrap_sha256               ,   57,  1.0f, 0x3b3c)
+    TASK(wrap_sha256               ,  384,  1.0f, 0x1d3f)
+    TASK(wrap_variation_001        ,    0,  3.0f, 0x0000)
+    TASK(wrap_sha256               , 4224,  4.0f, 0x9284)
+    TASK(wrap_aes_ecb_encrypt      , 2048, 10.0f, 0x989e)
     // TODO: V2 preliminary
-    { wrap_aes_gcm_encrypt,  256, 0.0f,  1.0f, 0x0, 0x325b }, /* 14 */
-    { wrap_aes_gcm_decrypt,  256, 0.0f,  1.0f, 0x0, 0x325b }, /* 15 */
-    { wrap_chachapoly_seal,  256, 0.0f,  1.0f, 0x0, 0xd80d }, /* 16 */
-    { wrap_chachapoly_read,  256, 0.0f,  1.0f, 0x0, 0xd80d }, /* 17 */
-
+    TASK(wrap_aes_gcm_encrypt      ,  256,  1.0f, 0x325b)
+    TASK(wrap_aes_gcm_decrypt      ,  256,  1.0f, 0x325b)
+    TASK(wrap_chachapoly_seal      ,  256,  1.0f, 0xd80d)
+    TASK(wrap_chachapoly_read      ,  256,  1.0f, 0xd80d)
+    TASK(wrap_ecdsa_sign_ed25519   ,    0,  1.0f, 0x209d)
+    TASK(wrap_ecdsa_verify_ed25519 ,    0,  1.0f, 0x209d)
 };
 // clang-format on
 static const size_t g_numtasks = sizeof(g_task) / sizeof(task_entry_t);
@@ -157,8 +158,9 @@ void          ee_srand(unsigned char);
  * This assumes 'char' is always an octet (probably safe for today's MCUs).
  */
 // clang-format off
+
 // Peer public key, 'Q'
-static uint8_t g_ecc_peer_public_key[] =
+static uint8_t g_ecc_peer_public_key_p256r1[] =
 {
 // Q.X
 0x01,0x2a,0x23,0x0e,0xbe,0xfc,0x7e,0x6d,0xc6,0xe2,0x8f,0x4f,0xc3,0xba,0x66,0x0f,
@@ -167,12 +169,36 @@ static uint8_t g_ecc_peer_public_key[] =
 0xfc,0x58,0xaf,0x84,0xac,0xdc,0x46,0xfc,0x05,0xf9,0xba,0x84,0xfb,0x60,0xb7,0xb5,
 0xd8,0x9b,0xb2,0xa6,0x76,0x1f,0xce,0x8e,0x06,0x73,0x28,0x7e,0x6d,0x7b,0xbb,0x46
 };
+
+static uint8_t g_ecc_peer_public_key_c25519[] =
+{
+0x9c,0x30,0xf6,0x8d,0xd5,0xcb,0xba,0x68,0x25,0x92,0x75,0xc7,0x44,0x34,0x1b,0x58,
+0x82,0x34,0x92,0xee,0x50,0x6b,0xba,0xe3,0x18,0x8d,0x75,0x92,0x43,0x2c,0xbb,0x94
+};
+
+static uint8_t *g_ecc_peer_public_keys[] = {
+    g_ecc_peer_public_key_p256r1,
+    g_ecc_peer_public_key_c25519
+};
+
 // Private key, 'd'
-static uint8_t g_ecc_private_key[] =
+static uint8_t g_ecc_private_key_p256r1[] =
 {
 0x6e,0x24,0x26,0x96,0x5f,0x12,0x90,0x18,0xbe,0x06,0xf7,0x09,0x2c,0xdf,0x83,0x22,
 0x33,0x8e,0x3e,0x65,0x74,0x61,0x61,0x03,0x6d,0x61,0x55,0xf9,0xcb,0x14,0x44,0x70
 };
+
+static uint8_t g_ecc_private_key_c25519[] =
+{
+0xe5,0x89,0x42,0xb3,0x27,0xe7,0x57,0x42,0x8b,0xb2,0xd0,0x21,0x4e,0x0a,0x85,0x4e,
+0x8f,0xda,0x6f,0xbf,0x2f,0x4a,0x12,0xb1,0xee,0x47,0x28,0xa1,0xf6,0x36,0x0c,0x2d,
+};
+
+static uint8_t *g_ecc_private_keys[] = {
+    g_ecc_private_key_p256r1,
+    g_ecc_private_key_c25519
+};
+
 // clang-format on
 
 /** TIMESTAMP IMPLEMENTATION **************************************************/
@@ -567,8 +593,8 @@ wrap_ecdh(unsigned int n, unsigned int i)
     uint16_t       crc;
 
     n             = 0; // unused
-    peerPublicXY  = g_ecc_peer_public_key;
-    privkey       = g_ecc_private_key;
+    peerPublicXY  = g_ecc_peer_public_keys[EE_P256R1];
+    privkey       = g_ecc_private_keys[EE_P256R1];
     g_verify_mode = false;
     ee_ecdh(peerPublicXY,
             EE_P256R1,
@@ -586,7 +612,7 @@ wrap_ecdh(unsigned int n, unsigned int i)
 }
 
 uint16_t
-wrap_ecdsa_sign(unsigned int n, unsigned int i)
+wrap_ecdsa_sign_base(ecdh_group_t group, unsigned int n, unsigned int i)
 {
     n = 0; // unused
     /**
@@ -613,10 +639,9 @@ wrap_ecdsa_sign(unsigned int n, unsigned int i)
     sig  = (unsigned char *)th_malloc(slen);
     assert(sig != NULL);
     memset(sig, 0x0, slen);
-    privkey       = g_ecc_private_key;
+    privkey       = g_ecc_private_keys[group];
     g_verify_mode = false;
-    ee_ecdsa_sign(
-        EE_P256R1, hash, HMAC_SIZE, sig, &slen, privkey, ECC_DSIZE, i);
+    ee_ecdsa_sign(group, hash, HMAC_SIZE, sig, &slen, privkey, ECC_DSIZE, i);
     for (crc = 0, x = 0; x < slen; ++x)
     {
         crc = crcu16(crc, (uint8_t)sig[x]);
@@ -626,7 +651,7 @@ wrap_ecdsa_sign(unsigned int n, unsigned int i)
 }
 
 uint16_t
-wrap_ecdsa_verify(unsigned int n, unsigned int i)
+wrap_ecdsa_verify_base(ecdh_group_t group, unsigned int n, unsigned int i)
 {
     /**
      * ECDSA Sign & Verify a hash
@@ -654,22 +679,44 @@ wrap_ecdsa_verify(unsigned int n, unsigned int i)
     sig  = (unsigned char *)th_malloc(slen);
     assert(sig != NULL);
     memset(sig, 0x0, slen);
-    privkey = g_ecc_private_key;
+    privkey = g_ecc_private_keys[group];
     // Do NOT record timestamps during encrypt! (see th_timestamp())
     g_verify_mode = true;
     // Only need one iteration to create the signature; save time!
-    ee_ecdsa_sign(
-        EE_P256R1, hash, HMAC_SIZE, sig, &slen, privkey, ECC_DSIZE, 1);
+    ee_ecdsa_sign(group, hash, HMAC_SIZE, sig, &slen, privkey, ECC_DSIZE, 1);
     // Turn on recording timestamps
     g_verify_mode = false;
-    ee_ecdsa_verify(
-        EE_P256R1, hash, HMAC_SIZE, sig, slen, privkey, ECC_DSIZE, i);
+    ee_ecdsa_verify(group, hash, HMAC_SIZE, sig, slen, privkey, ECC_DSIZE, i);
     for (crc = 0, x = 0; x < slen; ++x)
     {
         crc = crcu16(crc, (uint8_t)sig[x]);
     }
     th_free(sig);
     return crc;
+}
+
+uint16_t
+wrap_ecdsa_sign(unsigned int n, unsigned int i)
+{
+    return wrap_ecdsa_sign_base(EE_P256R1, n, i);
+}
+
+uint16_t
+wrap_ecdsa_verify(unsigned int n, unsigned int i)
+{
+    return wrap_ecdsa_verify_base(EE_P256R1, n, i);
+}
+
+uint16_t
+wrap_ecdsa_sign_ed25519(unsigned int n, unsigned int i)
+{
+    return wrap_ecdsa_sign_base(EE_C25519, n, i);
+}
+
+uint16_t
+wrap_ecdsa_verify_ed25519(unsigned int n, unsigned int i)
+{
+    return wrap_ecdsa_verify_base(EE_C25519, n, i);
 }
 
 uint16_t
@@ -793,8 +840,8 @@ wrap_ecdh_ed25519(unsigned int n, unsigned int i)
     uint16_t       crc;
 
     n             = 0; // unused
-    peerPublicXY  = g_ecc_peer_public_key;
-    privkey       = g_ecc_private_key;
+    peerPublicXY  = g_ecc_peer_public_keys[1];
+    privkey       = g_ecc_private_keys[1];
     g_verify_mode = false;
     ee_ecdh(peerPublicXY,
             EE_C25519,
@@ -988,8 +1035,9 @@ main(void)
          */
         component_score = g_task[i].weight / g_task[i].ips;
         score += component_score;
-        printf("Component #%02zu ips=%15.3f crc=0x%04x expected_crc=0x%04x",
-               i,
+        printf("Component #%02ld: %25s ips=%15.3f crc=0x%04x expected=0x%04x",
+               i + 1,
+               g_task[i].name,
                g_task[i].ips,
                g_task[i].actual_crc,
                g_task[i].expected_crc);

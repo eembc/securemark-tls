@@ -17,12 +17,6 @@ a set of wrapper functions in `main.c` prepare the primitives for local
 execution. Keys, plaintext, and ciphertext are all generated randomly with
 `ee_srand()` which is seeded with zero for each primitive invocation.
 
-Since this firmware is designed to be run from the Host GUI runner, the `ee_*`
-functions to return a status value. Instead they print an error message `e-`
-which causes the GUI to abort. The `EE_CFG_QUIET` variable turns of `th_printf`,
-effectively disabling error messages. If you are experience problems, it might
-help to disable `EE_CFG_QUIET` in the cmake file and recompile.
-
 The `th_timestamp` function is implemented with the POSIX `clock_gettime`
 function, which reports elapsed time down to nanoseconds (if supported). If
 your compiler does not support this function, edit the `th_timestamp` function
@@ -43,6 +37,15 @@ This is to help verify the primitive SDK implementation is was done correctly.
 
 # Compile and run
 
+The `cmake` list file will build one of three options, depending on the following
+variables:
+
+`SELFHOSTED` - Builds a reference mbedTLS executable (mbedTLS source included)
+`WOLFSSL` - Builds a reference wolfSSL executable (wolfSSL must be installed)
+default - Compiles and builds a library with the un-implemented functions
+
+## Default `SELFHOSTED`: mbedTLS (2.4.2)
+
 This example uses `cmake`. The option `SELFHOSTED` enables the `EE_CFG_SELFHOSTED`
 flag in the code, and links in the local `profile/th_api` implementation (as
 well as `main.c`).
@@ -50,10 +53,8 @@ well as `main.c`).
 ```
 % mkdir build
 % cd build
-% cmake -DSELFHOSTED=1 -DMBEDTLS=1|-DWOLFSSL=1..
+% cmake -DSELFHOSTED=1 ..
 % make
-:
-:
 % ./sec-tls
 Running each primitive for at least 1s or 10 iterations.
 Component #00 ips=    1286609.125 crc=0xc7b0 expected_crc=0xc7b0
@@ -75,7 +76,32 @@ SecureMark-TLS Score is 112677.812 marks
 ```
 
 To compile the SecureMark-TLS benchmark on Windows using Visual Studio open 
-the Visual Studio project file at `visualc/sec-tls/sec-tls.vcxproj`. 
+the Visual Studio project file at `visualc/sec-tls/sec-tls.vcxproj`.
+
+## `WOLFSSL` self-hosted
+
+To build with using wolfSSL for crypto (https://github.com/wolfssl/wolfssl)
+install wolfSSL version 4.8.0 or later on the system. On the host a good configure option to use when
+building wolfSSL is:
+
+```Bash
+% ./autogen.sh
+% ./configure CFLAGS="-DWOLFSSL_AES_DIRECT -DHAVE_AES_ECB -DWOLFSSL_ECDSA_DETERMINISTIC_K" \
+              --enable-ecc --enable-keygen --enable-aesccm --enable-sp --enable-sp-asm \
+              --enable-eccencrypt --enable-curve25519 --enable-ed25519
+% make
+% sudo make install
+```
+
+Then run `cmake` for SecureMark from this `examples/selfhosted` directory, and execute the benchmark:
+
+```Bash
+% mkdir build
+% cd build
+% cmake -DWOLFSSL=1 ..
+% make
+% ./sec-tls
+```
 
 # Scoring
 
@@ -84,6 +110,4 @@ generate an official score, the host software must be used to verify operation
 of the benchmark (to discourage cheating). Please contact 
 [support@eembc.org](mailto:support@eembc.org) for information on how to license the host
 software.
-
-
 
