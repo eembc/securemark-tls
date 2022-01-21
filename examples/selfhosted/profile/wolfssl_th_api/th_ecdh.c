@@ -74,62 +74,6 @@ th_ecdh_create(void **p_context // output: portable context
 }
 
 /**
- * Load a 64-byte public key from a peer, big-endian; confim is on curve
- *
- * return EE_STATUS_OK on success.
- */
-ee_status_t
-load_public_peer_key(void *         p_context,
-                     unsigned char *p_pub, /* raw X | Y */
-                     size_t         publen)
-{
-    int           ret;
-    unsigned char uncompressed[65];
-
-    uncompressed[0] = 0x04;
-    th_memcpy(&(uncompressed[1]), p_pub, publen);
-
-    ret = wc_ecc_import_x963(
-        uncompressed, publen + 1, ((ecc_context *)p_context)->key);
-    if (ret != 0)
-    {
-        th_printf("e-[import EC key failed : -0x%04x]\r\n", -ret);
-        return EE_STATUS_ERROR;
-    }
-    return EE_STATUS_OK;
-}
-
-/**
- * Load private & populate ecdh->Q public point
- */
-ee_status_t
-load_private_key(void *p_context, unsigned char *p_private, size_t prilen)
-{
-    int ret;
-
-    ret = wc_ecc_import_private_key(
-        p_private, prilen, NULL, 0, ((ecc_context *)p_context)->key);
-    if (ret != 0)
-    {
-        th_printf("e-[error loading private key : -0x%04x]\r\n", -ret);
-        return EE_STATUS_ERROR;
-    }
-
-    // compute the public key from the provided secret
-    ret = wc_ecc_make_pub(((ecc_context *)p_context)->key, NULL);
-    if (ret != 0)
-    {
-        th_printf(
-            "e-[error generating public EC key from private :"
-            " -0x%04x]\r\n",
-            -ret);
-        return EE_STATUS_ERROR;
-    }
-
-    return EE_STATUS_OK;
-}
-
-/**
  * Initialize to a group (must be in the EE_ enum)
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
@@ -151,11 +95,6 @@ th_ecdh_init(void *         p_context, // input: portable context
     {
         case EE_P256R1:
             curveId = ECC_SECP256R1;
-            break;
-        default:
-            th_printf("e-[Invalid ECC curve in th_ecdh_init]\r\n");
-            return EE_STATUS_ERROR;
-    }
 
     uncompressed[0] = 0x04;
     th_memcpy(&(uncompressed[1]), p_public, publen);
@@ -170,6 +109,29 @@ th_ecdh_init(void *         p_context, // input: portable context
                                        publen + 1,
                                        ((ecc_context *)p_context)->key,
                                        curveId);
+            break;
+        case EE_C25519:
+            curveId = ECC_X25519;
+
+    uncompressed[0] = 0x04;
+            publen = 32;
+    th_memcpy(&(uncompressed[1]), p_public, publen);
+
+#ifdef WOLFSSL_VALIDATE_ECC_IMPORT
+#error undifne WOLFSSL_VALIDATE_ECC_IMPORT to set up missmatch private ours public peers
+#endif
+
+    ret = wc_ecc_import_private_key_ex(p_private,
+                                       prilen,
+                                       uncompressed,
+                                       publen + 1,
+                                       ((ecc_context *)p_context)->key,
+                                       curveId);
+            break;
+        default:
+            th_printf("e-[Invalid ECC curve in th_ecdh_init]\r\n");
+            return EE_STATUS_ERROR;
+    }
     if (ret != 0)
     {
         th_printf("e-[loading group key failed : -0x%04x]\r\n", -ret);

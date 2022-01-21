@@ -110,10 +110,13 @@ typedef struct
 #define TASK(name, n, w, crc) { name, n, 0.0, (float)w, 0x0, crc, #name },
 static task_entry_t g_task[] =
 {
+    TASK(wrap_ecdsa_verify         ,    0,  2.0f, 0x3a47)
+    /*
     TASK(wrap_aes_ecb_encrypt      ,  320,  1.0f, 0x998a)
     TASK(wrap_aes_ccm_encrypt      ,   52,  1.0f, 0xd82d)
     TASK(wrap_aes_ccm_decrypt      ,  168,  1.0f, 0x005b)
     TASK(wrap_ecdh                 ,    0,  1.0f, 0xb659)
+    TASK(wrap_ecdh_ed25519         ,    0,  1.0f, 0xb659)
     TASK(wrap_ecdsa_sign           ,    0,  1.0f, 0x3a47)
     TASK(wrap_ecdsa_verify         ,    0,  2.0f, 0x3a47)
     TASK(wrap_sha256               ,   23,  3.0f, 0x2151)
@@ -129,6 +132,7 @@ static task_entry_t g_task[] =
     TASK(wrap_chachapoly_read      ,  256,  1.0f, 0xd80d)
     TASK(wrap_ecdsa_sign_ed25519   ,    0,  1.0f, 0x209d)
     TASK(wrap_ecdsa_verify_ed25519 ,    0,  1.0f, 0x209d)
+    */
 };
 // clang-format on
 static const size_t g_numtasks = sizeof(g_task) / sizeof(task_entry_t);
@@ -593,8 +597,8 @@ wrap_ecdh(unsigned int n, unsigned int i)
     uint16_t       crc;
 
     n             = 0; // unused
-    peerPublicXY  = g_ecc_peer_public_keys[EE_P256R1];
-    privkey       = g_ecc_private_keys[EE_P256R1];
+    peerPublicXY  = g_ecc_peer_public_keys[0];
+    privkey       = g_ecc_private_keys[0];
     g_verify_mode = false;
     ee_ecdh(peerPublicXY,
             EE_P256R1,
@@ -611,6 +615,33 @@ wrap_ecdh(unsigned int n, unsigned int i)
     return crc;
 }
 
+uint16_t
+wrap_ecdh_ed25519(unsigned int n, unsigned int i)
+{
+    unsigned char *peerPublicXY;
+    unsigned char *privkey;
+    unsigned char  shared[ECC_DSIZE];
+    unsigned int   x;
+    uint16_t       crc;
+
+    n             = 0; // unused
+    peerPublicXY  = g_ecc_peer_public_keys[1];
+    privkey       = g_ecc_private_keys[1];
+    g_verify_mode = false;
+    ee_ecdh(peerPublicXY,
+            EE_C25519,
+            ECC_QSIZE,
+            privkey,
+            ECC_DSIZE,
+            shared,
+            ECC_DSIZE,
+            i);
+    for (crc = 0, x = 0; x < ECC_DSIZE; ++x)
+    {
+        crc = crcu16(crc, (uint8_t)shared[x]);
+    }
+    return crc;
+}
 uint16_t
 wrap_ecdsa_sign_base(ecdh_group_t group, unsigned int n, unsigned int i)
 {
@@ -686,7 +717,7 @@ wrap_ecdsa_verify_base(ecdh_group_t group, unsigned int n, unsigned int i)
     ee_ecdsa_sign(group, hash, HMAC_SIZE, sig, &slen, privkey, ECC_DSIZE, 1);
     // Turn on recording timestamps
     g_verify_mode = false;
-    ee_ecdsa_verify(group, hash, HMAC_SIZE, sig, slen, privkey, ECC_DSIZE, i);
+    ee_ecdsa_verify(group, hash, HMAC_SIZE, sig, slen, g_ecc_peer_public_keys[group], ECC_DSIZE, i);
     for (crc = 0, x = 0; x < slen; ++x)
     {
         crc = crcu16(crc, (uint8_t)sig[x]);
@@ -830,33 +861,6 @@ wrap_aes_gcm_decrypt(unsigned int n, unsigned int i)
     return crc;
 }
 
-uint16_t
-wrap_ecdh_ed25519(unsigned int n, unsigned int i)
-{
-    unsigned char *peerPublicXY;
-    unsigned char *privkey;
-    unsigned char  shared[ECC_DSIZE];
-    unsigned int   x;
-    uint16_t       crc;
-
-    n             = 0; // unused
-    peerPublicXY  = g_ecc_peer_public_keys[1];
-    privkey       = g_ecc_private_keys[1];
-    g_verify_mode = false;
-    ee_ecdh(peerPublicXY,
-            EE_C25519,
-            ECC_QSIZE,
-            privkey,
-            ECC_DSIZE,
-            shared,
-            ECC_DSIZE,
-            i);
-    for (crc = 0, x = 0; x < ECC_DSIZE; ++x)
-    {
-        crc = crcu16(crc, (uint8_t)shared[x]);
-    }
-    return crc;
-}
 
 uint16_t
 wrap_chachapoly_seal(unsigned int n, unsigned int i)
@@ -1015,8 +1019,8 @@ main(void)
     for (i = 0; i < g_numtasks; ++i)
     {
         // First, compute the correct # of iterations for each primitive
-        iterations = tune_iterations(g_task[i].n, g_task[i].func);
-        // iterations = 1;
+        //iterations = tune_iterations(g_task[i].n, g_task[i].func);
+        iterations = 1;
         // Compute a CRC from a single iteration, also warm up the test
         ee_srand(0); // CRCs are computed with seed 0
         g_task[i].actual_crc = (*g_task[i].func)(g_task[i].n, 1);
