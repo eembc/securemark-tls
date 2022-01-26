@@ -32,7 +32,7 @@ ee_ecdh(uint8_t *     p_public, // input: peer public key, from host
 {
     void *p_context; // Generic context if needed by implementation
 
-    if (th_ecdh_create(&p_context) != EE_STATUS_OK)
+    if (th_ecdh_create(&p_context, group) != EE_STATUS_OK)
     {
         th_printf("e-ecdh-[Failed to create context]\r\n");
         return;
@@ -50,7 +50,7 @@ ee_ecdh(uint8_t *     p_public, // input: peer public key, from host
     th_pre();
     while (iterations-- > 0)
     {
-        if (th_ecdh_calc_secret(p_context, p_secret, seclen) != EE_STATUS_OK)
+        if (th_ecdh_calc_secret(p_context, group, p_secret, seclen) != EE_STATUS_OK)
         {
             th_post();
             th_printf("e-ecdh-[Failed to compute shared secret]\r\n");

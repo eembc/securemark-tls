@@ -170,11 +170,11 @@ ee_printmem_be(uint8_t *p_addr, uint_fast32_t len, char *p_user_header)
         b = p_addr[i];
         if (b <= 0xf)
         {
-            th_printf("0%x", b);
+            th_printf("%02x", (uint8_t)b);
         }
         else
         {
-            th_printf("%x", b);
+            th_printf("%02x", (uint8_t)b);
         }
     }
     th_printf("\r\n");

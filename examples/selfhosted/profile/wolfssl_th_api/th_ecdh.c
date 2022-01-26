@@ -12,6 +12,7 @@
 
 #include <wolfssl/options.h>
 #include <wolfssl/wolfcrypt/ecc.h>
+#include <wolfssl/wolfcrypt/curve25519.h>
 
 /* can be set for static memory use */
 #define HEAP_HINT NULL
@@ -21,9 +22,14 @@
 
 #include "ee_ecdh.h"
 
+#define FREE(x) if (NULL != x) th_free(x)
+
 typedef struct ecc_context
 {
-    ecc_key *key;
+    ecc_key * ecc_key_pri;
+    ecc_key * ecc_key_pub;
+    curve25519_key * x255_key_pri;
+    curve25519_key * x255_key_pub;
     WC_RNG * rng;
 } ecc_context;
 
@@ -33,44 +39,59 @@ typedef struct ecc_context
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_ecdh_create(void **p_context // output: portable context
+th_ecdh_create(
+    void    **p_context, // output: portable context
+    ecdh_group_t   group // input: curve group
 )
 {
-    WC_RNG *     rng;
-    ecc_key *    key;
-    ecc_context *ctx;
-
-    key = (ecc_key *)th_malloc(sizeof(ecc_key));
-    if (key == NULL)
-    {
-        th_printf("e-[malloc() fail in th_ecdh_create\r\n");
-        return EE_STATUS_ERROR;
-    }
-
-    rng = (WC_RNG *)th_malloc(sizeof(WC_RNG));
-    if (rng == NULL)
-    {
-        th_free(key);
-        th_printf("e-[malloc() fail in th_ecdh_create\r\n");
-        return EE_STATUS_ERROR;
-    }
+    ecc_context *ctx = NULL;
 
     ctx = (ecc_context *)th_malloc(sizeof(ecc_context));
-    if (key == NULL)
-    {
-        th_free(key);
-        th_free(rng);
-        th_printf("e-[malloc() fail in th_ecdh_create\r\n");
-        return EE_STATUS_ERROR;
+    if (NULL == ctx) goto error;
+
+    th_memset(ctx, 0, sizeof(ecc_context));
+
+    switch (group) {
+        case EE_P256R1:
+            ctx->ecc_key_pri = (ecc_key *)th_malloc(sizeof(ecc_key));
+            if (NULL == ctx->ecc_key_pri) {
+                goto error;
+            }
+            wc_ecc_init_ex(ctx->ecc_key_pri, HEAP_HINT, DEVID);
+            break;
+        case EE_C25519:
+            ctx->x255_key_pri = (curve25519_key *)th_malloc(sizeof(curve25519_key));
+            if (NULL == ctx->x255_key_pri) {
+                goto error;
+            }
+            wc_curve25519_init(ctx->x255_key_pri);
+            ctx->x255_key_pub = (curve25519_key *)th_malloc(sizeof(curve25519_key));
+            if (NULL == ctx->x255_key_pub) {
+                goto error;
+            }
+            wc_curve25519_init(ctx->x255_key_pub);
+            break;
+        default:
+            th_printf("e-[Invalid curve in th_ecdh_init]\r\n");
+            return EE_STATUS_ERROR;
     }
 
-    ctx->key = key;
-    ctx->rng = rng;
+    ctx->rng = (WC_RNG *)th_malloc(sizeof(WC_RNG));
+    if (NULL == ctx->rng) goto error;
+    wc_InitRng_ex(ctx->rng, HEAP_HINT, DEVID);
 
-    wc_ecc_init_ex(key, HEAP_HINT, DEVID);
-    wc_InitRng_ex(rng, HEAP_HINT, DEVID);
     *p_context = (void *)ctx;
     return EE_STATUS_OK;
+
+error:
+    FREE(ctx->ecc_key_pri);
+    FREE(ctx->ecc_key_pub);
+    FREE(ctx->x255_key_pri);
+    FREE(ctx->x255_key_pub);
+    FREE(ctx->rng);
+    FREE(ctx);
+    th_printf("e-[Malloc error in th_ecdh_init\r\n");
+    return EE_STATUS_ERROR;
 }
 
 /**
@@ -87,61 +108,68 @@ th_ecdh_init(void *         p_context, // input: portable context
              unsigned int   publen     // input: peer public key length in bytes
 )
 {
-    int           curveId;
     int           ret;
     unsigned char uncompressed[65];
+    ecc_context *ctx = (ecc_context *)p_context;
+
+#ifdef WOLFSSL_VALIDATE_ECC_IMPORT
+#error undifne WOLFSSL_VALIDATE_ECC_IMPORT to set up missmatch private ours public peers
+#endif
 
     switch (group)
     {
         case EE_P256R1:
-            curveId = ECC_SECP256R1;
-
-    uncompressed[0] = 0x04;
-    th_memcpy(&(uncompressed[1]), p_public, publen);
-
-#ifdef WOLFSSL_VALIDATE_ECC_IMPORT
-#error undifne WOLFSSL_VALIDATE_ECC_IMPORT to set up missmatch private ours public peers
+            uncompressed[0] = 0x04;
+            th_memcpy(&(uncompressed[1]), p_public, publen);
+            ret = wc_ecc_import_private_key_ex(p_private,
+                                            prilen,
+                                            uncompressed,
+                                            publen + 1,
+                                            ctx->ecc_key_pri,
+                                            ECC_SECP256R1);
+            if (ret != 0)
+            {
+                th_printf("e-[wc_ecc_import_private_key_ex: -%d]\r\n", -ret);
+                return EE_STATUS_ERROR;
+            }
+#ifdef ECC_TIMING_RESISTANT
+            wc_ecc_set_rng(ctx->ecc_key_pri, ctx->rng);
 #endif
-
-    ret = wc_ecc_import_private_key_ex(p_private,
-                                       prilen,
-                                       uncompressed,
-                                       publen + 1,
-                                       ((ecc_context *)p_context)->key,
-                                       curveId);
             break;
         case EE_C25519:
-            curveId = ECC_X25519;
-
-    uncompressed[0] = 0x04;
-            publen = 32;
-    th_memcpy(&(uncompressed[1]), p_public, publen);
-
-#ifdef WOLFSSL_VALIDATE_ECC_IMPORT
-#error undifne WOLFSSL_VALIDATE_ECC_IMPORT to set up missmatch private ours public peers
-#endif
-
-    ret = wc_ecc_import_private_key_ex(p_private,
-                                       prilen,
-                                       uncompressed,
-                                       publen + 1,
-                                       ((ecc_context *)p_context)->key,
-                                       curveId);
+            ret = wc_curve25519_import_private(
+                p_private,
+                prilen,
+                ctx->x255_key_pri);
+            if (ret != 0)
+            {
+                th_printf("e-[wc_curve25519_import_private: -%d]\r\n", -ret);
+                return EE_STATUS_ERROR;
+            }
+            th_memcpy(uncompressed, p_public, publen);
+            // RFC7748 Section 5
+            uncompressed[0] &= 127;
+            ret = wc_curve25519_check_public(uncompressed, publen, EC25519_BIG_ENDIAN);
+            if (ret != 0)
+            {
+                th_printf("e-[wc_curve25519_check_public: -%d]\r\n", -ret);
+                return EE_STATUS_ERROR;
+            }
+            ret = wc_curve25519_import_public(
+                uncompressed,
+                publen,
+                ctx->x255_key_pub);
+            if (ret != 0)
+            {
+                th_printf("e-[wc_curve25519_import_public: -%d]\r\n", -ret);
+                return EE_STATUS_ERROR;
+            }
             break;
         default:
-            th_printf("e-[Invalid ECC curve in th_ecdh_init]\r\n");
+            th_printf("e-[Invalid curve in th_ecdh_init]\r\n");
             return EE_STATUS_ERROR;
     }
-    if (ret != 0)
-    {
-        th_printf("e-[loading group key failed : -0x%04x]\r\n", -ret);
-        return EE_STATUS_ERROR;
-    }
 
-#ifdef ECC_TIMING_RESISTANT
-    wc_ecc_set_rng(((ecc_context *)p_context)->key,
-                   ((ecc_context *)p_context)->rng);
-#endif
     return EE_STATUS_OK;
 }
 
@@ -152,25 +180,37 @@ th_ecdh_init(void *         p_context, // input: portable context
  */
 ee_status_t
 th_ecdh_calc_secret(void *         p_context, // input: portable context
+                    ecdh_group_t group, // input: curve group
                     unsigned char *p_secret,  // output: shared secret
                     unsigned int slen // input: length of shared buffer in bytes
 )
 {
-    ecc_key *key;
     int      ret;
     word32   olen = slen;
+    ecc_context *ctx = (ecc_context *)p_context;
 
-    key = ((ecc_context *)p_context)->key;
-    if (slen != wc_ecc_size(key))
-    {
-        th_printf("e-[Secret buffer wrong size %u ]\r\n", slen);
-        return EE_STATUS_ERROR;
+    switch (group) {
+        case EE_P256R1:
+            ret = wc_ecc_shared_secret(
+                ctx->ecc_key_pri,
+                ctx->ecc_key_pri,
+                p_secret,
+                &olen);
+            break;
+        case EE_C25519:
+            ret = wc_curve25519_shared_secret(
+                ctx->x255_key_pri,
+                ctx->x255_key_pub,
+                p_secret,
+                &olen);
+            break;
+        default:
+            th_printf("e-[Invalid curve in th_ecdh_calc_secret]\r\n");
+            return EE_STATUS_ERROR;
     }
-
-    ret = wc_ecc_shared_secret(key, key, p_secret, &olen);
     if (ret != 0)
     {
-        th_printf("e-[wc_ecc_shared_secret: -0x%04x]\r\n", -ret);
+        th_printf("e-[wc_*_shared_secret: -%d]\r\n", -ret);
         return EE_STATUS_ERROR;
     }
     return EE_STATUS_OK;
@@ -186,10 +226,16 @@ th_ecdh_destroy(void *p_context // input: portable context
     if (p_context != NULL)
     {
         ecc_context *ctx = (ecc_context *)p_context;
-        wc_ecc_free(ctx->key);
-        wc_FreeRng(ctx->rng);
-        th_free(ctx->key);
-        th_free(ctx->rng);
-        th_free(p_context);
+        if (ctx->rng) wc_FreeRng(ctx->rng);
+        if (ctx->ecc_key_pri) wc_ecc_free(ctx->ecc_key_pri);
+        if (ctx->ecc_key_pub) wc_ecc_free(ctx->ecc_key_pub);
+        if (ctx->x255_key_pri) wc_curve25519_free(ctx->x255_key_pri);
+        if (ctx->x255_key_pub) wc_curve25519_free(ctx->x255_key_pub);
+        FREE(ctx->ecc_key_pri);
+        FREE(ctx->ecc_key_pub);
+        FREE(ctx->x255_key_pri);
+        FREE(ctx->x255_key_pub);
+        FREE(ctx->rng);
+        FREE(ctx);
     }
 }

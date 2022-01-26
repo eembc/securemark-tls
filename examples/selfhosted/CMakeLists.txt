@@ -164,7 +164,7 @@ if (SELFHOSTED)
 		message("WOLFSSL_LIB = ${WOLFSSL_LIB}")
 
 		add_definitions(-DEE_CFG_SELFHOSTED=1)
-		add_definitions(-DEE_CFG_QUIET=1)
+		#add_definitions(-DEE_CFG_QUIET=1)
 		add_executable(sec-tls ${SOURCE})
 	else()
 		message(FATAL_ERROR "Specify -DMBEDTLS=1 or -DWOLFSSL=1 when self-hosting")
