@@ -111,16 +111,11 @@ ee_printmem(uint8_t *addr, uint_fast32_t len, char *user_header)
 
     for (i = 0; i < len; ++i)
     {
-        // Some libc printf's don't provide padding, e.g., %02x
+        // Some libc printf's don't provide padding, e.g., %02x, and force 1
+        // nibble on libcs that default to two.
         b = addr[i];
-        if (b <= 0xf)
-        {
-            th_printf("0%x", b);
-        }
-        else
-        {
-            th_printf("%x", b);
-        }
+        th_printf("%1x%1x", (b & 0xF0) >> 4, b & 0xf);
+
         if ((i + 1) % 16 == 0)
         {
             th_printf("\r\n");
@@ -144,10 +139,10 @@ ee_printmem(uint8_t *addr, uint_fast32_t len, char *user_header)
 /**
  * Printing utility #2
  *
- * Prints out memory as one line in big-endian hex bytes starting with 0x
+ * Prints out hex bytes [0..len] starting with 0x
  */
 void
-ee_printmem_be(uint8_t *p_addr, uint_fast32_t len, char *p_user_header)
+ee_printmem_hex(uint8_t *p_addr, uint_fast32_t len, char *p_user_header)
 {
     uint_fast32_t i;
     char *        p_header;
@@ -166,16 +161,10 @@ ee_printmem_be(uint8_t *p_addr, uint_fast32_t len, char *p_user_header)
     th_printf("0x");
     for (i = 0; i < len; ++i)
     {
-        // Some libc printf's don't provide padding, e.g., %02x
+        // Some libc printf's don't provide padding, e.g., %02x, and force 1
+        // nibble on libcs that default to two.
         b = p_addr[i];
-        if (b <= 0xf)
-        {
-            th_printf("%02x", (uint8_t)b);
-        }
-        else
-        {
-            th_printf("%02x", (uint8_t)b);
-        }
+        th_printf("%1x%1x", (b & 0xF0) >> 4, b & 0xf);
     }
     th_printf("\r\n");
 }

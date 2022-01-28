@@ -26,7 +26,7 @@ void ee_srand(uint8_t seed);
 uint8_t ee_rand(void);
 // Memory printer utility #1: standard hex bytes
 void ee_printmem(uint8_t *addr, uint_fast32_t len, char *user_header);
-// Memory printer utility #2: standard arbitrary-length big-endian
-void ee_printmem_be(uint8_t *p_addr, uint_fast32_t len, char *p_user_header);
+// Memory printer utility #2: standard arbitrary-length
+void ee_printmem_hex(uint8_t *p_addr, uint_fast32_t len, char *p_user_header);
 
 #endif /* _EE_UTIL_H */
