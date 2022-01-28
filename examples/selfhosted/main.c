@@ -35,7 +35,7 @@
 #include "ee_variations.h"
 
 #include <inttypes.h>
-void ee_printmem_be(uint8_t *p_addr, uint_fast32_t len, char *p_user_header);
+void ee_printmem_hex(uint8_t *p_addr, uint_fast32_t len, char *p_user_header);
 // There are several POSIX assumptions in this implementation.
 #if (__linux__ || __APPLE__)
 #include <time.h>
@@ -110,13 +110,11 @@ typedef struct
 #define TASK(name, n, w, crc) { name, n, 0.0, (float)w, 0x0, crc, #name },
 static task_entry_t g_task[] =
 {
-    TASK(wrap_ecdh_ed25519         ,    0,  1.0f, 0xb659)
     /*
     TASK(wrap_aes_ecb_encrypt      ,  320,  1.0f, 0x998a)
     TASK(wrap_aes_ccm_encrypt      ,   52,  1.0f, 0xd82d)
     TASK(wrap_aes_ccm_decrypt      ,  168,  1.0f, 0x005b)
-    TASK(wrap_ecdh                 ,    0,  1.0f, 0xb659)
-    TASK(wrap_ecdh_ed25519         ,    0,  1.0f, 0xb659)
+    TASK(wrap_ecdh                 ,    0,  1.0f, 0x7531)
     TASK(wrap_ecdsa_sign           ,    0,  1.0f, 0x3a47)
     TASK(wrap_ecdsa_verify         ,    0,  2.0f, 0x3a47)
     TASK(wrap_sha256               ,   23,  3.0f, 0x2151)
@@ -130,6 +128,7 @@ static task_entry_t g_task[] =
     TASK(wrap_aes_gcm_decrypt      ,  256,  1.0f, 0x325b)
     TASK(wrap_chachapoly_seal      ,  256,  1.0f, 0xd80d)
     TASK(wrap_chachapoly_read      ,  256,  1.0f, 0xd80d)
+    TASK(wrap_ecdh_ed25519         ,    0,  1.0f, 0x7bdc)
     TASK(wrap_ecdsa_sign_ed25519   ,    0,  1.0f, 0x209d)
     TASK(wrap_ecdsa_verify_ed25519 ,    0,  1.0f, 0x209d)
     */
@@ -175,27 +174,15 @@ static uint8_t g_ecc_peer_public_key_p256r1[] =
 static uint8_t g_ecc_peer_public_key_c25519[] =
 {
 // Taken from RFC7748 Section 6.1
+// LITTLE-ENDIAN
 0xde,0x9e,0xdb,0x7d,0x7b,0x7d,0xc1,0xb4,0xd3,0x5b,0x61,0xc2,0xec,0xe4,0x35,0x37,
 0x3f,0x83,0x43,0xc8,0x5b,0x78,0x67,0x4d,0xad,0xfc,0x7e,0x14,0x6f,0x88,0x2b,0x4f,
 /* Associated private key
+// LITTLE-ENDIAN
 0x5d,0xab,0x08,0x7e,0x62,0x4a,0x8a,0x4b,0x79,0xe1,0x7f,0x8b,0x83,0x80,0x0e,0xe6,
 0x6f,0x3b,0xb1,0x29,0x26,0x18,0xb6,0xfd,0x1c,0x2f,0x8b,0x27,0xff,0x88,0xe0,0xeb,
 */
 };
-
-/*
-0x4c,0x12,0x26,0xfe,0xac,0xe0,0xd8,0x8b,0xe0,0xe2,0x2c,0xb3,0x82,0x8f,0x99,0x35,
-0x01,0x5b,0xa9,0x39,0x21,0x81,0xf5,0x61,0x26,0x2c,0xb9,0x52,0x55,0x53,0xc1,0x98,
-
-*/
-
-/*
-0xc4,0x8e,0x2e,0x35,0x88,0xa7,0x2e,0xd9,0xb8,0x68,0x76,0x1f,0xf3,0x98,0x14,0x33,
-0x44,0xca,0x2d,0xb4,0x32,0x5f,0x2a,0xfe,0x05,0x3d,0xc8,0x96,0xc7,0x74,0x83,0xcf,
-// Associated private key
-0x36,0x9b,0xd7,0x54,0xcd,0x57,0x51,0xd0,0x06,0x7e,0x5d,0xd2,0x33,0x50,0xdc,0x9b,
-0xd6,0x01,0x3d,0x79,0x30,0x4f,0xf8,0x6c,0x56,0x67,0xcf,0x17,0xa5,0x12,0xd8,0x05,
-*/
 
 static uint8_t *g_ecc_peer_public_keys[] = {
     g_ecc_peer_public_key_p256r1,
@@ -218,9 +205,11 @@ static uint8_t g_ecc_private_key_p256r1[] =
 static uint8_t g_ecc_private_key_c25519[] =
 {
 // Taken from RFC7748 Section 6.1
+// LITTLE-ENDIAN
 0x77,0x07,0x6d,0x0a,0x73,0x18,0xa5,0x7d,0x3c,0x16,0xc1,0x72,0x51,0xb2,0x66,0x45,
 0xdf,0x4c,0x2f,0x87,0xeb,0xc0,0x99,0x2a,0xb1,0x77,0xfb,0xa5,0x1d,0xb9,0x2c,0x2a,
 /* Associated public key
+// LITTLE-ENDIAN
 0x85,0x20,0xf0,0x09,0x89,0x30,0xa7,0x54,0x74,0x8b,0x7d,0xdc,0xb4,0x3e,0xf7,0x5a,
 0x0d,0xbf,0x3a,0x0d,0x26,0x38,0x1a,0xf4,0xeb,0xa4,0xa9,0x8e,0xaa,0x9b,0x4e,0x6a,
 */
@@ -659,21 +648,15 @@ wrap_ecdh_ed25519(unsigned int n, unsigned int i)
     unsigned int   x;
     uint16_t       crc;
 
-    n             = 0; // unused
-    public        = g_ecc_peer_public_keys[1];
+    n = 0; // unused
+public
+    = g_ecc_peer_public_keys[1];
     privkey       = g_ecc_private_keys[1];
     g_verify_mode = false;
-    ee_printmem_be(public, ECC_DSIZE, "public: ");
-    ee_printmem_be(privkey, ECC_DSIZE, "privkey: ");
-    ee_ecdh(public,
-            EE_C25519,
-            32,
-            privkey,
-            32,
-            shared,
-            32,
-            i);
-    ee_printmem_be(shared, ECC_DSIZE, "shared: ");
+    ee_printmem_hex(privkey, ECC_DSIZE, "pri: ");
+    ee_printmem_hex(public, ECC_DSIZE, "pub: ");
+    ee_ecdh(public, EE_C25519, 32, privkey, 32, shared, 32, i);
+    ee_printmem_hex(shared, ECC_DSIZE, "sec: ");
     for (crc = 0, x = 0; x < ECC_DSIZE; ++x)
     {
         crc = crcu16(crc, (uint8_t)shared[x]);
@@ -742,10 +725,10 @@ wrap_ecdsa_verify_base(ecdh_group_t group, unsigned int n, unsigned int i)
     // Do NOT record timestamps during encrypt! (see th_timestamp())
     g_verify_mode = true;
     // Only need one iteration to create the signature; save time!
-    ee_printmem_be(privkey, ECC_DSIZE, "secret: ");
-    ee_printmem_be(g_hmac, HMAC_SIZE, "hmac: ");
+    ee_printmem_hex(privkey, ECC_DSIZE, "secret: ");
+    ee_printmem_hex(g_hmac, HMAC_SIZE, "hmac: ");
     ee_ecdsa_sign(group, g_hmac, HMAC_SIZE, sig, &slen, privkey, ECC_DSIZE, 1);
-    ee_printmem_be(sig, slen, "sig: ");
+    ee_printmem_hex(sig, slen, "sig: ");
     // Turn on recording timestamps
     g_verify_mode = false;
     ee_ecdsa_verify(group, g_hmac, HMAC_SIZE, sig, slen, privkey, ECC_DSIZE, i);
@@ -891,7 +874,6 @@ wrap_aes_gcm_decrypt(unsigned int n, unsigned int i)
     th_free(buffer);
     return crc;
 }
-
 
 uint16_t
 wrap_chachapoly_seal(unsigned int n, unsigned int i)
@@ -1050,7 +1032,7 @@ main(void)
     for (i = 0; i < g_numtasks; ++i)
     {
         // First, compute the correct # of iterations for each primitive
-        //iterations = tune_iterations(g_task[i].n, g_task[i].func);
+        // iterations = tune_iterations(g_task[i].n, g_task[i].func);
         iterations = 1;
         // Compute a CRC from a single iteration, also warm up the test
         ee_srand(0); // CRCs are computed with seed 0
