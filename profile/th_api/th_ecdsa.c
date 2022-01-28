@@ -18,7 +18,8 @@
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_ecdsa_create(void **p_context // output: portable context
+th_ecdsa_create(void **      p_context, // output: portable context
+                ecdh_group_t group      // input: see `ecdh_group_t` for options
 )
 {
 #warning "th_ecdsa_create not implemented"
@@ -49,6 +50,7 @@ th_ecdsa_init(void *        p_context, // input: portable context
  */
 ee_status_t
 th_ecdsa_sign(void *         p_context, // input: portable context
+              ecdh_group_t   group,     // input: see `ecdh_group_t` for options
               uint8_t *      p_hash,    // input: sha256 digest
               uint_fast32_t  hlen,      // input: length of digest in bytes
               uint8_t *      p_sig,     // output: signature
@@ -68,10 +70,11 @@ th_ecdsa_sign(void *         p_context, // input: portable context
  */
 ee_status_t
 th_ecdsa_verify(void *        p_context, // input: portable context
-                uint8_t *     p_hash,    // input: sha256 digest
-                uint_fast32_t hlen,      // input: length of digest in bytes
-                uint8_t *     p_sig,     // output: signature
-                uint_fast32_t slen       // input: length of signature in bytes
+                ecdh_group_t  group,  // input: see `ecdh_group_t` for options
+                uint8_t *     p_hash, // input: sha256 digest
+                uint_fast32_t hlen,   // input: length of digest in bytes
+                uint8_t *     p_sig,  // output: signature
+                uint_fast32_t slen    // input: length of signature in bytes
 )
 {
 #warning "th_ecdsa_verify not implemented"
@@ -82,7 +85,8 @@ th_ecdsa_verify(void *        p_context, // input: portable context
  * Destroy the context created earlier.
  */
 void
-th_ecdsa_destroy(void *p_context // portable context
+th_ecdsa_destroy(void *       p_context, // portable context
+                 ecdh_group_t group // input: see `ecdh_group_t` for options
 )
 {
 #warning "th_ecdsa_destroy not implemented"

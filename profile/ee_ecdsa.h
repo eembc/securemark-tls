@@ -66,9 +66,8 @@ void ee_ecdsa_verify(ecdh_group_t  group,  // input: see `ecdh_group_t`
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t th_ecdsa_create(
-    void **      p_context,
-    ecdh_group_t group // input: see `ecdh_group_t` for options
-                       // output: portable context
+    void **      p_context, // output: portable context
+    ecdh_group_t group      // input: see `ecdh_group_t` for options
 );
 
 /**
