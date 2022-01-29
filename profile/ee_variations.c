@@ -39,6 +39,7 @@ uint8_t ee_rand(void);
 void
 ee_variation_001(uint_fast32_t iterations)
 {
+#if 0
     void *        p_csha1 = NULL;        // SHA context 1
     void *        p_csha2 = NULL;        // SHA context 2
     void *        p_caes  = NULL;        // AES context
@@ -157,4 +158,5 @@ error_exit:
 exit:
     th_free(p_msg);
     th_printf("m-variation-001-finish\r\n");
+#endif
 }

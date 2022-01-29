@@ -22,17 +22,17 @@ typedef enum
 {
     EE_P256R1 = 0,
     EE_C25519 = 1,
+    EE_P384   = 2,
 } ecdh_group_t;
-
-#define HMAC_SIZE 32 // expected HMAC size (using sha256)
-#define ECC_QSIZE 64 // public key size
-#define ECC_DSIZE 32 // private key size
-#define ECDH_SIZE 32 // secret size
+// Ordering respective of above enumeration
+static const uint8_t ee_pub_sz[] = { 32, 32, 48 };
+static const uint8_t ee_pri_sz[] = { 64, 32, 96 };
+static const uint8_t ee_sec_sz[] = { 64, 32, 96 };
 
 // Fixed test API
 
-void ee_ecdh(uint8_t *    p_public, // input: peer public key, from host
-             ecdh_group_t group, // input: input: see `ecdh_group_t` for options
+void ee_ecdh(ecdh_group_t group, // input: input: see `ecdh_group_t` for options
+             uint8_t *    p_public, // input: peer public key, from host
              uint_fast32_t publen,    // input: peer public key length in bytes
              uint8_t *     p_private, // input: private key, from host
              uint_fast32_t prilen,    // input: private key length in bytes

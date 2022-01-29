@@ -14,15 +14,11 @@
 
 /**
  * Perform an ECDSA sign a given number of times.
- *
- * HASH: SHA256 digest (32 bytes)
- * SIGNATURE: ASN.1 or raw R/S (32B each)
- * PRIVATE: 32B secret
  */
 void
 ee_ecdsa_sign(ecdh_group_t   group,  // input: see `ecdh_group_t`
-              uint8_t *      p_hash, // input: sha256 digest
-              uint_fast32_t  hlen,   // input: length of digest in bytes
+              uint8_t *      p_msg,  // input: message
+              uint_fast32_t  mlen,   // input: length of message in bytes
               uint8_t *      p_sig,  // output: signature
               uint_fast32_t *p_slen, // in/out: input=MAX slen, output=resultant
               uint8_t *      p_private, // input: private key (from host)
@@ -50,7 +46,7 @@ ee_ecdsa_sign(ecdh_group_t   group,  // input: see `ecdh_group_t`
     th_pre();
     while (iterations-- > 0)
     {
-        if (th_ecdsa_sign(p_context, group, p_hash, hlen, p_sig, p_slen)
+        if (th_ecdsa_sign(p_context, group, p_msg, mlen, p_sig, p_slen)
             != EE_STATUS_OK)
         {
             th_post();
@@ -67,15 +63,11 @@ exit:
 
 /**
  * Perform an ECDSA verify a given number of times.
- *
- * HASH: SHA256 digest (32 bytes)
- * SIGNATURE: ASN.1 or raw R/S (32B each)
- * PRIVATE: 32B secret
  */
 void
 ee_ecdsa_verify(ecdh_group_t  group,     // input: see `ecdh_group_t`
-                uint8_t *     p_hash,    // input: sha256 digest
-                uint_fast32_t hlen,      // input: length of digest in bytes
+                uint8_t *     p_msg,     // input: message
+                uint_fast32_t mlen,     // input: length of message in bytes
                 uint8_t *     p_sig,     // input: signature
                 uint_fast32_t slen,      // input: length of signature in bytes
                 uint8_t *     p_private, // input: private key (from host)
@@ -103,7 +95,7 @@ ee_ecdsa_verify(ecdh_group_t  group,     // input: see `ecdh_group_t`
     th_pre();
     while (iterations-- > 0)
     {
-        if (th_ecdsa_verify(p_context, group, p_hash, hlen, p_sig, slen)
+        if (th_ecdsa_verify(p_context, group, p_msg, mlen, p_sig, slen)
             != EE_STATUS_OK)
         {
             th_post();

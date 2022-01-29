@@ -23,9 +23,6 @@
 #include "ee_ecdh.h"
 #include "ee_ecdsa.h"
 
-// helper function defined in th_ecdh.h; not mandatory but very useful!
-int load_private_key(void *, unsigned char *, size_t);
-
 /**
  * Create the context passed between functions.
  *
@@ -158,7 +155,7 @@ th_ecdsa_init(void *        p_context, // input: portable context
 
 ee_status_t
 sign_ecc(ecc_key *      p_context, // input: portable context
-         uint8_t *      p_hash,    // input: sha256 digest
+         uint8_t *      p_hash,    // input: digest
          uint_fast32_t  hlen,      // input: length of digest in bytes
          uint8_t *      p_sig,     // output: signature
          uint_fast32_t *p_slen     // in/out: input=MAX slen, output=resultant
@@ -202,7 +199,13 @@ sign_ed25519(ed25519_key *  p_context, // input: portable context
 }
 
 /**
- * Create a signature using the specified hash.
+ * Create a signature using the specified message.
+ * 
+ * Ed25519 performs the digest per RFC7748, so if the input is a digest, it
+ * will be digested again. For P256R1 the input will not be hashed.
+ * 
+ * The signature shall be ASN1 or Raw R/S (32B) for P256R1, and raw LE bytes
+ * for Ed25519. This is necessary to pass the runner GUI validation test.
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
@@ -242,7 +245,7 @@ verify_ecc(ecc_key *     p_context,
     ret = wc_ecc_verify_hash(p_sig, slen, p_hash, hlen, &verify, p_context);
     if (ret != 0 || verify != 1)
     {
-        th_printf("e-[Failed to verify in verify_ecc: -%d]\r\n", -ret);
+        th_printf("e-[wc_ecc_verify_hash: -%d]\r\n", -ret);
         return EE_STATUS_ERROR;
     }
     return EE_STATUS_OK;
@@ -250,8 +253,8 @@ verify_ecc(ecc_key *     p_context,
 
 ee_status_t
 verify_ed25519(ed25519_key * p_context,
-               uint8_t *     p_hash, // input: sha256 digest
-               uint_fast32_t hlen,   // input: length of digest in bytes
+               uint8_t *     p_msg, // input: message
+               uint_fast32_t mlen,   // input: length of message in bytes
                uint8_t *     p_sig,  // output: signature
                uint_fast32_t slen    // input: length of signature in bytes
 )
@@ -259,26 +262,31 @@ verify_ed25519(ed25519_key * p_context,
     int ret;
     int verify;
 
-    ret = wc_ed25519ph_verify_hash(
-        p_sig, slen, p_hash, hlen, &verify, p_context, NULL, 0);
+    ret = wc_ed25519_verify_msg(p_sig, slen, p_msg, mlen, &verify, p_context);
     if (ret != 0 || verify != 1)
     {
-        th_printf("e-[Failed to verify in verify_ed25519: -%d]\r\n", -ret);
+        th_printf("e-[wc_ed25519_verify_msg: -%d]\r\n", -ret);
         return EE_STATUS_ERROR;
     }
     return EE_STATUS_OK;
 }
 
 /**
- * Create a signature using SHA256 hash.
- *
+ * Verify a signature and digest.
+ * 
+ * Ed25519 performs the digest per RFC7748, so if the input is a digest, it
+ * will be digested again. For P256R1 the input will not be hashed.
+ * 
+ * The signature shall be ASN1 or Raw R/S (32B) for P256R1, and raw LE bytes
+ * for Ed25519. This is necessary to pass the runner GUI validation test.
+ * 
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
 th_ecdsa_verify(void *        p_context, // input: portable context
                 ecdh_group_t  group,  // input: see `ecdh_group_t` for options
-                uint8_t *     p_hash, // input: sha256 digest
-                uint_fast32_t hlen,   // input: length of digest in bytes
+                uint8_t *     p_msg, // input: message
+                uint_fast32_t mlen,   // input: length of message in bytes
                 uint8_t *     p_sig,  // output: signature
                 uint_fast32_t slen    // input: length of signature in bytes
 )
@@ -286,10 +294,10 @@ th_ecdsa_verify(void *        p_context, // input: portable context
     switch (group)
     {
         case EE_P256R1:
-            return verify_ecc((ecc_key *)p_context, p_hash, hlen, p_sig, slen);
+            return verify_ecc((ecc_key *)p_context, p_msg, mlen, p_sig, slen);
         case EE_C25519:
             return verify_ed25519(
-                (ed25519_key *)p_context, p_hash, hlen, p_sig, slen);
+                (ed25519_key *)p_context, p_msg, mlen, p_sig, slen);
         default:
             th_printf("e-[Invalid ECC curve in th_ecdsa_verify]\r\n");
             return EE_STATUS_ERROR;

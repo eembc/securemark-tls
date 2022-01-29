@@ -44,15 +44,21 @@ th_ecdsa_init(void *        p_context, // input: portable context
 }
 
 /**
- * Create a signature using the specified hash.
+ * Create a signature using the specified message.
+ * 
+ * Ed25519 performs the digest per RFC7748, so if the input is a digest, it
+ * will be digested again. For P256R1 the input will not be hashed.
+ * 
+ * The signature shall be ASN1 or Raw R/S (32B) for P256R1, and raw LE bytes
+ * for Ed25519. This is necessary to pass the runner GUI validation test.
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
 th_ecdsa_sign(void *         p_context, // input: portable context
               ecdh_group_t   group,     // input: see `ecdh_group_t` for options
-              uint8_t *      p_hash,    // input: sha256 digest
-              uint_fast32_t  hlen,      // input: length of digest in bytes
+              uint8_t *      p_msg,     // input: message
+              uint_fast32_t  mlen,      // input: length of message in bytes
               uint8_t *      p_sig,     // output: signature
               uint_fast32_t *p_slen // in/out: input=MAX slen, output=resultant
 )
@@ -65,14 +71,20 @@ th_ecdsa_sign(void *         p_context, // input: portable context
 
 /**
  * Verify a signature and digest.
- *
+ * 
+ * Ed25519 performs the digest per RFC7748, so if the input is a digest, it
+ * will be digested again. For P256R1 the input will not be hashed.
+ * 
+ * The signature shall be ASN1 or Raw R/S (32B) for P256R1, and raw LE bytes
+ * for Ed25519. This is necessary to pass the runner GUI validation test.
+ * 
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
 th_ecdsa_verify(void *        p_context, // input: portable context
                 ecdh_group_t  group,  // input: see `ecdh_group_t` for options
-                uint8_t *     p_hash, // input: sha256 digest
-                uint_fast32_t hlen,   // input: length of digest in bytes
+                uint8_t *     p_msg, // input: message
+                uint_fast32_t mlen,   // input: length of message in bytes
                 uint8_t *     p_sig,  // output: signature
                 uint_fast32_t slen    // input: length of signature in bytes
 )

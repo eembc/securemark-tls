@@ -18,11 +18,11 @@
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_aes128_create(void **           p_context, // output: portable context
+th_aes_create(void **           p_context, // output: portable context
                  aes_cipher_mode_t mode       // input: AES_ENC or AES_DEC
 )
 {
-#warning "th_aes128_create not implemented"
+#warning "th_aes_create not implemented"
     return EE_STATUS_OK;
 }
 
@@ -32,15 +32,16 @@ th_aes128_create(void **           p_context, // output: portable context
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_aes128_init(void *            p_context, // input: portable context
-               const uint8_t *   p_key,     // input: key
-               uint_fast32_t     keylen,    // input: length of key in bytes
-               uint_fast32_t     rounds,    // input: number of AES rounds
-               aes_function_t    func,      // input: AES_ENC or AES_DEC
-               aes_cipher_mode_t mode       // input: AES_ECB|CCM|GCM
+th_aes_init(void *            p_context, // input: portable context
+            const uint8_t *   p_key,     // input: key
+            uint_fast32_t     keylen,    // input: length of key in bytes
+            const uint8_t *   iv,        // input: IV if CTR mode, or NULL
+            uint_fast32_t     rounds,    // input: number of AES rounds
+            aes_function_t    func,      // input: AES_ENC or AES_DEC
+            aes_cipher_mode_t mode       // input: see aes_cipher_mode_t
 )
 {
-#warning "th_aes128_init not implemented"
+#warning "th_aes_init not implemented"
     return EE_STATUS_OK;
 }
 
@@ -51,10 +52,11 @@ th_aes128_init(void *            p_context, // input: portable context
  * de-init before initializing again, without destroying the context.
  */
 void
-th_aes128_deinit(void *            p_context, // input: portable context
-                 aes_cipher_mode_t mode       // input: AES_ECB|CCM|GCM
-) {
-#warning "th_aes128_deinit not implemented"
+th_aes_deinit(void *            p_context, // input: portable context
+            aes_cipher_mode_t mode       // input: see aes_cipher_mode_t
+)
+{
+#warning "th_aes_deinit not implemented"
 }
 
 /**
@@ -62,13 +64,13 @@ th_aes128_deinit(void *            p_context, // input: portable context
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-ee_status_t th_aes128_ecb_encrypt(
+ee_status_t th_aes_ecb_encrypt(
     void *         p_context, // input: portable context
-    const uint8_t *p_pt,      // input: plaintext (AES_BLOCKSIZE bytes)
-    uint8_t *      p_ct       // output: ciphertext (AES_BLOCKSIZE bytes)
+    const uint8_t *p_pt,      // input: plaintext
+    uint8_t *      p_ct       // output: ciphertext
 )
 {
-#warning "th_aes128_ecb_encrypt not implemented"
+#warning "th_aes_ecb_encrypt not implemented"
     return EE_STATUS_OK;
 }
 
@@ -78,13 +80,45 @@ ee_status_t th_aes128_ecb_encrypt(
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_aes128_ecb_decrypt(
+th_aes_ecb_decrypt(
     void *         p_context, // input: portable context
-    const uint8_t *p_ct,      // input: ciphertext (AES_BLOCKSIZE bytes)
-    uint8_t *      p_pt       // output: plaintext (AES_BLOCKSIZE bytes)
+    const uint8_t *p_ct,      // input: ciphertext
+    uint8_t *      p_pt       // output: plaintext
 )
 {
-#warning "th_aes128_ecb_decrypt not implemented"
+#warning "th_aes_ecb_decrypt not implemented"
+    return EE_STATUS_OK;
+}
+
+/**
+ * Perform an ECB CTR encrypt.
+ *
+ * Return EE_STATUS_OK or EE_STATUS_ERROR.
+ */
+ee_status_t th_aes_ctr_encrypt(
+    void *         p_context, // input: portable context
+    const uint8_t *p_pt,      // input: plaintext
+    uint_fast32_t  plen,      // input: plaintext length in bytes
+    uint8_t *      p_ct       // output: ciphertext
+)
+{
+#warning "th_aes_ctr_encrypt not implemented"
+    return EE_STATUS_OK;
+}
+
+/**
+ * Perform an ECB CTR decrypt.
+ *
+ * Return EE_STATUS_OK or EE_STATUS_ERROR.
+ */
+ee_status_t th_aes_ctr_decrypt(
+    void *         p_context, // input: portable context
+    const uint8_t *p_ct,      // input: ciphertext
+    uint_fast32_t  clen,      // input: ciphertext length in bytes
+    uint8_t *      p_pt       // output: plaintext
+)
+{
+#warning "th_aes_ctr_decrypt not implemented"
     return EE_STATUS_OK;
 }
 
@@ -94,7 +128,7 @@ th_aes128_ecb_decrypt(
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_aes128_ccm_encrypt(
+th_aes_ccm_encrypt(
     void *         p_context, // input: portable context
     const uint8_t *p_aad,     // input: additional authentication data
     uint_fast32_t  aadlen,    // input: length of AAD in bytes
@@ -103,11 +137,11 @@ th_aes128_ccm_encrypt(
     uint8_t *      p_ct,      // output: ciphertext
     uint8_t *      p_tag,     // output: tag
     uint_fast32_t  taglen,    // input: tag length in bytes
-    uint8_t *      p_iv,      // input: initialization vector
+    const uint8_t *      p_iv,      // input: initialization vector
     uint_fast32_t  ivlen      // input: IV length in bytes
 )
 {
-#warning "th_aes128_ccm_encrypt not implemented"
+#warning "th_aes_ccm_encrypt not implemented"
     return EE_STATUS_OK;
 }
 
@@ -117,20 +151,20 @@ th_aes128_ccm_encrypt(
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_aes128_ccm_decrypt(
+th_aes_ccm_decrypt(
     void *         p_context, // input: portable context
     const uint8_t *p_aad,     // input: additional authentication data
     uint_fast32_t  aadlen,    // input: length of AAD in bytes
     const uint8_t *p_ct,      // input: ciphertext
     uint_fast32_t  ctlen,     // input: length of ciphertext in bytes
     uint8_t *      p_pt,      // output: plaintext
-    uint8_t *      p_tag,     // input: tag
+    const uint8_t *      p_tag,     // input: tag
     uint_fast32_t  taglen,    // input: tag length in bytes
-    uint8_t *      p_iv,      // input: initialization vector
+    const uint8_t *      p_iv,      // input: initialization vector
     uint_fast32_t  ivlen      // input: IV length in bytes
 )
 {
-#warning "th_aes128_ccm_decrypt not implemented"
+#warning "th_aes_ccm_decrypt not implemented"
     return EE_STATUS_OK;
 }
 
@@ -140,7 +174,7 @@ th_aes128_ccm_decrypt(
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_aes128_gcm_encrypt(
+th_aes_gcm_encrypt(
     void *         p_context, // input: portable context
     const uint8_t *p_aad,     // input: additional authentication data
     uint_fast32_t  aadlen,    // input: length of AAD in bytes
@@ -149,11 +183,11 @@ th_aes128_gcm_encrypt(
     uint8_t *      p_ct,      // output: ciphertext
     uint8_t *      p_tag,     // output: tag
     uint_fast32_t  taglen,    // input: tag length in bytes
-    uint8_t *      p_iv,      // input: initialization vector
+    const uint8_t *      p_iv,      // input: initialization vector
     uint_fast32_t  ivlen      // input: IV length in bytes
 )
 {
-#warning "th_aes128_gcm_encrypt not implemented"
+#warning "th_aes_gcm_encrypt not implemented"
     return EE_STATUS_OK;
 }
 
@@ -163,20 +197,20 @@ th_aes128_gcm_encrypt(
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_aes128_gcm_decrypt(
+th_aes_gcm_decrypt(
     void *         p_context, // input: portable context
     const uint8_t *p_aad,     // input: additional authentication data
     uint_fast32_t  aadlen,    // input: length of AAD in bytes
     const uint8_t *p_ct,      // input: ciphertext
     uint_fast32_t  ctlen,     // input: length of plaintext in bytes
     uint8_t *      p_pt,      // output: plaintext
-    uint8_t *      p_tag,     // output: tag
+    const uint8_t *      p_tag,     // input: tag
     uint_fast32_t  taglen,    // input: tag length in bytes
-    uint8_t *      p_iv,      // input: initialization vector
+    const uint8_t *      p_iv,      // input: initialization vector
     uint_fast32_t  ivlen      // input: IV length in bytes
 )
 {
-#warning "th_aes128_gcm_decrypt not implemented"
+#warning "th_aes_gcm_decrypt not implemented"
     return EE_STATUS_OK;
 }
 
@@ -186,9 +220,9 @@ th_aes128_gcm_decrypt(
  * Indicate the mode that was used for _create()
  */
 void
-th_aes128_destroy(void *            p_context, // input: portable context
+th_aes_destroy(void *            p_context, // input: portable context
                   aes_cipher_mode_t mode       // input: AES_ECB|CCM|GCM
 )
 {
-#warning "th_aes128_destroy not implemented"
+#warning "th_aes_destroy not implemented"
 }

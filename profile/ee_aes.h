@@ -18,14 +18,22 @@
 #include "th_libc.h"
 #include "th_util.h"
 
-typedef enum
+typedef enum aes_cipher_mode_t
 {
     AES_ECB = 0,
+    AES_CTR,
     AES_CCM,
-    AES_GCM
+    AES_GCM,
 } aes_cipher_mode_t;
 
-typedef enum
+static const char *aes_cipher_mode_text[] = {
+    "ecb",
+    "ctr",
+    "ccm",
+    "gcm"
+};
+
+typedef enum aes_function_t
 {
     AES_ENC = 0,
     AES_DEC
@@ -33,44 +41,25 @@ typedef enum
 
 // These must remain fixed for EEMBC profile (bytes)
 #define AES_BLOCKLEN 16u
-#define AES_KEYSIZE  16u
-#define AES_IVSIZE   12u
+#define AES_CTR_IVSIZE   16u
+#define AES_AEAD_IVSIZE   12u
 #define AES_TAGSIZE  16u
 #define AES_ROUNDS   0u
 
-// Fixed test API
+// Testing function.
 
-void ee_aes128_ecb(uint8_t *p_key, // input: key
-                   uint8_t *p_in,  // input: pointer to source input (pt or ct)
-                   uint_fast32_t  len,       // input: length of input in bytes
-                   uint8_t *      p_out,     // output: pointer to output buffer
-                   aes_function_t func,      // input: func (AES_ENC|AES_DEC)
-                   uint_fast32_t  iterations // input: # of test iterations
-);
-
-void ee_aes128_ccm(
-    uint8_t *      p_key,     // input: key
-    const uint8_t *p_add,     // input: additional authentication data
-    uint_fast32_t  addlen,    // input: length of AAD in bytes
-    uint8_t *      p_iv,      // input: initialization vector
-    uint8_t *      p_in,      // input: pointer to source input (pt or ct)
-    uint_fast32_t  len,       // input: length of input in bytes
-    uint8_t *      p_tag,     // inout: output in encrypt, input on decrypt
-    uint8_t *      p_out,     // output: pointer to output buffer
-    aes_function_t func,      // input: func (AES_ENC|AES_DEC)
-    uint_fast32_t  iterations // input: # of test iterations
-);
-
-void ee_aes128_gcm(
-    uint8_t *      p_key,     // input: key
-    const uint8_t *p_add,     // input: additional authentication data
-    uint_fast32_t  addlen,    // input: length of AAD in bytes
-    uint8_t *      p_iv,      // input: initialization vector
-    uint8_t *      p_in,      // input: pointer to source input (pt or ct)
-    uint_fast32_t  len,       // input: length of input in bytes
-    uint8_t *      p_tag,     // inout: output in encrypt, input on decrypt
-    uint8_t *      p_out,     // output: pointer to output buffer
-    aes_function_t func,      // input: func (AES_ENC|AES_DEC)
+void ee_aes(
+   aes_cipher_mode_t mode, // input: cipher mode
+    aes_function_t func,  // input: func (AES_ENC|AES_DEC)
+    const uint8_t *      p_key, // input: key
+    uint_fast32_t  keylen,       // input: length of key in bytes
+    const uint8_t *      p_iv,   // input: initialization vector
+    const uint8_t *      p_in,  // input: pointer to source input (pt or ct)
+    uint_fast32_t  len,   // input: length of input in bytes
+    uint8_t *      p_out, // output: pointer to output buffer
+    uint8_t *p_tag,     // inout: output in encrypt, input on decrypt
+    const uint8_t *p_add,  // input: additional authentication data
+    uint_fast32_t  addlen, // input: length of AAD in bytes
     uint_fast32_t  iterations // input: # of test iterations
 );
 
@@ -81,7 +70,7 @@ void ee_aes128_gcm(
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-ee_status_t th_aes128_create(void **p_context,      // output: portable context
+ee_status_t th_aes_create(void **p_context,      // output: portable context
                              aes_cipher_mode_t mode // input: AES_ENC or AES_DEC
 );
 
@@ -90,13 +79,13 @@ ee_status_t th_aes128_create(void **p_context,      // output: portable context
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-ee_status_t th_aes128_init(
-    void *            p_context, // input: portable context
-    const uint8_t *   p_key,     // input: key
-    uint_fast32_t     keylen,    // input: length of key in bytes
-    uint_fast32_t     rounds,    // input: number of AES rounds
-    aes_function_t    func,      // input: AES_ENC or AES_DEC
-    aes_cipher_mode_t mode       // input: AES_ECB or AES_CCM
+ee_status_t th_aes_init(void *            p_context, // input: portable context
+            const uint8_t *   p_key,     // input: key
+            uint_fast32_t     keylen,    // input: length of key in bytes
+            const uint8_t *   iv,        // input: IV if CTR mode, or NULL
+            uint_fast32_t     rounds,    // input: number of AES rounds
+            aes_function_t    func,      // input: AES_ENC or AES_DEC
+            aes_cipher_mode_t mode       // input: see aes_cipher_mode_t
 );
 
 /**
@@ -105,7 +94,7 @@ ee_status_t th_aes128_init(
  * Some implementations of AES perform allocations on init and require a
  * de-init before initializing again, without destroying the context.
  */
-void th_aes128_deinit(void *            context, // input: portable context
+void th_aes_deinit(void *            context, // input: portable context
                       aes_cipher_mode_t mode     // input: AES_ECB or AES_CCM
 );
 
@@ -114,10 +103,10 @@ void th_aes128_deinit(void *            context, // input: portable context
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-ee_status_t th_aes128_ecb_encrypt(
+ee_status_t th_aes_ecb_encrypt(
     void *         p_context, // input: portable context
-    const uint8_t *p_pt,      // input: plaintext (AES_BLOCKSIZE bytes)
-    uint8_t *      p_ct       // output: ciphertext (AES_BLOCKSIZE bytes)
+    const uint8_t *p_pt,      // input: plaintext
+    uint8_t *      p_ct       // output: ciphertext
 );
 
 /**
@@ -125,10 +114,34 @@ ee_status_t th_aes128_ecb_encrypt(
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-ee_status_t th_aes128_ecb_decrypt(
+ee_status_t th_aes_ecb_decrypt(
     void *         p_context, // input: portable context
-    const uint8_t *p_ct,      // input: ciphertext (AES_BLOCKSIZE bytes)
-    uint8_t *      p_pt       // output: plaintext (AES_BLOCKSIZE bytes)
+    const uint8_t *p_ct,      // input: ciphertext
+    uint8_t *      p_pt       // output: plaintext
+);
+
+/**
+ * Perform an ECB CTR encrypt.
+ *
+ * Return EE_STATUS_OK or EE_STATUS_ERROR.
+ */
+ee_status_t th_aes_ctr_encrypt(
+    void *         p_context, // input: portable context
+    const uint8_t *p_pt,      // input: plaintext
+    uint_fast32_t  plen,      // input: plaintext length in bytes
+    uint8_t *      p_ct       // output: ciphertext
+);
+
+/**
+ * Perform an ECB CTR decrypt.
+ *
+ * Return EE_STATUS_OK or EE_STATUS_ERROR.
+ */
+ee_status_t th_aes_ctr_decrypt(
+    void *         p_context, // input: portable context
+    const uint8_t *p_ct,      // input: ciphertext
+    uint_fast32_t  clen,      // input: ciphertext length in bytes
+    uint8_t *      p_pt       // output: plaintext
 );
 
 /**
@@ -136,7 +149,7 @@ ee_status_t th_aes128_ecb_decrypt(
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-ee_status_t th_aes128_ccm_encrypt(
+ee_status_t th_aes_ccm_encrypt(
     void *         p_context, // input: portable context
     const uint8_t *p_aad,     // input: Additional Authentication Data
     uint_fast32_t  aadlen,    // input: Length of AAD in bytes
@@ -145,7 +158,7 @@ ee_status_t th_aes128_ccm_encrypt(
     uint8_t *      p_ct,      // output: ciphertext
     uint8_t *      p_tag,     // output: tag
     uint_fast32_t  taglen,    // input: tag length in bytes
-    uint8_t *      p_iv,      // input: initialization vector
+    const uint8_t *      p_iv,      // input: initialization vector
     uint_fast32_t  ivlen      // input: IV length in bytes
 );
 
@@ -154,16 +167,16 @@ ee_status_t th_aes128_ccm_encrypt(
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-ee_status_t th_aes128_ccm_decrypt(
+ee_status_t th_aes_ccm_decrypt(
     void *         p_context, // input: portable context
     const uint8_t *p_aad,     // input: Additional Authentication Data
     uint_fast32_t  aadlen,    // input: Length of AAD in bytes
     const uint8_t *p_ct,      // input: ciphertext
     uint_fast32_t  ctlen,     // input: length of ciphertext in bytes
     uint8_t *      p_pt,      // output: plaintext
-    uint8_t *      p_tag,     // input: tag
+    const uint8_t *      p_tag,     // input: tag
     uint_fast32_t  taglen,    // input: tag length in bytes
-    uint8_t *      p_iv,      // input: initialization vector
+    const uint8_t *      p_iv,      // input: initialization vector
     uint_fast32_t  ivlen      // input: IV length in bytes
 );
 
@@ -172,7 +185,7 @@ ee_status_t th_aes128_ccm_decrypt(
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-ee_status_t th_aes128_gcm_encrypt(
+ee_status_t th_aes_gcm_encrypt(
     void *         p_context, // input: portable context
     const uint8_t *p_aad,     // input: Additional Authentication Data
     uint_fast32_t  aadlen,    // input: Length of AAD in bytes
@@ -181,7 +194,7 @@ ee_status_t th_aes128_gcm_encrypt(
     uint8_t *      p_ct,      // output: ciphertext
     uint8_t *      p_tag,     // output: tag
     uint_fast32_t  taglen,    // input: tag length in bytes
-    uint8_t *      p_iv,      // input: initialization vector
+    const uint8_t *      p_iv,      // input: initialization vector
     uint_fast32_t  ivlen      // input: IV length in bytes
 );
 
@@ -190,17 +203,16 @@ ee_status_t th_aes128_gcm_encrypt(
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-
-ee_status_t th_aes128_gcm_decrypt(
+ee_status_t th_aes_gcm_decrypt(
     void *         p_context, // input: portable context
     const uint8_t *p_aad,     // input: Additional Authentication Data
     uint_fast32_t  aadlen,    // input: Length of AAD in bytes
     const uint8_t *p_ct,      // input: ciphertext
     uint_fast32_t  ctlen,     // input: length of plaintext in bytes
     uint8_t *      p_pt,      // output: plaintext
-    uint8_t *      p_tag,     // output: tag
+    const uint8_t *      p_tag,     // input: tag
     uint_fast32_t  taglen,    // input: tag length in bytes
-    uint8_t *      p_iv,      // input: initialization vector
+    const uint8_t *      p_iv,      // input: initialization vector
     uint_fast32_t  ivlen      // input: IV length in bytes
 );
 
@@ -209,7 +221,7 @@ ee_status_t th_aes128_gcm_decrypt(
  *
  * Indicate the mode that was used for _create()
  */
-void th_aes128_destroy(void *            p_context, // input: portable context
+void th_aes_destroy(void *            p_context, // input: portable context
                        aes_cipher_mode_t mode       // input: AES_ECB or AES_CCM
 );
 
