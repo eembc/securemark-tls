@@ -16,49 +16,49 @@
  * Runs a SHA-256 hash on an input message a given number of times.
  */
 void
-ee_sha256(const uint8_t *p_in,      // input: bytes to hash
-          uint_fast32_t  len,       // input: length of input in bytes
-          uint8_t *      p_result,  // output: resulting digest
-          uint_fast32_t  iterations // input: # of test iterations
+ee_sha(sha_size_t     size,      // input: SHA algorithm size
+       const uint8_t *p_in,      // input: bytes to hash
+       uint_fast32_t  len,       // input: length of input in bytes
+       uint8_t *      p_result,  // output: resulting digest
+       uint_fast32_t  iterations // input: # of test iterations
 )
 {
     void *p_context; // Generic context if needed by implementation
 
-    if (th_sha256_create(&p_context) != EE_STATUS_OK)
+    if (th_sha_create(&p_context, size) != EE_STATUS_OK)
     {
-        th_printf("e-sha256-[Failed to create context]\r\n");
+        th_printf("e-sha%d-[Failed to create context]\r\n", size);
         return;
     }
-
-    th_printf("m-sha256-iterations-%d\r\n", iterations);
-    th_printf("m-sha256-message-length-%d\r\n", len);
-    th_printf("m-sha256-start\r\n");
+    th_printf("m-sha%d-iterations-%d\r\n", size, iterations);
+    th_printf("m-sha%d-message-length-%d\r\n", size, len);
+    th_printf("m-sha%d-start\r\n", size);
     th_timestamp();
     th_pre();
-    if (th_sha256_init(p_context) != EE_STATUS_OK)
+    if (th_sha_init(p_context, size) != EE_STATUS_OK)
     {
         th_post();
-        th_printf("e-sha246-[Failed to initialize]\r\n");
+        th_printf("e-sha%d-[Failed to initialize]\r\n", size);
         goto exit;
     }
     while (iterations-- > 0)
     {
-        if (th_sha256_process(p_context, p_in, len) != EE_STATUS_OK)
+        if (th_sha_process(p_context, size, p_in, len) != EE_STATUS_OK)
         {
             th_post();
-            th_printf("e-sha256-[Failed to process bytes]\r\n");
+            th_printf("e-sha%d-[Failed to process bytes]\r\n", size);
             goto exit;
         }
     }
-    if (th_sha256_done(p_context, p_result) != EE_STATUS_OK)
+    if (th_sha_done(p_context, size, p_result) != EE_STATUS_OK)
     {
         th_post();
-        th_printf("e-sha256-[Failed to complete]\r\n");
+        th_printf("e-sha%d-[Failed to complete]\r\n", size);
         goto exit;
     }
     th_post();
     th_timestamp();
-    th_printf("m-sha256-finish\r\n");
+    th_printf("m-sha%d-finish\r\n", size);
 exit:
-    th_sha256_destroy(p_context);
+    th_sha_destroy(p_context, size);
 }

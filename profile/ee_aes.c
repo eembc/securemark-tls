@@ -94,15 +94,15 @@ ee_aes(aes_cipher_mode_t mode,   // input: cipher mode
                     break;
                 case AES_CCM:
                     ret = th_aes_ccm_encrypt(p_context,
-                                                p_add,
-                                                addlen,
-                                                p_in,
-                                                len,
-                                                p_out,
-                                                p_tag,
-                                                AES_TAGSIZE,
-                                                p_iv,
-                                                AES_AEAD_IVSIZE);
+                                             p_add,
+                                             addlen,
+                                             p_in,
+                                             len,
+                                             p_out,
+                                             p_tag,
+                                             AES_TAGSIZE,
+                                             p_iv,
+                                             AES_AEAD_IVSIZE);
                     break;
                 case AES_GCM:
                     ret = th_aes_gcm_encrypt(p_context,
@@ -165,15 +165,15 @@ ee_aes(aes_cipher_mode_t mode,   // input: cipher mode
                     break;
                 case AES_CCM:
                     ret = th_aes_ccm_decrypt(p_context,
-                                                p_add,
-                                                addlen,
-                                                p_in,
-                                                len,
-                                                p_out,
-                                                p_tag,
-                                                AES_TAGSIZE,
-                                                p_iv,
-                                                AES_AEAD_IVSIZE);
+                                             p_add,
+                                             addlen,
+                                             p_in,
+                                             len,
+                                             p_out,
+                                             p_tag,
+                                             AES_TAGSIZE,
+                                             p_iv,
+                                             AES_AEAD_IVSIZE);
                     break;
                 case AES_GCM:
                     ret = th_aes_gcm_decrypt(p_context,

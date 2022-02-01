@@ -33,9 +33,9 @@
 #include "ee_ecdsa.h"
 #include "ee_sha.h"
 #include "ee_variations.h"
-
+#include "ee_util.h"
 #include <inttypes.h>
-void ee_printmem_hex(uint8_t *p_addr, uint_fast32_t len, char *p_user_header);
+
 // There are several POSIX assumptions in this implementation.
 #if (__linux__ || __APPLE__)
 #include <time.h>
@@ -53,120 +53,8 @@ void ee_printmem_hex(uint8_t *p_addr, uint_fast32_t len, char *p_user_header);
 #define MIN_ITER 10u
 // Stored timestamps (a single primitive may generate multiple stamps)
 #define MAX_TIMESTAMPS 64u
-
 // All wrapper functions fit this prototype (n=dataset octets, i=iterations)
 typedef uint16_t wrapper_function_t(unsigned int n, unsigned int i);
-
-// 'Wrappers' are generic enough that we only need dataset and iterations.
-wrapper_function_t wrap_aes128_ecb_encrypt;
-wrapper_function_t wrap_aes128_ecb_decrypt;
-wrapper_function_t wrap_aes128_ccm_encrypt;
-wrapper_function_t wrap_aes128_ccm_decrypt;
-wrapper_function_t wrap_ecdh_p256r1;
-wrapper_function_t wrap_ecdsa_sign_p256r1;
-wrapper_function_t wrap_ecdsa_verify_p256r1;
-wrapper_function_t wrap_sha256;
-wrapper_function_t wrap_variation_001;
-// TODO: V2 wrappers, preliminary (work in progress, this is for testing)
-wrapper_function_t wrap_aes128_gcm_encrypt;
-wrapper_function_t wrap_aes128_gcm_decrypt;
-wrapper_function_t wrap_chachapoly_seal;
-wrapper_function_t wrap_chachapoly_read;
-wrapper_function_t wrap_ecdh_ed25519;
-wrapper_function_t wrap_ecdsa_sign_ed25519;
-wrapper_function_t wrap_ecdsa_verify_ed25519;
-wrapper_function_t wrap_ecdh_p384;
-wrapper_function_t wrap_ecdsa_sign_p384;
-wrapper_function_t wrap_ecdsa_verify_p384;
-wrapper_function_t wrap_aes128_ctr_encrypt;
-wrapper_function_t wrap_aes128_ctr_decrypt;
-wrapper_function_t wrap_aes256_ecb_encrypt;
-wrapper_function_t wrap_aes256_ecb_decrypt;
-wrapper_function_t wrap_aes256_ctr_encrypt;
-wrapper_function_t wrap_aes256_ctr_decrypt;
-wrapper_function_t wrap_aes256_ccm_encrypt;
-wrapper_function_t wrap_aes256_ccm_decrypt;
-
-
-// We tune each function independently by using a table entry for each wrapper:
-typedef struct
-{
-    wrapper_function_t *func;         // The primitive for this task
-    uint16_t            n;            // Number of octets for input data
-    float               ips;          // iterations-per-second
-    float               weight;       // equation scaling weight
-    uint16_t            actual_crc;   // CRC computed for 1 iter. seed 0
-    uint16_t            expected_crc; // Precomputed CRC by EEMBC
-    char *              name;
-} task_entry_t;
-
-/**
- * The following task table consists of a list of primitives observed during
- * a TLSv1.2 handshake.
- *
- * The provided datasizes reflect the actual values of a TLSv1.2 handshake using
- * the TLS-ECDHE-ECDSA-WITH-AES-128-GCM-SHA256 ciphersuite. These numbers
- * were collected by instrumenting TLS handshake with open_ssl.
- *
- * The weights are used for scoring and were defined by the team in 2018.
- *
- * The expected_crc value was computed by EEMBC using mbedTLS. The intent
- * of this field is to help detected mistakes in the implementation, or errant
- * bugs introduced while porting the firmware.
- *
- * The CRC of the resulting output should be the same regardless of the
- * software or hardware implementation. Changing the seeds or the input
- * Q/d ECC keys will break the CRC.
- *
- * Note 1: This CRC is based on the signature in ASN1 encoding.
- * Note 2: This CRC is based on the signature as raw little-endian bytes.
- */
-// clang-format off
-#define TASK(name, n, w, crc) { wrap_##name, n, 0.0, (float)w, 0x0, crc, #name },
-static task_entry_t g_task[] =
-{
-
-    TASK(aes128_ecb_encrypt, 16,  1.0f, 0x998a)
-    TASK(aes128_ecb_decrypt, 16,  1.0f, 0x998a)
-    TASK(aes256_ecb_encrypt, 16,  1.0f, 0x998a)
-    TASK(aes256_ecb_decrypt, 16,  1.0f, 0x998a)
-    TASK(aes128_ctr_encrypt, 16,  1.0f, 0x998a)
-    TASK(aes128_ctr_decrypt, 16,  1.0f, 0x998a)
-    TASK(aes256_ctr_encrypt, 16,  1.0f, 0x998a)
-    TASK(aes256_ctr_decrypt, 16,  1.0f, 0x998a)
-    TASK(aes128_ccm_encrypt, 16,  1.0f, 0x998a)
-    TASK(aes128_ccm_decrypt, 16,  1.0f, 0x998a)
-    TASK(aes256_ccm_encrypt, 16,  1.0f, 0x998a)
-    TASK(aes256_ccm_decrypt, 16,  1.0f, 0x998a)
-    TASK(aes128_gcm_encrypt, 16,  1.0f, 0x998a)
-    TASK(aes128_gcm_decrypt, 16,  1.0f, 0x998a)
-
-    /*
-    TASK(wrap_aes_ecb_encrypt      ,  320,  1.0f, 0x998a)
-    TASK(wrap_aes_ccm_encrypt      ,   52,  1.0f, 0xd82d)
-    TASK(wrap_aes_ccm_decrypt      ,  168,  1.0f, 0x005b)
-    TASK(wrap_ecdh                 ,    0,  1.0f, 0x7531)
-    TASK(wrap_ecdsa_sign           ,    0,  1.0f, 0x3a47) // Note [1]
-    TASK(wrap_ecdsa_verify         ,    0,  2.0f, 0x3a47) // Note [1]
-    TASK(wrap_sha256               ,   23,  3.0f, 0x2151)
-    TASK(wrap_sha256               ,   57,  1.0f, 0x3b3c)
-    TASK(wrap_sha256               ,  384,  1.0f, 0x1d3f)
-    TASK(wrap_variation_001        ,    0,  3.0f, 0x0000)
-    TASK(wrap_sha256               , 4224,  4.0f, 0x9284)
-    TASK(wrap_aes_ecb_encrypt      , 2048, 10.0f, 0x989e)
-    // TODO: V2 preliminary
-    TASK(wrap_aes_gcm_encrypt      ,  256,  1.0f, 0x325b)
-    TASK(wrap_aes_gcm_decrypt      ,  256,  1.0f, 0x325b)
-    TASK(wrap_chachapoly_seal      ,  256,  1.0f, 0xd80d)
-    TASK(wrap_chachapoly_read      ,  256,  1.0f, 0xd80d)
-    TASK(wrap_ecdh_ed25519         ,    0,  1.0f, 0x7bdc)
-    TASK(wrap_ecdsa_sign_ed25519   ,    0,  1.0f, 0x209d) // Note [2]
-    TASK(wrap_ecdsa_verify_ed25519 ,    0,  1.0f, 0x209d) // Note [2]
-    */
-};
-// clang-format on
-static const size_t g_numtasks = sizeof(g_task) / sizeof(task_entry_t);
-
 /**
  * Use this variable to suppress certain timestamps. For example, before
  * running AES decryption, we first must encrypt the plaintext. If we didn't
@@ -187,10 +75,6 @@ void          ee_srand(unsigned char);
 
 /** PRE-GENERATED ECC POINTS **************************************************/
 
-/**
- * These are the keys taken from the Host GUI when running benchmark mode.
- * This assumes 'char' is always an octet (probably safe for today's MCUs).
- */
 // clang-format off
 
 static uint8_t g_ecc_peer_public_key_p256r1[] =
@@ -204,19 +88,6 @@ static uint8_t g_ecc_peer_public_key_p256r1[] =
 // Associated private key
 0x3e,0xfd,0x56,0x58,0xe8,0xd9,0x15,0x8c,0x97,0x0b,0xc1,0x12,0xe6,0x6a,0x4d,0xb3,
 0x93,0xa0,0x78,0xf6,0x13,0xfa,0x0e,0xb8,0x6a,0xf0,0x68,0xf0,0x3f,0x4d,0x41,0x23,
-*/
-};
-
-static uint8_t g_ecc_peer_public_key_c25519[] =
-{
-// Taken from RFC7748 Section 6.1
-// LITTLE-ENDIAN
-0xde,0x9e,0xdb,0x7d,0x7b,0x7d,0xc1,0xb4,0xd3,0x5b,0x61,0xc2,0xec,0xe4,0x35,0x37,
-0x3f,0x83,0x43,0xc8,0x5b,0x78,0x67,0x4d,0xad,0xfc,0x7e,0x14,0x6f,0x88,0x2b,0x4f,
-/* Associated private key
-// LITTLE-ENDIAN
-0x5d,0xab,0x08,0x7e,0x62,0x4a,0x8a,0x4b,0x79,0xe1,0x7f,0x8b,0x83,0x80,0x0e,0xe6,
-0x6f,0x3b,0xb1,0x29,0x26,0x18,0xb6,0xfd,0x1c,0x2f,0x8b,0x27,0xff,0x88,0xe0,0xeb,
 */
 };
 
@@ -237,11 +108,33 @@ static uint8_t g_ecc_peer_public_key_p384[] =
 */
 };
 
+static uint8_t g_ecc_peer_public_key_c25519[] =
+{
+// Taken from RFC7748 Section 6.1
+// LITTLE-ENDIAN
+0xde,0x9e,0xdb,0x7d,0x7b,0x7d,0xc1,0xb4,0xd3,0x5b,0x61,0xc2,0xec,0xe4,0x35,0x37,
+0x3f,0x83,0x43,0xc8,0x5b,0x78,0x67,0x4d,0xad,0xfc,0x7e,0x14,0x6f,0x88,0x2b,0x4f,
+/* Associated private key
+// LITTLE-ENDIAN
+0x5d,0xab,0x08,0x7e,0x62,0x4a,0x8a,0x4b,0x79,0xe1,0x7f,0x8b,0x83,0x80,0x0e,0xe6,
+0x6f,0x3b,0xb1,0x29,0x26,0x18,0xb6,0xfd,0x1c,0x2f,0x8b,0x27,0xff,0x88,0xe0,0xeb,
+*/
+};
+
+static uint8_t g_ecc_peer_public_key_ed25519[] =
+{
+// Taken from RFC7748 Section 6.1
+// LITTLE-ENDIAN
+/* Associated private key
+// LITTLE-ENDIAN
+*/
+};
+
 // Order must follow ecdh_group_t in profile/ee_ecdh.h
 static uint8_t *g_ecc_peer_public_keys[] = {
     g_ecc_peer_public_key_p256r1,
+    g_ecc_peer_public_key_p384,
     g_ecc_peer_public_key_c25519,
-    g_ecc_peer_public_key_p384
 };
 
 static uint8_t g_ecc_private_key_p256r1[] =
@@ -254,19 +147,6 @@ static uint8_t g_ecc_private_key_p256r1[] =
 0x27,0x01,0xfb,0x4f,0xd5,0xff,0x4b,0xab,0x7e,0x52,0x17,0xbf,0x09,0x15,0xe9,0x48,
 0xb0,0x54,0xbe,0x64,0x70,0xe5,0x28,0xd9,0xe1,0x45,0xfc,0xbc,0xdc,0x01,0x6f,0x6a,
 0x4a,0xa1,0x55,0x8b,0x89,0xc8,0xe1,0x6f,0x90,0x1e,0xe1,0xc3,0xd4,0x60,0xa8,0xcc,
-*/
-};
-
-static uint8_t g_ecc_private_key_c25519[] =
-{
-// Taken from RFC7748 Section 6.1
-// LITTLE-ENDIAN
-0x77,0x07,0x6d,0x0a,0x73,0x18,0xa5,0x7d,0x3c,0x16,0xc1,0x72,0x51,0xb2,0x66,0x45,
-0xdf,0x4c,0x2f,0x87,0xeb,0xc0,0x99,0x2a,0xb1,0x77,0xfb,0xa5,0x1d,0xb9,0x2c,0x2a,
-/* Associated public key
-// LITTLE-ENDIAN
-0x85,0x20,0xf0,0x09,0x89,0x30,0xa7,0x54,0x74,0x8b,0x7d,0xdc,0xb4,0x3e,0xf7,0x5a,
-0x0d,0xbf,0x3a,0x0d,0x26,0x38,0x1a,0xf4,0xeb,0xa4,0xa9,0x8e,0xaa,0x9b,0x4e,0x6a,
 */
 };
 
@@ -286,18 +166,39 @@ static uint8_t g_ecc_private_key_p384[] =
 */
 };
 
+static uint8_t g_ecc_private_key_c25519[] =
+{
+// Taken from RFC7748 Section 6.1
+// LITTLE-ENDIAN
+0xc8,0xea,0x84,0xfd,0x5d,0x6c,0xa2,0xa4,0x15,0xb3,0x6b,0xb1,0x1d,0x66,0xc8,0x36,
+0x0d,0x00,0x6f,0xca,0xf5,0x4a,0x3a,0x6f,0x50,0x65,0xa9,0xc2,0x61,0xb1,0xc0,0x6a,
+/* Associated public key
+// LITTLE-ENDIAN
+0xf8,0x5d,0x06,0x5d,0xd7,0xa4,0xe2,0xb8,0x72,0x27,0xf2,0x38,0x2b,0x44,0x4b,0xf5,
+0xd2,0x29,0x60,0x70,0x3c,0xdc,0x86,0xc0,0xef,0xd2,0xd3,0x4d,0x5d,0xe1,0xdb,0x26,
+*/
+};
+
+// N.B. Ed25519 defines a specific algorithm for key generation
+static uint8_t g_ecc_private_key_ed25519[] =
+{
+// Taken from RFC7748 Section 6.1
+// LITTLE-ENDIAN
+0x5a,0xb0,0x0d,0x46,0xea,0xd1,0xf3,0xa7,0x8e,0x66,0xde,0x59,0x8a,0xe8,0xbf,0x46,
+0x64,0xe4,0xf8,0x05,0xe4,0xe7,0x68,0x0f,0x70,0x67,0xe9,0x82,0x82,0x70,0x56,0xfd,
+/* Associated public key
+// LITTLE-ENDIAN
+0x77,0xee,0xaf,0x7f,0x13,0x65,0xcc,0x5f,0x60,0xcf,0x3d,0x7e,0x08,0xa6,0x2f,0xf0,
+0xf8,0x18,0x1a,0xc8,0x1c,0x21,0x29,0xe8,0xf9,0x12,0x7f,0x44,0x26,0xfe,0x58,0x32,
+*/
+};
+
 // Order must follow ecdh_group_t in profile/ee_ecdh.h
 static uint8_t *g_ecc_private_keys[] = {
     g_ecc_private_key_p256r1,
+    g_ecc_private_key_p384,
     g_ecc_private_key_c25519,
-    g_ecc_private_key_p384
-};
-
-// HMAC. This is an HMAC generated from a test message to use for sign/verify.
-// Message: "EEMBC hash test" -> PKCS1v15/SHA256 -> hex
-static uint8_t g_hmac[] = {
-0x93,0x75,0xa3,0x23,0xed,0x69,0x76,0x17,0x0e,0x8c,0x01,0xd1,0xdf,0xcb,0xfc,0x6f,
-0x38,0x3e,0xf4,0x04,0x04,0xc1,0x4a,0xd0,0xc7,0xc6,0x84,0xde,0x66,0xa2,0x3f,0xd5,
+    g_ecc_private_key_ed25519,
 };
 
 // clang-format on
@@ -346,7 +247,6 @@ th_timestamp(void)
     // --- BEGIN USER CODE 1
 #if (__linux__ || __APPLE__)
     struct timespec t;
-
     /*@-unrecog*/
     clock_gettime(CLOCK_REALTIME, &t);
 #elif _WIN32
@@ -357,7 +257,6 @@ th_timestamp(void)
 #else
 #error "Operating system not recognized"
 #endif
-
     // --- END USER CODE 1
     if (g_verify_mode)
     {
@@ -379,11 +278,19 @@ th_timestamp(void)
 #else
 #error "Operating system not recognized"
 #endif
-
         // --- END USER CODE 2
         th_printf(EE_MSG_TIMESTAMP, elapsedMicroSeconds);
         push_timestamp(elapsedMicroSeconds);
     }
+}
+
+/** ERROR HANDLER **/
+
+void
+error_handler(void)
+{
+    exit(-1);
+    // or if embedded: while(1) {};
 }
 
 /** PRINTF ********************************************************************/
@@ -405,7 +312,7 @@ th_printf(const char *fmt, ...)
     // Emulate the GUI and fail on error message.
     if (fmt[0] == 'e' && fmt[1] == '-')
     {
-        exit(1);
+        error_handler();
     }
 #else
     // If quiet mode is on, at least print the error (see README.md).
@@ -416,7 +323,7 @@ th_printf(const char *fmt, ...)
         /*@-retvalint*/
         th_vprintf(fmt, args);
         va_end(args);
-        exit(1);
+        error_handler();
     }
 #endif
 }
@@ -468,181 +375,6 @@ crcu16(uint16_t newval, uint16_t crc)
 
 /** BENCHMARK PRIMITIVE WRAPPERS **********************************************/
 
-uint16_t
-wrap_cipher(
-    aes_cipher_mode_t mode,   // input: cipher mode
-    aes_function_t    func,   // input: func (AES_ENC|AES_DEC)
-    uint_fast32_t     keylen, // input: length of key in bytes
-    uint_fast32_t     len,    // input: length of input in bytes
-    uint_fast32_t     iter    // input: # of test iterations
-)
-{
-    uint8_t *key = NULL;
-    uint8_t *in = NULL;
-    uint8_t *out = NULL;
-    uint8_t *iv;
-    int ivlen = mode == AES_CTR ? AES_CTR_IVSIZE : AES_AEAD_IVSIZE;
-    uint8_t tag[AES_TAGSIZE];
-    uint16_t       crc;
-    int x;
-
-    key = (uint8_t *)th_malloc(keylen);
-    in = (uint8_t *)th_malloc(len);
-    iv = (uint8_t *)th_malloc(ivlen);
-    out = (uint8_t *)th_malloc(len);
-    if (!key || !in || !out || !iv)
-    {
-        th_printf("e-[wrap_cipher malloc error\r\n");
-        while (1) {};
-    }
-
-    // Fill the key, iv, and plaintext with random values
-    for (x = 0; x < keylen; ++x)
-    {
-        key[x] = ee_rand();
-    }
-    for (x = 0; x < ivlen; ++x)
-    {
-        iv[x] = ee_rand();
-    }
-    for (x = 0; x < len; ++x)
-    {
-        in[x] = ee_rand();
-    }
-    ee_printmem_hex(key, keylen,    "> key :");
-    ee_printmem_hex(iv, ivlen, "> iv  :");
-    ee_printmem_hex(in, len,        "> pt  :");
-    if (func == AES_DEC)
-    {
-        // Encrypt something for the decrypt loop to decrypt
-        ee_aes(
-            mode, AES_ENC,
-            key, keylen,
-            iv,
-            in, len,
-            out,
-            tag,
-            NULL,
-            0,
-            iter
-        );
-        th_memcpy(in, out, len);
-        ee_printmem_hex(in, len, "> pct :");
-        ee_printmem_hex(tag, AES_TAGSIZE, "> ptag:");
-    }
-    ee_aes(
-        mode, func,
-        key, keylen,
-        iv,
-        in, len,
-        out,
-        tag,
-        NULL,
-        0,
-        iter
-    );
-    ee_printmem_hex(out, len, "> out :");
-    ee_printmem_hex(tag, AES_TAGSIZE, "> tag :");
-    th_free(key);
-    th_free(in);
-    th_free(out);
-    return 0xfff;
-}
-
-// ECB 
-
-uint16_t
-wrap_aes128_ecb_encrypt(unsigned int n, unsigned int i)
-{
-    return wrap_cipher(AES_ECB, AES_ENC, 128 / 8, n, i);
-}
-
-uint16_t
-wrap_aes128_ecb_decrypt(unsigned int n, unsigned int i)
-{
-    return wrap_cipher(AES_ECB, AES_DEC, 128 / 8, n, i);
-}
-
-uint16_t
-wrap_aes256_ecb_encrypt(unsigned int n, unsigned int i)
-{
-    return wrap_cipher(AES_ECB, AES_ENC, 256 / 8, n, i);
-}
-
-uint16_t
-wrap_aes256_ecb_decrypt(unsigned int n, unsigned int i)
-{
-    return wrap_cipher(AES_ECB, AES_DEC, 256 / 8, n, i);
-}
-
-// CTR
-
-uint16_t
-wrap_aes128_ctr_encrypt(unsigned int n, unsigned int i)
-{
-    return wrap_cipher(AES_CTR, AES_ENC, 128 / 8, n, i);
-}
-
-uint16_t
-wrap_aes128_ctr_decrypt(unsigned int n, unsigned int i)
-{
-    return wrap_cipher(AES_CTR, AES_DEC, 128 / 8, n, i);
-}
-
-uint16_t
-wrap_aes256_ctr_encrypt(unsigned int n, unsigned int i)
-{
-    return wrap_cipher(AES_CTR, AES_ENC, 256 / 8, n, i);
-}
-
-uint16_t
-wrap_aes256_ctr_decrypt(unsigned int n, unsigned int i)
-{
-    return wrap_cipher(AES_CTR, AES_DEC, 256 / 8, n, i);
-}
-
-// CCM
-
-uint16_t
-wrap_aes128_ccm_encrypt(unsigned int n, unsigned int i)
-{
-    return wrap_cipher(AES_CCM, AES_ENC, 128 / 8, n, i);
-}
-
-uint16_t
-wrap_aes128_ccm_decrypt(unsigned int n, unsigned int i)
-{
-    return wrap_cipher(AES_CCM, AES_DEC, 128 / 8, n, i);
-}
-
-uint16_t
-wrap_aes256_ccm_encrypt(unsigned int n, unsigned int i)
-{
-    return wrap_cipher(AES_CCM, AES_ENC, 256 / 8, n, i);
-}
-
-uint16_t
-wrap_aes256_ccm_decrypt(unsigned int n, unsigned int i)
-{
-    return wrap_cipher(AES_CCM, AES_DEC, 256 / 8, n, i);
-}
-
-// GCM
-
-uint16_t
-wrap_aes128_gcm_encrypt(unsigned int n, unsigned int i)
-{
-    return wrap_cipher(AES_GCM, AES_ENC, 128 / 8, n, i);
-}
-
-uint16_t
-wrap_aes128_gcm_decrypt(unsigned int n, unsigned int i)
-{
-    return wrap_cipher(AES_GCM, AES_DEC, 128 / 8, n, i);
-}
-
-#if 0
-
 /**
  * The following functions all match the wrapper_function_t typedef by
  * accepting the number of octets in the input data (n), the number of
@@ -655,17 +387,98 @@ wrap_aes128_gcm_decrypt(unsigned int n, unsigned int i)
  */
 
 uint16_t
-wrap_sha256(unsigned int n, unsigned int i)
+wrap_aes(aes_cipher_mode_t mode,   // input: cipher mode
+         aes_function_t    func,   // input: func (AES_ENC|AES_DEC)
+         uint_fast32_t     keylen, // input: length of key in bytes
+         uint_fast32_t     n,      // input: length of input in bytes
+         uint_fast32_t     i       // input: # of test iterations
+)
 {
-    unsigned char *buffer;
-    unsigned int   buflen;
-    unsigned char *in;
-    unsigned char *out;
-    unsigned int   x;
-    uint16_t       crc;
+    uint8_t *    buffer = NULL;
+    unsigned int buflen;
+    uint8_t *    key;
+    uint8_t *    in;
+    uint8_t *    out;
+    uint8_t *    iv;
+    uint8_t *    tag;
+    int          ivlen  = mode == AES_CTR ? AES_CTR_IVSIZE : AES_AEAD_IVSIZE;
+    uint8_t      taglen = AES_TAGSIZE;
+    uint16_t     crc;
+    int          x;
 
-    buflen = n + SHA_SIZE;
-    buffer = (unsigned char *)th_malloc(buflen);
+    buflen = keylen + n + n + ivlen + taglen;
+    buffer = (uint8_t *)th_malloc(buflen);
+    assert(buffer != NULL);
+    key = buffer;
+    in  = key + keylen;
+    out = in + n;
+    iv  = out + n;
+    tag = iv + ivlen;
+    for (x = 0; x < keylen; ++x)
+    {
+        key[x] = ee_rand();
+    }
+    for (x = 0; x < ivlen; ++x)
+    {
+        iv[x] = ee_rand();
+    }
+    for (x = 0; x < n; ++x)
+    {
+        in[x] = ee_rand();
+    }
+    ee_printmem_hex(key, keylen, "> key :");
+    ee_printmem_hex(iv, ivlen, "> iv  :");
+    ee_printmem_hex(in, n, "> pt  :");
+    if (func == AES_DEC)
+    {
+        // Encrypt something for the decrypt loop to decrypt
+        ee_aes(mode, AES_ENC, key, keylen, iv, in, n, out, tag, NULL, 0, i);
+        th_memcpy(in, out, n);
+        ee_printmem_hex(in, n, "> pct :");
+        ee_printmem_hex(tag, AES_TAGSIZE, "> ptag:");
+    }
+    ee_aes(mode, func, key, keylen, iv, in, n, out, tag, NULL, 0, i);
+    ee_printmem_hex(out, n, "> out :");
+    ee_printmem_hex(tag, AES_TAGSIZE, "> tag :");
+    for (crc = 0, x = 0; x < n; ++x)
+    {
+        crc = crcu16(crc, (uint8_t)out[x]);
+    }
+    th_free(buffer);
+    return crc;
+}
+
+#define MAKE_WRAP_AES(bits, MODE)                                              \
+    uint16_t wrap_aes##bits##_##MODE##_encrypt(unsigned int n, unsigned int i) \
+    {                                                                          \
+        return wrap_aes(AES_##MODE, AES_ENC, bits / 8, n, i);                  \
+    }                                                                          \
+    uint16_t wrap_aes##bits##_##MODE##_decrypt(unsigned int n, unsigned int i) \
+    {                                                                          \
+        return wrap_aes(AES_##MODE, AES_DEC, bits / 8, n, i);                  \
+    }
+
+MAKE_WRAP_AES(128, ECB)
+MAKE_WRAP_AES(128, CTR)
+MAKE_WRAP_AES(128, CCM)
+MAKE_WRAP_AES(128, GCM)
+MAKE_WRAP_AES(256, ECB)
+MAKE_WRAP_AES(256, CTR)
+MAKE_WRAP_AES(256, CCM)
+
+uint16_t
+wrap_sha(sha_size_t size, unsigned int n, unsigned int i)
+{
+    uint8_t *    buffer;
+    unsigned int buflen;
+    uint8_t *    in;
+    uint8_t *    out;
+    unsigned int x;
+    unsigned int shalen = size / 8;
+    uint16_t     crc;
+
+    buflen = n + shalen;
+    buffer = (uint8_t *)th_malloc(buflen);
     assert(buffer != NULL);
     in  = buffer;
     out = in + n;
@@ -674,8 +487,10 @@ wrap_sha256(unsigned int n, unsigned int i)
         in[x] = ee_rand();
     }
     g_verify_mode = false;
-    ee_sha256(buffer, n, out, i);
-    for (crc = 0, x = 0; x < SHA_SIZE; ++x)
+    ee_sha(size, buffer, n, out, i);
+    ee_printmem_hex(in, n, "> in  :");
+    ee_printmem_hex(out, shalen, "> out :");
+    for (crc = 0, x = 0; x < shalen; ++x)
     {
         crc = crcu16(crc, (uint8_t)out[x]);
     }
@@ -683,19 +498,29 @@ wrap_sha256(unsigned int n, unsigned int i)
     return crc;
 }
 
-uint16_t
-wrap_ecdh_ex(unsigned int n, unsigned int i, ecdh_group_t group)
-{
-    uint8_t *pubkey;
-    uint8_t *prikey;
-    uint8_t  shared[ee_sec_sz[group]];
-    unsigned int   x;
-    uint16_t       crc;
+#define MAKE_WRAP_SHA(x)                                 \
+    uint16_t wrap_sha##x(unsigned int n, unsigned int i) \
+    {                                                    \
+        return wrap_sha(EE_SHA##x, n, i);               \
+    }
 
+MAKE_WRAP_SHA(256)
+MAKE_WRAP_SHA(384)
+
+uint16_t
+wrap_ecdh(ecdh_group_t group, unsigned int n, unsigned int i)
+{
+    uint8_t *    pubkey;
+    uint8_t *    prikey;
+    uint8_t      shared[ee_sec_sz[group]];
+    unsigned int x;
+    uint16_t     crc;
     n             = 0; // unused
-    pubkey  = g_ecc_peer_public_keys[group];
-    prikey       = g_ecc_private_keys[group];
+    pubkey        = g_ecc_peer_public_keys[group];
+    prikey        = g_ecc_private_keys[group];
     g_verify_mode = false;
+    ee_printmem_hex(pubkey, ee_pub_sz[group], "pub : ");
+    ee_printmem_hex(prikey, ee_pri_sz[group], "pri : ");
     ee_ecdh(group,
             pubkey,
             ee_pub_sz[group],
@@ -704,6 +529,7 @@ wrap_ecdh_ex(unsigned int n, unsigned int i, ecdh_group_t group)
             shared,
             ee_sec_sz[group],
             i);
+    ee_printmem_hex(shared, ee_sec_sz[group], "sec : ");
     for (crc = 0, x = 0; x < ee_sec_sz[group]; ++x)
     {
         crc = crcu16(crc, (uint8_t)shared[x]);
@@ -711,124 +537,110 @@ wrap_ecdh_ex(unsigned int n, unsigned int i, ecdh_group_t group)
     return crc;
 }
 
-uint16_t
-wrap_ecdh_p256r1(unsigned int n, unsigned int i)
-{
-    return wrap_ecdh_ex(n, i, EE_P256R1);
-}
+#define MAKE_WRAP_ECDH(nick, group)                           \
+    uint16_t wrap_ecdh_##nick(unsigned int n, unsigned int i) \
+    {                                                         \
+        return wrap_ecdh(group, n, i);                        \
+    }
+
+MAKE_WRAP_ECDH(p256r1, EE_P256R1)
+MAKE_WRAP_ECDH(p384, EE_P384)
+MAKE_WRAP_ECDH(x25519, EE_C25519)
 
 uint16_t
-wrap_ecdh_ed25519(unsigned int n, unsigned int i)
+wrap_ecdsa_sign(ecdh_group_t group, unsigned int n, unsigned int i)
 {
-    return wrap_ecdh_ex(n, i, EE_C25519);
-}
+    uint8_t *    buffer;
+    unsigned int buflen;
+    uint8_t *    privkey;
+    uint8_t *    sig;
+    // Note this is an in/out to slen, as input it is the max siglen
+    unsigned int slen = 256;
+    unsigned int x;
+    uint16_t     crc;
+    size_t       keydex;
 
-uint16_t
-wrap_ecdh_p384(unsigned int n, unsigned int i)
-{
-    return wrap_ecdh_ex(n, i, EE_P384);
-}
+    // This is a hack because the keys for Ed25519 are not the same as keys
+    // made on Curve25519 by mod math.
+    keydex = group == EE_C25519 ? 3 : group;
 
-uint16_t
-wrap_ecdsa_sign_base(ecdh_group_t group, unsigned int n, unsigned int i)
-{
-    n = 0; // unused
-    /**
-     * ECDSA Sign & Verify a hash
-     *
-     * Preload buffer with:
-     *
-     * Value      Size (Bytes)
-     * d          32 (Private key uncompressed 32-byte)
-     * msg        32 (Digest to sign)
-     */
-    unsigned char *privkey;
-    unsigned char *sig;
-    uint_fast32_t  slen;
-    unsigned int   x;
-    uint16_t       crc;
-
-    slen = 256; // Note: this is also an input to ee_ecdsa_sign
-    sig  = (unsigned char *)th_malloc(slen);
-    assert(sig != NULL);
+    buflen = n + slen;
+    buffer = (uint8_t *)th_malloc(buflen);
+    assert(buffer != NULL);
+    sig = buffer + n;
     memset(sig, 0x0, slen);
-    privkey       = g_ecc_private_keys[group];
+    for (x = 0; x < n; ++x)
+    {
+        buffer[x] = ee_rand();
+    }
+    privkey       = g_ecc_private_keys[keydex];
     g_verify_mode = false;
-    ee_ecdsa_sign(group, g_hmac, HMAC_SIZE, sig, &slen, privkey, ECC_DSIZE, i);
-    ee_printmem_hex(privkey, ECC_DSIZE, "pri ");
-    ee_printmem_hex(g_hmac, HMAC_SIZE, "msg ");
+    ee_printmem_hex(privkey, ee_pri_sz[group], "pri ");
+    ee_printmem_hex(buffer, n, "msg ");
+    ee_ecdsa_sign(group, buffer, n, sig, &slen, privkey, ee_pri_sz[group], i);
     ee_printmem_hex(sig, slen, "sig ");
     for (crc = 0, x = 0; x < slen; ++x)
     {
         crc = crcu16(crc, (uint8_t)sig[x]);
     }
-    th_free(sig);
+    th_free(buffer);
     return crc;
 }
 
 uint16_t
-wrap_ecdsa_verify_base(ecdh_group_t group, unsigned int n, unsigned int i)
+wrap_ecdsa_verify(ecdh_group_t group, unsigned int n, unsigned int i)
 {
-    /**
-     * ECDSA Sign & Verify a hash
-     *
-     * Preload buffer with:
-     *
-     * Value      Size (Bytes)
-     * d          32 (Private key uncompressed 32-byte)
-     * SHA256     32 (SHA256 Digest to sign)
-     */
-    unsigned char *privkey;
-    unsigned char *sig;
-    uint_fast32_t  slen;
-    unsigned int   x;
-    uint16_t       crc;
+    uint8_t *    buffer;
+    unsigned int buflen;
+    uint8_t *    privkey;
+    uint8_t *    sig;
+    // Note this is an in/out to slen, as input it is the max siglen
+    unsigned int slen = 256;
+    unsigned int x;
+    uint16_t     crc;
+    size_t       keydex;
 
-    n = 0; // unused
+    // This is a hack because the keys for Ed25519 are not the same as keys
+    // made on Curve25519 by mod math.
+    keydex = group == EE_C25519 ? 3 : group;
 
-    slen = 256; // Note: this is also an input to ee_ecdsa_sign
-    sig  = (unsigned char *)th_malloc(slen);
-    assert(sig != NULL);
+    buflen = n + slen;
+    buffer = (uint8_t *)th_malloc(buflen);
+    assert(buffer != NULL);
+    sig = buffer + n;
     memset(sig, 0x0, slen);
-    privkey = g_ecc_private_keys[group];
-    // Do NOT record timestamps during encrypt! (see th_timestamp())
-    g_verify_mode = true;
-    // Only need one iteration to create the signature; save time!
-    ee_ecdsa_sign(group, g_hmac, HMAC_SIZE, sig, &slen, privkey, ECC_DSIZE, 1);
-    // Turn on recording timestamps
+    for (x = 0; x < n; ++x)
+    {
+        buffer[x] = ee_rand();
+    }
+    privkey       = g_ecc_private_keys[keydex];
     g_verify_mode = false;
-    ee_ecdsa_verify(group, g_hmac, HMAC_SIZE, sig, slen, privkey, ECC_DSIZE, i);
+    ee_ecdsa_sign(group, buffer, n, sig, &slen, privkey, ee_pri_sz[group], i);
+    ee_printmem_hex(privkey, ee_pri_sz[group], "pri ");
+    ee_printmem_hex(buffer, n, "msg ");
+    ee_printmem_hex(sig, slen, "sig ");
+    ee_ecdsa_verify(group, buffer, n, sig, slen, privkey, ee_pri_sz[group], i);
     for (crc = 0, x = 0; x < slen; ++x)
     {
         crc = crcu16(crc, (uint8_t)sig[x]);
     }
-    th_free(sig);
+    th_free(buffer);
     return crc;
 }
 
-uint16_t
-wrap_ecdsa_sign(unsigned int n, unsigned int i)
-{
-    return wrap_ecdsa_sign_base(EE_P256R1, n, i);
-}
+#define MAKE_WRAP_ECC_DSA(nick, group) \
+    uint16_t wrap_ecdsa_sign_##nick(unsigned int n, unsigned int i) \
+    { \
+        return wrap_ecdsa_sign(group, n, i); \
+    } \
+    uint16_t wrap_ecdsa_verify_##nick(unsigned int n, unsigned int i) \
+    { \
+        return wrap_ecdsa_verify(group, n, i); \
+    }
 
-uint16_t
-wrap_ecdsa_verify(unsigned int n, unsigned int i)
-{
-    return wrap_ecdsa_verify_base(EE_P256R1, n, i);
-}
-
-uint16_t
-wrap_ecdsa_sign_ed25519(unsigned int n, unsigned int i)
-{
-    return wrap_ecdsa_sign_base(EE_C25519, n, i);
-}
-
-uint16_t
-wrap_ecdsa_verify_ed25519(unsigned int n, unsigned int i)
-{
-    return wrap_ecdsa_verify_base(EE_C25519, n, i);
-}
+MAKE_WRAP_ECC_DSA(p256r1, EE_P256R1)
+MAKE_WRAP_ECC_DSA(p384, EE_P384)
+MAKE_WRAP_ECC_DSA(ed25519, EE_C25519)
 
 uint16_t
 wrap_variation_001(unsigned int n, unsigned int i)
@@ -843,6 +655,7 @@ wrap_variation_001(unsigned int n, unsigned int i)
      */
     return (uint16_t)0;
 }
+
 uint16_t
 wrap_chachapoly_seal(unsigned int n, unsigned int i)
 {
@@ -881,8 +694,12 @@ wrap_chachapoly_seal(unsigned int n, unsigned int i)
         in[x] = ee_rand();
     }
     g_verify_mode = false;
-
+    ee_printmem_hex(key, CHACHAPOLY_KEYSIZE, "key: ");
+    ee_printmem_hex(iv, CHACHAPOLY_IVSIZE, "iv : ");
+    ee_printmem_hex(in, n, "in : ");
     ee_chachapoly(key, NULL, 0, iv, in, n, tag, out, CHACHAPOLY_ENC, i);
+    ee_printmem_hex(out, n, "out: ");
+    ee_printmem_hex(tag, CHACHAPOLY_TAGSIZE, "tag: ");
     for (crc = 0, x = 0; x < n; ++x)
     {
         crc = crcu16(crc, (uint8_t)out[x]);
@@ -942,7 +759,6 @@ wrap_chachapoly_read(unsigned int n, unsigned int i)
     th_free(buffer);
     return crc;
 }
-#endif
 
 /** TUNING FUNCTION ***********************************************************/
 
@@ -985,6 +801,92 @@ tune_iterations(unsigned int n, wrapper_function_t *func)
     return total_iter;
 }
 
+// We tune each function independently by using a table entry for each wrapper:
+typedef struct
+{
+    wrapper_function_t *func;         // The primitive for this task
+    uint16_t            n;            // Number of octets for input data
+    float               ips;          // iterations-per-second
+    float               weight;       // equation scaling weight
+    uint16_t            actual_crc;   // CRC computed for 1 iter. seed 0
+    uint16_t            expected_crc; // Precomputed CRC by EEMBC
+    char *              name;
+} task_entry_t;
+
+#define TASK(name, n, w, crc) \
+    { wrap_##name, n, 0.0, (float)w, 0x0, crc, #name },
+
+/**
+ * The weights are used for scoring and were defined by the team in 2018.
+ *
+ * The expected_crc value was computed by EEMBC using wolfSSL. The intent
+ * of this field is to help detected mistakes in the implementation, or errant
+ * bugs introduced while porting the firmware.
+ *
+ * The CRC of the resulting output should be the same regardless of the
+ * software or hardware implementation. Changing the seeds or the input
+ * Q/d ECC keys will break the CRC.
+ *
+ * Note 1: This CRC is based on the signature in ASN1 encoding.
+ * Note 3: This CRC is based on the signature as raw little-endian bytes.
+ * Note 4: All ECDSA is done according to RFC6979 with SHA256
+ */
+// clang-format off
+static task_entry_t g_task[] =
+{
+    /*   nicname              , data, weight, crc  */
+    /*
+    TASK(sha256               ,   16,   1.0f, 0x998a)
+    TASK(sha384               ,   16,   1.0f, 0x998a)
+    TASK(aes128_ECB_encrypt   ,   16,   1.0f, 0x998a)
+    TASK(aes128_ECB_decrypt   ,   16,   1.0f, 0x998a)
+    TASK(aes256_ECB_encrypt   ,   16,   1.0f, 0x998a)
+    TASK(aes256_ECB_decrypt   ,   16,   1.0f, 0x998a)
+    TASK(aes128_CTR_encrypt   ,   16,   1.0f, 0x998a)
+    TASK(aes128_CTR_decrypt   ,   16,   1.0f, 0x998a)
+    TASK(aes256_CTR_encrypt   ,   16,   1.0f, 0x998a)
+    TASK(aes256_CTR_decrypt   ,   16,   1.0f, 0x998a)
+    TASK(aes128_CCM_encrypt   ,   16,   1.0f, 0x998a)
+    TASK(aes128_CCM_decrypt   ,   16,   1.0f, 0x998a)
+    TASK(aes256_CCM_encrypt   ,   16,   1.0f, 0x998a)
+    TASK(aes256_CCM_decrypt   ,   16,   1.0f, 0x998a)
+    TASK(aes128_GCM_encrypt   ,   16,   1.0f, 0x998a)
+    TASK(aes128_GCM_decrypt   ,   16,   1.0f, 0x998a)
+    TASK(chachapoly_seal      ,   16,   1.0f, 0xd80d)
+    TASK(chachapoly_read      ,   16,   1.0f, 0xd80d)
+    TASK(ecdh_p256r1          ,    0,   1.0f, 0x7bdc)
+    TASK(ecdh_p384            ,    0,   1.0f, 0x7bdc)
+    TASK(ecdh_x25519          ,    0,   1.0f, 0x7bdc)
+    TASK(ecdsa_sign_p256r1    ,   32,   1.0f, 0x3a47) // Note [1,4]
+    TASK(ecdsa_verify_p256r1  ,   32,   1.0f, 0x3a47) // Note [1,4]
+    TASK(ecdsa_sign_p256r1    ,   32,   1.0f, 0x3a47) // Note [1,4]
+    */
+    TASK(ecdsa_sign_p256r1    ,   32,   1.0f, 0x3a47) // Note [1,4]
+    TASK(ecdsa_sign_p384      ,   32,   1.0f, 0x3a47) // Note [1,4]
+    //TASK(ecdsa_verify_p384    ,   32,   1.0f, 0x3a47) // Note [1,4]
+    /*
+    TASK(ecdsa_sign_ed25519   ,  256,   1.0f, 0x209d) // Note [3]
+    TASK(ecdsa_verify_ed25519 ,  256,   1.0f, 0x209d) // Note [3]
+    */
+    /*
+    // V1
+    TASK(aes128_ECB_encrypt   ,  320,  1.0f, 0x998a)
+    TASK(aes128_CCM_encrypt   ,   52,  1.0f, 0xd82d)
+    TASK(aes128_CCM_decrypt   ,  168,  1.0f, 0x005b)
+    TASK(ecdh                 ,    0,  1.0f, 0x7531)
+    TASK(ecdsa_sign_p256r1    ,   64,  1.0f, 0x3a47) // Note [1,4]
+    TASK(ecdsa_verify_p256r1  ,   64,  2.0f, 0x3a47) // Note [1,4]
+    TASK(sha256               ,   23,  3.0f, 0x2151)
+    TASK(sha256               ,   57,  1.0f, 0x3b3c)
+    TASK(sha256               ,  384,  1.0f, 0x1d3f)
+    TASK(variation_001        ,    0,  3.0f, 0x0000)
+    TASK(sha256               , 4224,  4.0f, 0x9284)
+    TASK(aes_ecb_encrypt      , 2048, 10.0f, 0x989e)
+    */
+};
+// clang-format on
+static const size_t g_numtasks = sizeof(g_task) / sizeof(task_entry_t);
+
 int
 main(void)
 {
@@ -1002,13 +904,12 @@ main(void)
     {
         // First, compute the correct # of iterations for each primitive
         // iterations = tune_iterations(g_task[i].n, g_task[i].func);
-        iterations = 1;
         // Compute a CRC from a single iteration, also warm up the test
         ee_srand(0); // CRCs are computed with seed 0
-      //  g_task[i].actual_crc = (*g_task[i].func)(g_task[i].n, 1);
+        g_task[i].actual_crc = (*g_task[i].func)(g_task[i].n, 1);
         // Now do a run with the correct number of iterations to get ips
         clear_timestamps();
-        (*g_task[i].func)(g_task[i].n, iterations);
+        //(*g_task[i].func)(g_task[i].n, iterations);
         g_task[i].ips
             = (float)iterations / ((g_timestamps[1] - g_timestamps[0]) / 1e6f);
         /**
@@ -1040,3 +941,8 @@ main(void)
         "official score, please contact support@eembc.org.\n");
     return 0;
 }
+
+
+// TODO verify in = out for decrypt, seal/read, sign/verify
+// TODO rename SIZE to len to be consistent
+// TODO check var names in wrappers for consistency

@@ -46,8 +46,7 @@ th_ecdh_create(void **      p_context, // output: portable context
 )
 {
     ecc_context *ctx = NULL;
-
-    ctx = (ecc_context *)th_malloc(sizeof(ecc_context));
+    ctx              = (ecc_context *)th_malloc(sizeof(ecc_context));
     if (NULL == ctx)
         goto error;
 
@@ -56,6 +55,7 @@ th_ecdh_create(void **      p_context, // output: portable context
     switch (group)
     {
         case EE_P256R1:
+        case EE_P384:
             ctx->ecc_key_pri = (ecc_key *)th_malloc(sizeof(ecc_key));
             if (NULL == ctx->ecc_key_pri)
             {
@@ -99,7 +99,7 @@ error:
     FREE(ctx->x255_key_pub);
     FREE(ctx->rng);
     FREE(ctx);
-    th_printf("e-[Malloc error in th_ecdh_init\r\n");
+    th_printf("e-[Malloc error in th_ecdh_init]\r\n");
     return EE_STATUS_ERROR;
 }
 
@@ -118,24 +118,25 @@ th_ecdh_init(void *         p_context, // input: portable context
 )
 {
     int           ret;
-    unsigned char uncompressed[65];
+    unsigned char uncompressed[256]; // avoid a malloc, just go big
     ecc_context * ctx = (ecc_context *)p_context;
 
 #ifdef WOLFSSL_VALIDATE_ECC_IMPORT
 #error undifne WOLFSSL_VALIDATE_ECC_IMPORT to set up missmatch private ours public peers
 #endif
-
     switch (group)
     {
+        case EE_P384:
         case EE_P256R1:
             uncompressed[0] = 0x04;
             th_memcpy(&(uncompressed[1]), p_public, publen);
-            ret = wc_ecc_import_private_key_ex(p_private,
-                                               prilen,
-                                               uncompressed,
-                                               publen + 1,
-                                               ctx->ecc_key_pri,
-                                               ECC_SECP256R1);
+            ret = wc_ecc_import_private_key_ex(
+                p_private,
+                prilen,
+                uncompressed,
+                publen + 1,
+                ctx->ecc_key_pri,
+                group == EE_P256R1 ? ECC_SECP256R1 : ECC_SECP384R1);
             if (ret != 0)
             {
                 th_printf("e-[wc_ecc_import_private_key_ex: -%d]\r\n", -ret);
@@ -172,7 +173,6 @@ th_ecdh_init(void *         p_context, // input: portable context
             th_printf("e-[Invalid curve in th_ecdh_init]\r\n");
             return EE_STATUS_ERROR;
     }
-
     return EE_STATUS_OK;
 }
 
@@ -191,9 +191,9 @@ th_ecdh_calc_secret(void *         p_context, // input: portable context
     int          ret;
     word32       olen = slen;
     ecc_context *ctx  = (ecc_context *)p_context;
-
     switch (group)
     {
+        case EE_P384:
         case EE_P256R1:
             ret = wc_ecc_shared_secret(
                 ctx->ecc_key_pri, ctx->ecc_key_pri, p_secret, &olen);

@@ -37,11 +37,12 @@ th_ecdsa_create(void **      p_context, // output: portable context
 
     switch (group)
     {
+        case EE_P256R1:
+        case EE_P384:
+            ptr = th_malloc(sizeof(ecc_key));
+            break;
         case EE_C25519:
             ptr = th_malloc(sizeof(ed25519_key));
-            break;
-        case EE_P256R1:
-            ptr = th_malloc(sizeof(ecc_key));
             break;
         default:
             th_printf("e-[Invalid ECC curve in th_ecdsa_create]\r\n");
@@ -49,7 +50,7 @@ th_ecdsa_create(void **      p_context, // output: portable context
     }
     if (ptr == NULL)
     {
-        th_printf("e-[malloc() fail in th_ecdsa_create\r\n");
+        th_printf("e-[malloc() fail in th_ecdsa_create]\r\n");
         return EE_STATUS_ERROR;
     }
     *p_context = ptr;
@@ -58,7 +59,10 @@ th_ecdsa_create(void **      p_context, // output: portable context
 }
 
 ee_status_t
-init_ecc(ecc_key *p_key, uint8_t *p_private, uint_fast32_t plen)
+init_ecc(ecc_key *     p_key,
+         uint8_t *     p_private,
+         uint_fast32_t plen,
+         ecc_curve_id  id)
 {
     int ret;
 
@@ -68,8 +72,7 @@ init_ecc(ecc_key *p_key, uint8_t *p_private, uint_fast32_t plen)
         th_printf("e-[wc_ecc_init_ex: -%d]\r\n", -ret);
         return EE_STATUS_ERROR;
     }
-    ret = wc_ecc_import_private_key_ex(
-        p_private, plen, NULL, 0, p_key, ECC_SECP256R1);
+    ret = wc_ecc_import_private_key_ex(p_private, plen, NULL, 0, p_key, id);
     if (ret != 0)
     {
         th_printf("e-[wc_ecc_import_private_key_ex: -%d]\r\n", -ret);
@@ -144,7 +147,11 @@ th_ecdsa_init(void *        p_context, // input: portable context
     switch (group)
     {
         case EE_P256R1:
-            return init_ecc((ecc_key *)p_context, p_private, plen);
+            return init_ecc(
+                (ecc_key *)p_context, p_private, plen, ECC_SECP256R1);
+        case EE_P384:
+            return init_ecc(
+                (ecc_key *)p_context, p_private, plen, ECC_SECP384R1);
         case EE_C25519:
             return init_ed25519((ed25519_key *)p_context, p_private, plen);
         default:
@@ -164,6 +171,7 @@ sign_ecc(ecc_key *      p_context, // input: portable context
     int    ret;
     WC_RNG rng;
 
+printf("Hashlen %d\n", hlen);
     ret = wc_InitRng_ex(&rng, HEAP_HINT, DEVID);
     if (ret != 0)
     {
@@ -198,17 +206,6 @@ sign_ed25519(ed25519_key *  p_context, // input: portable context
     return EE_STATUS_OK;
 }
 
-/**
- * Create a signature using the specified message.
- * 
- * Ed25519 performs the digest per RFC7748, so if the input is a digest, it
- * will be digested again. For P256R1 the input will not be hashed.
- * 
- * The signature shall be ASN1 or Raw R/S (32B) for P256R1, and raw LE bytes
- * for Ed25519. This is necessary to pass the runner GUI validation test.
- *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
- */
 ee_status_t
 th_ecdsa_sign(void *         p_context, // input: portable context
               ecdh_group_t   group,     // input: see `ecdh_group_t` for options
@@ -221,6 +218,7 @@ th_ecdsa_sign(void *         p_context, // input: portable context
     switch (group)
     {
         case EE_P256R1:
+        case EE_P384:
             return sign_ecc((ecc_key *)p_context, p_msg, mlen, p_sig, p_slen);
         case EE_C25519:
             return sign_ed25519(
@@ -254,9 +252,9 @@ verify_ecc(ecc_key *     p_context,
 ee_status_t
 verify_ed25519(ed25519_key * p_context,
                uint8_t *     p_msg, // input: message
-               uint_fast32_t mlen,   // input: length of message in bytes
-               uint8_t *     p_sig,  // output: signature
-               uint_fast32_t slen    // input: length of signature in bytes
+               uint_fast32_t mlen,  // input: length of message in bytes
+               uint8_t *     p_sig, // output: signature
+               uint_fast32_t slen   // input: length of signature in bytes
 )
 {
     int ret;
@@ -271,29 +269,19 @@ verify_ed25519(ed25519_key * p_context,
     return EE_STATUS_OK;
 }
 
-/**
- * Verify a signature and digest.
- * 
- * Ed25519 performs the digest per RFC7748, so if the input is a digest, it
- * will be digested again. For P256R1 the input will not be hashed.
- * 
- * The signature shall be ASN1 or Raw R/S (32B) for P256R1, and raw LE bytes
- * for Ed25519. This is necessary to pass the runner GUI validation test.
- * 
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
- */
 ee_status_t
 th_ecdsa_verify(void *        p_context, // input: portable context
-                ecdh_group_t  group,  // input: see `ecdh_group_t` for options
+                ecdh_group_t  group, // input: see `ecdh_group_t` for options
                 uint8_t *     p_msg, // input: message
-                uint_fast32_t mlen,   // input: length of message in bytes
-                uint8_t *     p_sig,  // output: signature
-                uint_fast32_t slen    // input: length of signature in bytes
+                uint_fast32_t mlen,  // input: length of message in bytes
+                uint8_t *     p_sig, // output: signature
+                uint_fast32_t slen   // input: length of signature in bytes
 )
 {
     switch (group)
     {
         case EE_P256R1:
+        case EE_P384:
             return verify_ecc((ecc_key *)p_context, p_msg, mlen, p_sig, slen);
         case EE_C25519:
             return verify_ed25519(
@@ -315,6 +303,7 @@ th_ecdsa_destroy(void *       p_context, // portable context
     switch (group)
     {
         case EE_P256R1:
+        case EE_P384:
             wc_ecc_free((ecc_key *)p_context);
             break;
         case EE_C25519:

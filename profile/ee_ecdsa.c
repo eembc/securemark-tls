@@ -67,7 +67,7 @@ exit:
 void
 ee_ecdsa_verify(ecdh_group_t  group,     // input: see `ecdh_group_t`
                 uint8_t *     p_msg,     // input: message
-                uint_fast32_t mlen,     // input: length of message in bytes
+                uint_fast32_t mlen,      // input: length of message in bytes
                 uint8_t *     p_sig,     // input: signature
                 uint_fast32_t slen,      // input: length of signature in bytes
                 uint8_t *     p_private, // input: private key (from host)
@@ -95,6 +95,7 @@ ee_ecdsa_verify(ecdh_group_t  group,     // input: see `ecdh_group_t`
     th_pre();
     while (iterations-- > 0)
     {
+        // The public key should already be in the context.
         if (th_ecdsa_verify(p_context, group, p_msg, mlen, p_sig, slen)
             != EE_STATUS_OK)
         {

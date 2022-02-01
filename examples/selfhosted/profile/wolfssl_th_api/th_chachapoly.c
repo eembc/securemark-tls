@@ -45,7 +45,7 @@ th_chachapoly_init(void *            p_context, // input: portable context
 {
     if (keylen != CHACHA20_POLY1305_AEAD_KEYSIZE)
     {
-        th_printf("e-[wolfSSL expects a %d-byte tag for ChaChaPoly\r\n",
+        th_printf("e-[wolfSSL expects a %d-byte tag for ChaChaPoly]\r\n",
                   CHACHA20_POLY1305_AEAD_KEYSIZE);
     }
     th_memcpy(g_localKey, p_key, CHACHA20_POLY1305_AEAD_KEYSIZE);

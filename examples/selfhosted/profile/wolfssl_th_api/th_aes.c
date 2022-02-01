@@ -23,7 +23,7 @@
 
 ee_status_t
 th_aes_create(void **           p_context, // output: portable context
-           aes_cipher_mode_t mode       // input: AES_ENC or AES_DEC
+              aes_cipher_mode_t mode       // input: AES_ENC or AES_DEC
 )
 {
     *p_context = (Aes *)th_malloc(sizeof(Aes));
@@ -46,7 +46,7 @@ th_aes_init(void *            p_context, // input: portable context
 )
 {
     int  ret = -1;
-    int dir = 0;
+    int  dir = 0;
     Aes *aes;
 
     aes = (Aes *)p_context;
@@ -93,7 +93,7 @@ th_aes_init(void *            p_context, // input: portable context
 
 void
 th_aes_deinit(void *            p_context, // input: portable context
-            aes_cipher_mode_t mode       // input: see aes_cipher_mode_t
+              aes_cipher_mode_t mode       // input: see aes_cipher_mode_t
 )
 {
     if (p_context)
@@ -103,49 +103,49 @@ th_aes_deinit(void *            p_context, // input: portable context
 }
 
 ee_status_t
-th_aes_ecb_encrypt(
-    void *         p_context, // input: portable context
-    const uint8_t *p_pt,      // input: plaintext
-    uint8_t *      p_ct       // output: ciphertext
+th_aes_ecb_encrypt(void *         p_context, // input: portable context
+                   const uint8_t *p_pt,      // input: plaintext
+                   uint8_t *      p_ct       // output: ciphertext
 )
 {
-    return wc_AesEcbEncrypt((Aes *)p_context, p_ct, p_pt, AES_BLOCK_SIZE) ?
-        EE_STATUS_ERROR : EE_STATUS_OK;
+    return wc_AesEcbEncrypt((Aes *)p_context, p_ct, p_pt, AES_BLOCK_SIZE)
+               ? EE_STATUS_ERROR
+               : EE_STATUS_OK;
 }
 
 ee_status_t
-th_aes_ecb_decrypt(
-    void *         p_context, // input: portable context
-    const uint8_t *p_ct,      // input: ciphertext
-    uint8_t *      p_pt       // output: plaintext
+th_aes_ecb_decrypt(void *         p_context, // input: portable context
+                   const uint8_t *p_ct,      // input: ciphertext
+                   uint8_t *      p_pt       // output: plaintext
 )
 {
-    return wc_AesEcbDecrypt((Aes *)p_context, p_pt, p_ct, AES_BLOCK_SIZE) ?
-        EE_STATUS_ERROR : EE_STATUS_OK;
+    return wc_AesEcbDecrypt((Aes *)p_context, p_pt, p_ct, AES_BLOCK_SIZE)
+               ? EE_STATUS_ERROR
+               : EE_STATUS_OK;
 }
 
 ee_status_t
-th_aes_ctr_encrypt(
-    void *         p_context, // input: portable context
-    const uint8_t *p_pt,      // input: plaintext
-    uint_fast32_t  ptlen,     // input: length of plaintext in bytes
-    uint8_t *      p_ct       // output: ciphertext
+th_aes_ctr_encrypt(void *         p_context, // input: portable context
+                   const uint8_t *p_pt,      // input: plaintext
+                   uint_fast32_t  ptlen, // input: length of plaintext in bytes
+                   uint8_t *      p_ct   // output: ciphertext
 )
 {
-    return wc_AesCtrEncrypt((Aes *)p_context, p_ct, p_pt, ptlen) ?
-        EE_STATUS_ERROR : EE_STATUS_OK;
+    return wc_AesCtrEncrypt((Aes *)p_context, p_ct, p_pt, ptlen)
+               ? EE_STATUS_ERROR
+               : EE_STATUS_OK;
 }
 
 ee_status_t
-th_aes_ctr_decrypt(
-    void *         p_context, // input: portable context
-    const uint8_t *p_ct,      // input: ciphertext
-    uint_fast32_t  ctlen,     // input: length of ciphertext in bytes
-    uint8_t *      p_pt       // output: plaintext
+th_aes_ctr_decrypt(void *         p_context, // input: portable context
+                   const uint8_t *p_ct,      // input: ciphertext
+                   uint_fast32_t  ctlen, // input: length of ciphertext in bytes
+                   uint8_t *      p_pt   // output: plaintext
 )
 {
-    return wc_AesCtrEncrypt((Aes *)p_context, p_pt, p_ct, ctlen) ?
-        EE_STATUS_ERROR : EE_STATUS_OK;
+    return wc_AesCtrEncrypt((Aes *)p_context, p_pt, p_ct, ctlen)
+               ? EE_STATUS_ERROR
+               : EE_STATUS_OK;
 }
 
 ee_status_t
@@ -158,20 +158,22 @@ th_aes_ccm_encrypt(
     uint8_t *      p_ct,      // output: ciphertext
     uint8_t *      p_tag,     // output: tag
     uint_fast32_t  taglen,    // input: tag length in bytes
-    const uint8_t *      p_iv,      // input: initialization vector
+    const uint8_t *p_iv,      // input: initialization vector
     uint_fast32_t  ivlen      // input: IV length in bytes
 )
 {
     return wc_AesCcmEncrypt((Aes *)p_context,
-                           p_ct,
-                           p_pt,
-                           ptlen,
-                           p_iv,
-                           ivlen,
-                           p_tag,
-                           taglen,
-                           p_aad,
-                           aadlen) ? EE_STATUS_ERROR : EE_STATUS_OK;
+                            p_ct,
+                            p_pt,
+                            ptlen,
+                            p_iv,
+                            ivlen,
+                            p_tag,
+                            taglen,
+                            p_aad,
+                            aadlen)
+               ? EE_STATUS_ERROR
+               : EE_STATUS_OK;
 }
 
 ee_status_t
@@ -182,22 +184,24 @@ th_aes_ccm_decrypt(
     const uint8_t *p_ct,      // input: ciphertext
     uint_fast32_t  ctlen,     // input: length of ciphertext in bytes
     uint8_t *      p_pt,      // output: plaintext
-    const uint8_t *      p_tag,     // input: tag
+    const uint8_t *p_tag,     // input: tag
     uint_fast32_t  taglen,    // input: tag length in bytes
-    const uint8_t *      p_iv,      // input: initialization vector
+    const uint8_t *p_iv,      // input: initialization vector
     uint_fast32_t  ivlen      // input: IV length in bytes
 )
 {
     return wc_AesCcmDecrypt((Aes *)p_context,
-                           p_pt,
-                           p_ct,
-                           ctlen,
-                           p_iv,
-                           ivlen,
-                           p_tag,
-                           taglen,
-                           p_aad,
-                           aadlen) ? EE_STATUS_ERROR : EE_STATUS_OK;
+                            p_pt,
+                            p_ct,
+                            ctlen,
+                            p_iv,
+                            ivlen,
+                            p_tag,
+                            taglen,
+                            p_aad,
+                            aadlen)
+               ? EE_STATUS_ERROR
+               : EE_STATUS_OK;
 }
 
 ee_status_t
@@ -210,7 +214,7 @@ th_aes_gcm_encrypt(
     uint8_t *      p_ct,      // output: ciphertext
     uint8_t *      p_tag,     // output: tag
     uint_fast32_t  taglen,    // input: tag length in bytes
-    const uint8_t *      p_iv,      // input: initialization vector
+    const uint8_t *p_iv,      // input: initialization vector
     uint_fast32_t  ivlen      // input: IV length in bytes
 )
 {
@@ -223,8 +227,9 @@ th_aes_gcm_encrypt(
                             p_tag,
                             taglen,
                             p_aad,
-                            aadlen
-                            ) ? EE_STATUS_ERROR : EE_STATUS_OK;
+                            aadlen)
+               ? EE_STATUS_ERROR
+               : EE_STATUS_OK;
 }
 
 ee_status_t
@@ -235,9 +240,9 @@ th_aes_gcm_decrypt(
     const uint8_t *p_ct,      // input: ciphertext
     uint_fast32_t  ctlen,     // input: length of plaintext in bytes
     uint8_t *      p_pt,      // output: plaintext
-    const uint8_t *      p_tag,     // input: tag
+    const uint8_t *p_tag,     // input: tag
     uint_fast32_t  taglen,    // input: tag length in bytes
-    const uint8_t *      p_iv,      // input: initialization vector
+    const uint8_t *p_iv,      // input: initialization vector
     uint_fast32_t  ivlen      // input: IV length in bytes
 )
 {
@@ -250,13 +255,14 @@ th_aes_gcm_decrypt(
                             p_tag,
                             taglen,
                             p_aad,
-                            aadlen
-                            ) ? EE_STATUS_ERROR : EE_STATUS_OK;
+                            aadlen)
+               ? EE_STATUS_ERROR
+               : EE_STATUS_OK;
 }
 
 void
 th_aes_destroy(void *            p_context, // input: portable context
-                  aes_cipher_mode_t mode       // input: AES_ECB or AES_CCM
+               aes_cipher_mode_t mode       // input: AES_ECB or AES_CCM
 )
 {
     if (p_context)

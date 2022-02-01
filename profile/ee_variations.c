@@ -39,17 +39,16 @@ uint8_t ee_rand(void);
 void
 ee_variation_001(uint_fast32_t iterations)
 {
-#if 0
     void *        p_csha1 = NULL;        // SHA context 1
     void *        p_csha2 = NULL;        // SHA context 2
     void *        p_caes  = NULL;        // AES context
     uint8_t *     p_msg;                 // All bytes to hash
     uint8_t *     p_buf1;                // SHA1's buffer
     uint8_t *     p_buf2;                // SHA2's buffer
-    uint8_t       p_digest[SHA_SIZE];    // SHA digest
+    uint8_t       p_digest[EE_SHA256 / 8];    // SHA digest
     uint8_t       p_pt[VAR001_AES_SIZE]; // AES plaintext
     uint8_t       p_ct[VAR001_AES_SIZE]; // AES ciphertext
-    uint8_t       p_key[AES_KEYSIZE];    // AES key
+    uint8_t       p_key[16];    // AES key, forcing AES128
     uint_fast32_t idx;                   // Loop index
 
     // Total number of bytes in the TLS handshake session-hash
@@ -67,7 +66,7 @@ ee_variation_001(uint_fast32_t iterations)
     for (idx = 0; idx < VAR001_SESSION_SIZE; ++idx)
     {
         p_msg[idx] = ee_rand();
-        if (idx < AES_KEYSIZE)
+        if (idx < 16)
         {
             p_key[idx] = ee_rand();
         }
@@ -85,62 +84,62 @@ ee_variation_001(uint_fast32_t iterations)
         p_buf1 = p_msg; // p_buf1 creeps through the p_msg data
         p_buf2 = p_msg; // p_buf2 never moves, but use a diff name for clarity
 
-        CHECK(th_sha256_create(&p_csha1));
-        CHECK(th_sha256_init(p_csha1));
+        CHECK(th_sha_create(&p_csha1, EE_SHA256));
+        CHECK(th_sha_init(p_csha1, EE_SHA256));
 
         // NOTE: All of these "magic numbers" are based on handshake analysis
 
-        CHECK(th_sha256_process(p_csha1, p_buf1, 115));
+        CHECK(th_sha_process(p_csha1, EE_SHA256, p_buf1, 115));
         p_buf1 += 115;
-        CHECK(th_sha256_process(p_csha1, p_buf1, 91));
+        CHECK(th_sha_process(p_csha1, EE_SHA256, p_buf1, 91));
         p_buf1 += 91;
-        CHECK(th_sha256_process(p_csha1, p_buf1, 425));
+        CHECK(th_sha_process(p_csha1, EE_SHA256, p_buf1, 425));
         p_buf1 += 425;
 
-        CHECK(th_sha256_create(&p_csha2));
-        CHECK(th_sha256_init(p_csha2));
-        CHECK(th_sha256_process(p_csha2, p_buf2, 384));
-        CHECK(th_sha256_done(p_csha2, p_digest));
-        th_sha256_destroy(p_csha2);
+        CHECK(th_sha_create(&p_csha2, EE_SHA256));
+        CHECK(th_sha_init(p_csha2, EE_SHA256));
+        CHECK(th_sha_process(p_csha2, EE_SHA256, p_buf2, 384));
+        CHECK(th_sha_done(p_csha2, EE_SHA256, p_digest));
+        th_sha_destroy(p_csha2, EE_SHA256);
 
-        CHECK(th_sha256_process(p_csha1, p_buf1, 149));
+        CHECK(th_sha_process(p_csha1, EE_SHA256, p_buf1, 149));
         p_buf1 += 149;
-        CHECK(th_sha256_process(p_csha1, p_buf1, 109));
+        CHECK(th_sha_process(p_csha1, EE_SHA256, p_buf1, 109));
         p_buf1 += 109;
-        CHECK(th_sha256_process(p_csha1, p_buf1, 4));
+        CHECK(th_sha_process(p_csha1, EE_SHA256, p_buf1, 4));
         p_buf1 += 4;
-        CHECK(th_sha256_process(p_csha1, p_buf1, 422));
+        CHECK(th_sha_process(p_csha1, EE_SHA256, p_buf1, 422));
         p_buf1 += 422;
-        CHECK(th_sha256_process(p_csha1, p_buf1, 70));
+        CHECK(th_sha_process(p_csha1, EE_SHA256, p_buf1, 70));
         p_buf1 += 70;
-        CHECK(th_sha256_process(p_csha1, p_buf1, 78));
+        CHECK(th_sha_process(p_csha1, EE_SHA256, p_buf1, 78));
         p_buf1 += 78;
 
-        CHECK(th_aes128_create(&p_caes, AES_ECB));
-        CHECK(th_aes128_init(
-            p_caes, p_key, AES_KEYSIZE, AES_ROUNDS, AES_ENC, AES_ECB));
-        CHECK(th_aes128_ecb_encrypt(p_caes, p_pt, p_ct));
-        th_aes128_destroy(p_caes, AES_ECB);
+        CHECK(th_aes_create(&p_caes, AES_ECB));
+        CHECK(th_aes_init(
+            p_caes, p_key, 16, NULL, AES_ROUNDS, AES_ENC, AES_ECB));
+        CHECK(th_aes_ecb_encrypt(p_caes, p_pt, p_ct));
+        th_aes_destroy(p_caes, AES_ECB);
 
-        CHECK(th_aes128_create(&p_caes, AES_ECB));
-        CHECK(th_aes128_init(
-            p_caes, p_key, AES_KEYSIZE, AES_ROUNDS, AES_ENC, AES_ECB));
-        CHECK(th_aes128_ecb_encrypt(p_caes, p_pt, p_ct));
-        th_aes128_destroy(p_caes, AES_ECB);
+        CHECK(th_aes_create(&p_caes, AES_ECB));
+        CHECK(th_aes_init(
+            p_caes, p_key, 16, NULL, AES_ROUNDS, AES_ENC, AES_ECB));
+        CHECK(th_aes_ecb_encrypt(p_caes, p_pt, p_ct));
+        th_aes_destroy(p_caes, AES_ECB);
 
-        CHECK(th_sha256_process(p_csha1, p_buf1, 16));
+        CHECK(th_sha_process(p_csha1, EE_SHA256, p_buf1, 16));
         p_buf1 += 16;
-        CHECK(th_sha256_process(p_csha1, p_buf1, 16));
+        CHECK(th_sha_process(p_csha1, EE_SHA256, p_buf1, 16));
         p_buf1 += 16;
 
-        CHECK(th_aes128_create(&p_caes, AES_ECB));
-        CHECK(th_aes128_init(
-            p_caes, p_key, AES_KEYSIZE, AES_ROUNDS, AES_ENC, AES_ECB));
-        CHECK(th_aes128_ecb_encrypt(p_caes, p_pt, p_ct));
-        th_aes128_destroy(p_caes, AES_ECB);
+        CHECK(th_aes_create(&p_caes, AES_ECB));
+        CHECK(th_aes_init(
+            p_caes, p_key, 16, NULL, AES_ROUNDS, AES_ENC, AES_ECB));
+        CHECK(th_aes_ecb_encrypt(p_caes, p_pt, p_ct));
+        th_aes_destroy(p_caes, AES_ECB);
 
-        CHECK(th_sha256_done(p_csha1, p_digest));
-        th_sha256_destroy(p_csha1);
+        CHECK(th_sha_done(p_csha1, EE_SHA256, p_digest));
+        th_sha_destroy(p_csha1, EE_SHA256);
     }
     th_post();
     th_timestamp();
@@ -151,12 +150,11 @@ error_exit:
     // TODO: Hard to be more descriptive here.
     th_printf("e-variation-001\r\n");
     // These are NULL safe
-    th_aes128_destroy(p_caes, AES_ECB);
-    th_sha256_destroy(p_csha1);
-    th_sha256_destroy(p_csha2);
+    th_aes_destroy(p_caes, AES_ECB);
+    th_sha_destroy(p_csha1, EE_SHA256);
+    th_sha_destroy(p_csha2, EE_SHA256);
 
 exit:
     th_free(p_msg);
     th_printf("m-variation-001-finish\r\n");
-#endif
 }

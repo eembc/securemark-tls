@@ -20,7 +20,7 @@ include(cmake/splint.cmake)
 #set(CMAKE_NM ${tools}/bin/arm-none-eabi-nm)
 #set(CMAKE_OBJDUMP ${tools}/bin/arm-none-eabi-objdump)
 
-set(CMAKE_C_FLAGS "-pedantic -Wall -O3")
+set(CMAKE_C_FLAGS "-pedantic -Wall -O0")
 
 include_directories(../../monitor)
 include_directories(../../monitor/th_api)

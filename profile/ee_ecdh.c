@@ -19,14 +19,15 @@
  * Peer public key is two 32-byte uncompressed points X & Y on the curve,
  * private key is 32-byte value used in G * m = R (the 'm' value).
  */
-void ee_ecdh(ecdh_group_t group, // input: input: see `ecdh_group_t` for options
-             uint8_t *    p_public, // input: peer public key, from host
-             uint_fast32_t publen,    // input: peer public key length in bytes
-             uint8_t *     p_private, // input: private key, from host
-             uint_fast32_t prilen,    // input: private key length in bytes
-             uint8_t *     p_secret,  // output: shared secret
-             uint_fast32_t seclen, // input: size of buffer for secret, in bytes
-             uint_fast32_t iterations // input: # of test iterations
+void
+ee_ecdh(ecdh_group_t  group, // input: input: see `ecdh_group_t` for options
+        uint8_t *     p_public,  // input: peer public key, from host
+        uint_fast32_t publen,    // input: peer public key length in bytes
+        uint8_t *     p_private, // input: private key, from host
+        uint_fast32_t prilen,    // input: private key length in bytes
+        uint8_t *     p_secret,  // output: shared secret
+        uint_fast32_t seclen,    // input: size of buffer for secret, in bytes
+        uint_fast32_t iterations // input: # of test iterations
 )
 {
     void *p_context; // Generic context if needed by implementation
@@ -36,12 +37,14 @@ void ee_ecdh(ecdh_group_t group, // input: input: see `ecdh_group_t` for opt
         th_printf("e-ecdh-[Failed to create context]\r\n");
         return;
     }
+printf("%d\n", __LINE__);
     if (th_ecdh_init(p_context, group, p_private, prilen, p_public, publen)
         != EE_STATUS_OK)
     {
         th_printf("e-ecdh-[Failed to initialize]\r\n");
         goto exit;
     }
+printf("%d\n", __LINE__);
 
     th_printf("m-ecdh-iterations-%d\r\n", iterations);
     th_printf("m-ecdh-start\r\n");
