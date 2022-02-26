@@ -37,15 +37,12 @@ ee_ecdh(ecdh_group_t  group, // input: input: see `ecdh_group_t` for options
         th_printf("e-ecdh-[Failed to create context]\r\n");
         return;
     }
-printf("%d\n", __LINE__);
     if (th_ecdh_init(p_context, group, p_private, prilen, p_public, publen)
         != EE_STATUS_OK)
     {
         th_printf("e-ecdh-[Failed to initialize]\r\n");
         goto exit;
     }
-printf("%d\n", __LINE__);
-
     th_printf("m-ecdh-iterations-%d\r\n", iterations);
     th_printf("m-ecdh-start\r\n");
     th_timestamp();

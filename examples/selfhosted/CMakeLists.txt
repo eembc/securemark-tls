@@ -140,15 +140,17 @@ if (SELFHOSTED)
 			../../profile/ee_ecdh.c
 			../../profile/ee_ecdsa.c
 			../../profile/ee_profile.c
+			../../profile/ee_rsa.c
 			../../profile/ee_sha.c
 			../../profile/ee_util.c
 			../../profile/ee_variations.c
 			profile/wolfssl_th_api/th_aes.c
 			profile/wolfssl_th_api/th_chachapoly.c
-			profile/wolfssl_th_api/th_util.c
 			profile/wolfssl_th_api/th_ecdh.c
 			profile/wolfssl_th_api/th_ecdsa.c
+			profile/wolfssl_th_api/th_rsa.c
 			profile/wolfssl_th_api/th_sha.c
+			profile/wolfssl_th_api/th_util.c
 			../../monitor/ee_main.c
 			../../monitor/th_api/th_lib.c
 			../../monitor/th_api/th_libc.c

@@ -11,6 +11,7 @@
  */
 
 #include <wolfssl/options.h>
+#include <wolfssl/version.h>
 #include <wolfssl/wolfcrypt/ecc.h>
 #include <wolfssl/wolfcrypt/ed25519.h>
 
@@ -65,7 +66,7 @@ init_ecc(ecc_key *     p_key,
          ecc_curve_id  id)
 {
     int ret;
-
+    th_printf("LIBWOLFSSL_VERSION_STRING: %s\n", LIBWOLFSSL_VERSION_STRING);
     ret = wc_ecc_init_ex(p_key, HEAP_HINT, DEVID);
     if (ret != 0)
     {
@@ -86,6 +87,7 @@ init_ecc(ecc_key *     p_key,
     }
 #ifdef WOLFSSL_ECDSA_DETERMINISTIC_K
     /* set deterministic k value */
+    /* TODO: This forces SHA256 for det-k, but there's no way to change it */
     ret = wc_ecc_set_deterministic(p_key, 1);
     if (ret != 0)
     {
@@ -160,7 +162,7 @@ th_ecdsa_init(void *        p_context, // input: portable context
     }
 }
 
-ee_status_t
+static ee_status_t
 sign_ecc(ecc_key *      p_context, // input: portable context
          uint8_t *      p_hash,    // input: digest
          uint_fast32_t  hlen,      // input: length of digest in bytes
@@ -171,7 +173,6 @@ sign_ecc(ecc_key *      p_context, // input: portable context
     int    ret;
     WC_RNG rng;
 
-printf("Hashlen %d\n", hlen);
     ret = wc_InitRng_ex(&rng, HEAP_HINT, DEVID);
     if (ret != 0)
     {
@@ -188,7 +189,7 @@ printf("Hashlen %d\n", hlen);
     return EE_STATUS_OK;
 }
 
-ee_status_t
+static ee_status_t
 sign_ed25519(ed25519_key *  p_context, // input: portable context
              uint8_t *      p_msg,     // input: message
              uint_fast32_t  mlen,      // input: length of message in bytes
@@ -229,7 +230,7 @@ th_ecdsa_sign(void *         p_context, // input: portable context
     }
 }
 
-ee_status_t
+static ee_status_t
 verify_ecc(ecc_key *     p_context,
            uint8_t *     p_hash, // input: sha256 digest
            uint_fast32_t hlen,   // input: length of digest in bytes
@@ -249,7 +250,7 @@ verify_ecc(ecc_key *     p_context,
     return EE_STATUS_OK;
 }
 
-ee_status_t
+static ee_status_t
 verify_ed25519(ed25519_key * p_context,
                uint8_t *     p_msg, // input: message
                uint_fast32_t mlen,  // input: length of message in bytes
