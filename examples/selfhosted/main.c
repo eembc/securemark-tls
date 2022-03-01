@@ -672,9 +672,7 @@ const uint8_t testHash[] = {
 uint16_t
 wrap_rsa(rsa_id_t id, rsa_function_t func, unsigned int n, unsigned int i)
 {
-    void *       p_context;
     uint8_t *    p_msg;
-    unsigned int keylen;
     uint8_t *    p_sig;
     unsigned int slen;
     uint16_t     crc;
@@ -683,7 +681,7 @@ wrap_rsa(rsa_id_t id, rsa_function_t func, unsigned int n, unsigned int i)
     uint8_t *    prikey, * pubkey;
     unsigned int prilen, publen;
 
-    slen = 512;
+    slen = 512; // big enough for up to 4096 bit keys
     p_msg = (uint8_t *)th_malloc(n);
     p_sig = (uint8_t *)th_malloc(slen);
     if (!p_msg || !p_sig)
@@ -693,47 +691,49 @@ wrap_rsa(rsa_id_t id, rsa_function_t func, unsigned int n, unsigned int i)
     }
     for (int x = 0; x < n; ++x)
     {
-        p_msg[x] = testHash[x];//ee_rand();
+        p_msg[x] = ee_rand();
     }
     switch (id) {
         case EE_RSA_2048:
             prikey = g_rsa_private_key_2048;
+        // TODO: Do we need key size if we're using ASN.1/DER?
             prilen = sizeof(g_rsa_private_key_2048);
             pubkey = g_rsa_associated_public_key_2048;
+        // TODO: Do we need key size if we're using ASN.1/DER?
             publen = sizeof(g_rsa_associated_public_key_2048);
             break;
         case EE_RSA_3072:
             prikey = g_rsa_private_key_3072;
+        // TODO: Do we need key size if we're using ASN.1/DER?
             prilen = sizeof(g_rsa_private_key_3072);
             pubkey = g_rsa_associated_public_key_3072;
+        // TODO: Do we need key size if we're using ASN.1/DER?
             publen = sizeof(g_rsa_associated_public_key_3072);
             break;
         case EE_RSA_4096:
             prikey = g_rsa_private_key_4096;
+        // TODO: Do we need key size if we're using ASN.1/DER?
             prilen = sizeof(g_rsa_private_key_4096);
             pubkey = g_rsa_associated_public_key_4096;
+        // TODO: Do we need key size if we're using ASN.1/DER?
             publen = sizeof(g_rsa_associated_public_key_4096);
             break;
     }
     if (EE_RSA_VERIFY == func)
     {
-        /*
         g_verify_mode = true;
-        ee_rsa(id, EE_RSA_SIGN, key, keylen, p_msg, n, p_sig, slen, 1);
+        // TODO: Do we need key size if we're using ASN.1/DER?
+        ee_rsa(id, EE_RSA_SIGN, prikey, prilen, pubkey, publen, p_msg, n, p_sig, &slen, 1);
         ee_printmem_hex(p_msg, n, "in : ");
         ee_printmem_hex(p_sig, slen, "out: ");
         g_verify_mode = false;
-        ee_rsa(id, EE_RSA_VERIFY, key, keylen, p_sig, slen, p_msg, n, i);
-        ee_printmem_hex(p_sig, slen, "in : ");
-        ee_printmem_hex(p_msg, n, "out: ");
-        */
+        // TODO: Do we need key size if we're using ASN.1/DER?
+        ee_rsa(id, EE_RSA_VERIFY, prikey, prilen, pubkey, publen, p_msg, n, p_sig, &slen, i);
     }
     else
     {
         g_verify_mode = false;
-        printf("slen=%d\n", slen);
-        ee_rsa_sign(id, prikey, prilen, pubkey, publen, p_msg, n, p_sig, &slen, i);
-        printf("slen=%d\n", slen);
+        ee_rsa(id, EE_RSA_SIGN, prikey, prilen, pubkey, publen, p_msg, n, p_sig, &slen, i);
         ee_printmem_hex(p_msg, n, "in : ");
         ee_printmem_hex(p_sig, slen, "out: ");
     }
@@ -745,23 +745,17 @@ wrap_rsa(rsa_id_t id, rsa_function_t func, unsigned int n, unsigned int i)
     th_free(p_sig);
     return crc;
 }
+
 #define MAKE_WRAP_RSA(nick, id)                                  \
     uint16_t wrap_rsa_sign_##nick(unsigned int n, unsigned int i) \
     {                                                            \
         return wrap_rsa(id, EE_RSA_SIGN, n, i);                   \
-    }                                                            
-
-/*
-#define MAKE_WRAP_RSA(nick, id)                                  \
-    uint16_t wrap_rsa_enc_##nick(unsigned int n, unsigned int i) \
-    {                                                            \
-        return wrap_rsa(id, EE_RSA_SIGN, n, i);                   \
     }                                                            \
-    uint16_t wrap_rsa_dec_##nick(unsigned int n, unsigned int i) \
+    uint16_t wrap_rsa_verify_##nick(unsigned int n, unsigned int i) \
     {                                                            \
         return wrap_rsa(id, EE_RSA_VERIFY, n, i);                   \
     }
-*/
+
 MAKE_WRAP_RSA(2048, EE_RSA_2048)
 MAKE_WRAP_RSA(3072, EE_RSA_3072)
 MAKE_WRAP_RSA(4096, EE_RSA_4096)
@@ -848,9 +842,9 @@ static task_entry_t g_task[] =
     // RSA not using padding, TODO: in = keysize??
     // TODO: Does everyone support "direct"? What's it like IRL?
     // TODO: For decrypt, do a memcmp to verify output = input
-//#define DO_RSA
-//#define DO_VERSION_1
-//#define DO_VERSION_2
+#define DO_RSA
+#define DO_VERSION_1
+#define DO_VERSION_2
     /*
      *   nickname             , data, weight, crc
      */
@@ -888,7 +882,6 @@ static task_entry_t g_task[] =
 #endif
 //    TASK(ecdsa_sign_p256r1    ,   32,   1.0f, 0x80bb) // Note [1,4]
   //  TASK(ecdsa_sign_p384      ,   48,   1.0f, 0x5601) // Note [1,4]
-    TASK(rsa_sign_4096, 32, 1.0, 0x6aa5)
 
 // TODO: need a variation 001 for Light and Heavy
 #ifdef DO_VERSION_2
@@ -946,12 +939,19 @@ static task_entry_t g_task[] =
     TASK(sha384               ,  130,   2.0f, 0x445b)
 #endif
 #ifdef DO_RSA
-    TASK(rsa_enc_2048, 256, 1.0, 0x6aa5)
-    TASK(rsa_dec_2048, 256, 2.0, 0x6aa5)
-    TASK(rsa_enc_3072, 384, 1.0, 0x395c)
-    TASK(rsa_dec_3072, 384, 2.0, 0x395c)
-    TASK(rsa_enc_4096, 512, 1.0, 0x69a9)
-    TASK(rsa_dec_4096, 512, 2.0, 0x69a9)
+    TASK(rsa_sign_2048   ,  4096, 1.0, 0x61d1)
+    TASK(rsa_sign_3072   ,  4096, 1.0, 0x68e4)
+    TASK(rsa_sign_4096   ,  4096, 1.0, 0x7e66)
+    TASK(rsa_verify_2048 ,  4096, 2.0, 0x61d1)
+    TASK(rsa_verify_3072 ,  4096, 2.0, 0x68e4)
+    TASK(rsa_verify_4096 ,  4096, 2.0, 0x7e66)
+
+    TASK(rsa_sign_2048   , 32768, 1.0, 0x489d)
+    TASK(rsa_sign_3072   , 32768, 1.0, 0x58a0)
+    TASK(rsa_sign_4096   , 32768, 1.0, 0x2846)
+    TASK(rsa_verify_2048 , 32768, 2.0, 0x489d)
+    TASK(rsa_verify_3072 , 32768, 2.0, 0x58a0)
+    TASK(rsa_verify_4096 , 32768, 2.0, 0x2846)
 #endif
 };
 // clang-format on
@@ -970,12 +970,15 @@ main(void)
            MIN_ITER);
 
     score = 0.0f;
+    printf(" # Component                    iterations/s   w  data iterations\n");
+    printf("-- ------------------------- --------------- --- ----- ----------\n");
     for (i = 0; i < g_numtasks; ++i)
     {
-#define DO_SINGLE
+//#define DO_SINGLE
 #ifdef DO_SINGLE
+        iterations = 1;
         ee_srand(0); // CRCs are computed with seed 0
-        g_task[i].actual_crc = (*g_task[i].func)(g_task[i].n, 1);
+        g_task[i].actual_crc = (*g_task[i].func)(g_task[i].n, iterations);
         clear_timestamps();
 #else
         // First, compute the correct # of iterations for each primitive
@@ -999,19 +1002,17 @@ main(void)
          */
         component_score = g_task[i].weight / g_task[i].ips;
         score += component_score;
-        printf(
-            "Component #%02ld: %21s[%04d] ips=%15.3f w=% 3.0f crc=0x%04x "
-            "expected=0x%04x",
+        printf("%2ld %-25s %15.3f %3.0f %5d %10ld",
             i + 1,
             g_task[i].name,
-            g_task[i].n,
             g_task[i].ips,
             g_task[i].weight,
-            g_task[i].actual_crc,
-            g_task[i].expected_crc);
+            g_task[i].n,
+            iterations);
         if (g_task[i].actual_crc != g_task[i].expected_crc)
         {
-            printf(" ***ERROR: CRCs did not match");
+            printf(" ***ERROR: CRCs did not match, expected 0x%04x, got 0x%04x",
+                g_task[i].expected_crc, g_task[i].actual_crc);
         }
         printf("\n");
     }

@@ -39,17 +39,17 @@ uint8_t ee_rand(void);
 void
 ee_variation_001(uint_fast32_t iterations)
 {
-    void *        p_csha1 = NULL;        // SHA context 1
-    void *        p_csha2 = NULL;        // SHA context 2
-    void *        p_caes  = NULL;        // AES context
-    uint8_t *     p_msg;                 // All bytes to hash
-    uint8_t *     p_buf1;                // SHA1's buffer
-    uint8_t *     p_buf2;                // SHA2's buffer
-    uint8_t       p_digest[EE_SHA256 / 8];    // SHA digest
-    uint8_t       p_pt[VAR001_AES_SIZE]; // AES plaintext
-    uint8_t       p_ct[VAR001_AES_SIZE]; // AES ciphertext
-    uint8_t       p_key[16];    // AES key, forcing AES128
-    uint_fast32_t idx;                   // Loop index
+    void *        p_csha1 = NULL;          // SHA context 1
+    void *        p_csha2 = NULL;          // SHA context 2
+    void *        p_caes  = NULL;          // AES context
+    uint8_t *     p_msg;                   // All bytes to hash
+    uint8_t *     p_buf1;                  // SHA1's buffer
+    uint8_t *     p_buf2;                  // SHA2's buffer
+    uint8_t       p_digest[EE_SHA256 / 8]; // SHA digest
+    uint8_t       p_pt[VAR001_AES_SIZE];   // AES plaintext
+    uint8_t       p_ct[VAR001_AES_SIZE];   // AES ciphertext
+    uint8_t       p_key[16];               // AES key, forcing AES128
+    uint_fast32_t idx;                     // Loop index
 
     // Total number of bytes in the TLS handshake session-hash
     p_msg = (uint8_t *)th_malloc(VAR001_SESSION_SIZE);
@@ -116,14 +116,14 @@ ee_variation_001(uint_fast32_t iterations)
         p_buf1 += 78;
 
         CHECK(th_aes_create(&p_caes, AES_ECB));
-        CHECK(th_aes_init(
-            p_caes, p_key, 16, NULL, AES_ROUNDS, AES_ENC, AES_ECB));
+        CHECK(
+            th_aes_init(p_caes, p_key, 16, NULL, AES_ROUNDS, AES_ENC, AES_ECB));
         CHECK(th_aes_ecb_encrypt(p_caes, p_pt, p_ct));
         th_aes_destroy(p_caes, AES_ECB);
 
         CHECK(th_aes_create(&p_caes, AES_ECB));
-        CHECK(th_aes_init(
-            p_caes, p_key, 16, NULL, AES_ROUNDS, AES_ENC, AES_ECB));
+        CHECK(
+            th_aes_init(p_caes, p_key, 16, NULL, AES_ROUNDS, AES_ENC, AES_ECB));
         CHECK(th_aes_ecb_encrypt(p_caes, p_pt, p_ct));
         th_aes_destroy(p_caes, AES_ECB);
 
@@ -133,8 +133,8 @@ ee_variation_001(uint_fast32_t iterations)
         p_buf1 += 16;
 
         CHECK(th_aes_create(&p_caes, AES_ECB));
-        CHECK(th_aes_init(
-            p_caes, p_key, 16, NULL, AES_ROUNDS, AES_ENC, AES_ECB));
+        CHECK(
+            th_aes_init(p_caes, p_key, 16, NULL, AES_ROUNDS, AES_ENC, AES_ECB));
         CHECK(th_aes_ecb_encrypt(p_caes, p_pt, p_ct));
         th_aes_destroy(p_caes, AES_ECB);
 

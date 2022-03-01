@@ -89,9 +89,19 @@ building wolfSSL is:
 % ./configure CFLAGS="-DWOLFSSL_AES_DIRECT -DHAVE_AES_ECB -DWOLFSSL_ECDSA_DETERMINISTIC_K" \
               --enable-ecc --enable-keygen --enable-aesccm --enable-sp --enable-sp-asm \
               --enable-eccencrypt --enable-curve25519 --enable-ed25519
+
+
+% ./configure CFLAGS='-DWOLFSSL_AES_DIRECT -DECC_TIMING_RESISTANT -DHAVE_AES_ECB -DWOLFSSL_ECDSA_DETERMINISTIC_K' \
+              --enable-ecc --enable-keygen --enable-aesccm --enable-sp --enable-sp-asm \
+              --enable-eccencrypt --enable-curve25519 --enable-ed25519 \
+              --enable-aesctr --disable-harden
 % make
 % sudo make install
 ```
+
+TODO: Why did we leave ECC_TIMING_RESISTANT?
+
+Note: disabling harden to prevent RSA blinding in order to generate deterministic RSA signatures
 
 Then run `cmake` for SecureMark from this `examples/selfhosted` directory, and execute the benchmark:
 

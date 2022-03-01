@@ -31,18 +31,17 @@ typedef enum rsa_function_t
     EE_RSA_VERIFY
 } rsa_function_t;
 
-void
-ee_rsa_sign(
-    rsa_id_t id,
-    const uint8_t *p_pri,  // input: private key in ASN.1/DER PKCS1_v1.5
-    unsigned int  prilen, // input: key length in bytes
-    const uint8_t *p_pub,  // input: public key in ASN.1/DER PKCS1_v1.5
-    unsigned int  publen, // input: key length in bytes
-    const uint8_t *p_in,   // input: input data (max based on keysize)
-    unsigned int  ilen,   // input: input length in bytes
-    uint8_t       *p_out,  // output: output bytes
-    uint8_t *olen,   // inout: in: size of buffer, out: size used
-    unsigned int  iter    // input: # of test iterations
+void ee_rsa(rsa_id_t       id,
+            rsa_function_t func,
+            const uint8_t *p_pri,  // input: private key in ASN.1/DER PKCS1_v1.5
+            unsigned int   prilen, // input: key length in bytes
+            const uint8_t *p_pub,  // input: public key in ASN.1/DER PKCS1_v1.5
+            unsigned int   publen, // input: key length in bytes
+            const uint8_t *p_in,   // input: input data (max based on keysize)
+            unsigned int   ilen,   // input: input length in bytes
+            uint8_t *      p_out,  // output: output bytes
+            unsigned int * olen,   // inout: in: size of buffer, out: size used
+            unsigned int   iter    // input: # of test iterations
 );
 
 ee_status_t th_rsa_create(void **pp_context // output: portable context
@@ -58,18 +57,13 @@ ee_status_t th_rsa_init(void *        p_context, // input: portable context
 void th_rsa_deinit(void *p_context // input: portable context
 );
 
-ee_status_t th_rsa_sign(void *        p_context,
-                        uint8_t *     p_msg,
-                        uint_fast32_t mlen,
-                        uint8_t *     p_sig,
+ee_status_t th_rsa_sign(void *         p_context,
+                        uint8_t *      p_msg,
+                        uint_fast32_t  mlen,
+                        uint8_t *      p_sig,
                         uint_fast32_t *slen);
 
-ee_status_t th_rsa_verify(void *        p_context,
-                          uint8_t *     p_msg,
-                          uint_fast32_t mlen,
-                          uint8_t *     p_sig,
-                          uint_fast32_t slen,
-                          uint8_t *     p_verify);
+ee_status_t th_rsa_verify(void *p_context, const uint8_t *p_sig, uint_fast32_t slen);
 
 void th_rsa_destroy(void *p_context);
 
