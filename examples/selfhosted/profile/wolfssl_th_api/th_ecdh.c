@@ -111,10 +111,10 @@ error:
 ee_status_t
 th_ecdh_init(void *         p_context, // input: portable context
              ecdh_group_t   group,     // input: see `ecdh_group_t` for options
-             unsigned char *p_private, // input: private key, from host
-             unsigned int   prilen,    // input: private key length in bytes
-             unsigned char *p_public,  // input: peer public key, from host
-             unsigned int   publen     // input: peer public key length in bytes
+             uint8_t *p_private, // input: private key, from host
+             uint_fast32_t   prilen,    // input: private key length in bytes
+             uint8_t *p_public,  // input: peer public key, from host
+             uint_fast32_t   publen     // input: peer public key length in bytes
 )
 {
     int           ret;
@@ -184,8 +184,8 @@ th_ecdh_init(void *         p_context, // input: portable context
 ee_status_t
 th_ecdh_calc_secret(void *         p_context, // input: portable context
                     ecdh_group_t   group,     // input: curve group
-                    unsigned char *p_secret,  // output: shared secret
-                    unsigned int slen // input: length of shared buffer in bytes
+                    uint8_t *p_secret,  // output: shared secret
+                    uint_fast32_t slen // input: length of shared buffer in bytes
 )
 {
     int          ret;

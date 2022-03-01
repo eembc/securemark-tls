@@ -22,7 +22,7 @@ ee_rsa(rsa_id_t       id,     // input: EE_RSA_{2048,3072,4096}
        const uint8_t *p_in,   // input: input data (max based on keysize)
        unsigned int   ilen,   // input: input length in bytes
        uint8_t *      p_out,  // output: output bytes
-       unsigned int * olen,   // inout: in: size of buffer, out: size used
+       uint_fast32_t * olen,   // inout: in: size of buffer, out: size used
        unsigned int   iter    // input: # of test iterations
 )
 {
@@ -40,6 +40,9 @@ ee_rsa(rsa_id_t       id,     // input: EE_RSA_{2048,3072,4096}
         case EE_RSA_4096:
             text = 4096;
             break;
+        default:
+            th_printf("e-[ee_rsa() invalid sized\n");
+            return;
     }
 
     if (th_rsa_create(&p_context) != EE_STATUS_OK)

@@ -62,6 +62,8 @@ static uint8_t g_ecc_peer_public_key_ed25519[] =
 */
 };
 
+#if 0 // TODO: Do we need peer public keys?
+
 static uint8_t g_rsa_peer_public_key_2048[] =
 {
 // ASN.1/DER
@@ -499,6 +501,8 @@ static uint8_t g_rsa_peer_public_key_4096[] =
 0xb1,0x05,0x32,0x7a,0x2b,0xc6,0xeb,0x59,0x08,0xa1,0xf0,
 */
 };
+
+#endif // 0
 
 static uint8_t g_ecc_private_key_p256r1[] =
 {
@@ -1006,12 +1010,6 @@ static uint8_t *g_ecc_peer_public_keys[] = {
     g_ecc_peer_public_key_ed25519,
 };
 
-static uint8_t *g_rsa_peer_public_keys[] = {
-    g_rsa_peer_public_key_2048,
-    g_rsa_peer_public_key_3072,
-    g_rsa_peer_public_key_4096,
-};
-
 // Order must follow ecdh_group_t in profile/ee_ecdh.h
 static uint8_t *g_ecc_private_keys[] = {
     g_ecc_private_key_p256r1,
@@ -1019,6 +1017,8 @@ static uint8_t *g_ecc_private_keys[] = {
     g_ecc_private_key_c25519,
     g_ecc_private_key_ed25519,
 };
+
+/* TODO: We don't really need this since we have to use sizeof() ...
 
 static uint8_t *g_rsa_private_keys[] = {
     g_rsa_private_key_2048,
@@ -1032,6 +1032,14 @@ static uint8_t *g_rsa_associated_public_keys[] = {
     g_rsa_associated_public_key_3072,
     g_rsa_associated_public_key_4096,
 };
+
+static uint8_t *g_rsa_peer_public_keys[] = {
+    g_rsa_peer_public_key_2048,
+    g_rsa_peer_public_key_3072,
+    g_rsa_peer_public_key_4096,
+};
+
+*/
 
 // clang-format on
 

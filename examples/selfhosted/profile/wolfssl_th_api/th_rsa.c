@@ -66,9 +66,9 @@ th_rsa_create(void **pp_context // output: portable context
 ee_status_t
 th_rsa_init(void *        p_context, // input: portable context
             rsa_id_t      id,        // input: enum of RSA types
-            uint8_t *     p_prikey,
+            const uint8_t *     p_prikey,
             uint_fast32_t prilen,
-            uint8_t *     p_pubkey,
+            const uint8_t *     p_pubkey,
             uint_fast32_t publen)
 {
     int            ret;
@@ -143,7 +143,7 @@ th_rsa_deinit(void *p_context // input: portable context
 
 ee_status_t
 th_rsa_sign(void *         p_context,
-            uint8_t *      p_msg,
+            const uint8_t *      p_msg,
             uint_fast32_t  mlen,
             uint8_t *      p_sig,
             uint_fast32_t *slen)
@@ -151,6 +151,7 @@ th_rsa_sign(void *         p_context,
     int            ret;
     int            enclen;
     rsa_context_t *ctx = (rsa_context_t *)p_context;
+    byte * p_digest = (byte *)&(ctx->xdigest);
 
     ret = wc_Sha256Update(ctx->dctx, p_msg, mlen);
     if (ret < 0)
@@ -159,7 +160,7 @@ th_rsa_sign(void *         p_context,
         return EE_STATUS_ERROR;
     }
 
-    ret = wc_Sha256Final(ctx->dctx, &(ctx->xdigest));
+    ret = wc_Sha256Final(ctx->dctx, p_digest);
     if (ret < 0)
     {
         th_printf("e-[wc_Sha256Final: %d]\r\n", ret);
@@ -167,7 +168,7 @@ th_rsa_sign(void *         p_context,
     }
 
     enclen = wc_EncodeSignature(
-        ctx->enc, &(ctx->xdigest), SHA256_DIGEST_SIZE, SHA256h);
+        ctx->enc, p_digest, SHA256_DIGEST_SIZE, SHA256h);
     if (enclen < 0)
     {
         th_printf("e-[wc_EncodeSignature: %d]\r\n", enclen);

@@ -438,7 +438,7 @@ wrap_ecdsa_sign(ecdh_group_t group, unsigned int n, unsigned int i)
     uint8_t *    privkey;
     uint8_t *    sig;
     // Note this is an in/out to slen, as input it is the max siglen
-    unsigned int slen = 256;
+    uint_fast32_t slen = 256;
     unsigned int x;
     uint16_t     crc;
     size_t       keydex;
@@ -479,7 +479,7 @@ wrap_ecdsa_verify(ecdh_group_t group, unsigned int n, unsigned int i)
     uint8_t *    privkey;
     uint8_t *    sig;
     // Note this is an in/out to slen, as input it is the max siglen
-    unsigned int slen = 256;
+    uint_fast32_t slen = 256;
     unsigned int x;
     uint16_t     crc;
     size_t       keydex;
@@ -674,7 +674,7 @@ wrap_rsa(rsa_id_t id, rsa_function_t func, unsigned int n, unsigned int i)
 {
     uint8_t *    p_msg;
     uint8_t *    p_sig;
-    unsigned int slen;
+    uint_fast32_t slen;
     uint16_t     crc;
     int          x;
 
@@ -717,6 +717,10 @@ wrap_rsa(rsa_id_t id, rsa_function_t func, unsigned int n, unsigned int i)
             pubkey = g_rsa_associated_public_key_4096;
         // TODO: Do we need key size if we're using ASN.1/DER?
             publen = sizeof(g_rsa_associated_public_key_4096);
+            break;
+        default:
+            printf("Invalid RSA case\n");
+            exit(-1);
             break;
     }
     if (EE_RSA_VERIFY == func)

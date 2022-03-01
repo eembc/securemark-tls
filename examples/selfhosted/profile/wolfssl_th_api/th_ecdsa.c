@@ -172,6 +172,7 @@ sign_ecc(ecc_key *      p_context, // input: portable context
 {
     int    ret;
     WC_RNG rng;
+    word32 *p_slen2 = (word32 *)p_slen; // compiler warning
 
     ret = wc_InitRng_ex(&rng, HEAP_HINT, DEVID);
     if (ret != 0)
@@ -179,7 +180,7 @@ sign_ecc(ecc_key *      p_context, // input: portable context
         th_printf("e-[wc_InitRng_ex: -%d]\r\n", -ret);
         return EE_STATUS_ERROR;
     }
-    ret = wc_ecc_sign_hash(p_hash, hlen, p_sig, p_slen, &rng, p_context);
+    ret = wc_ecc_sign_hash(p_hash, hlen, p_sig, p_slen2, &rng, p_context);
     if (ret != 0)
     {
         th_printf("e-[wc_ecc_sign_hash: -%d]\r\n", -ret);
@@ -198,7 +199,9 @@ sign_ed25519(ed25519_key *  p_context, // input: portable context
 )
 {
     int ret;
-    ret = wc_ed25519_sign_msg(p_msg, mlen, p_sig, p_slen, p_context);
+    word32 *p_slen2 = (word32 *)p_slen; // compiler warning
+
+    ret = wc_ed25519_sign_msg(p_msg, mlen, p_sig, p_slen2, p_context);
     if (ret != 0)
     {
         th_printf("e-[wc_ed25519_sign_msg: -%d]\r\n", -ret);

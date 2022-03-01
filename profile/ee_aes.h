@@ -26,8 +26,6 @@ typedef enum aes_cipher_mode_t
     AES_GCM,
 } aes_cipher_mode_t;
 
-static const char *aes_cipher_mode_text[] = { "ecb", "ctr", "ccm", "gcm" };
-
 typedef enum aes_function_t
 {
     AES_ENC = 0,
