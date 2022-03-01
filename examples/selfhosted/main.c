@@ -670,45 +670,6 @@ const uint8_t testHash[] = {
 // 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
 
 uint16_t
-wrap_rsa_sign_2048(unsigned int n, unsigned int i)
-{
-    void *       p_context;
-    uint8_t *    p_msg;
-    unsigned int keylen;
-    uint8_t *    p_sig;
-    unsigned int slen;
-    uint16_t     crc;
-    int          x;
-
-    slen = 256;
-    //    p_msg = (uint8_t *)th_malloc(n);
-    p_sig = (uint8_t *)th_malloc(slen);
-
-    printf("%d\n", __LINE__);
-    CHECK(th_rsa_create(&p_context));
-    printf("%d\n", __LINE__);
-    CHECK(th_rsa_init(p_context,
-                      EE_RSA_2048,
-                      g_rsa_private_key_2048,
-                      sizeof(g_rsa_private_key_2048),
-                      g_rsa_associated_public_key_2048,
-                      sizeof(g_rsa_associated_public_key_2048)));
-    printf("%d\n", __LINE__);
-    // rand_bytes(p_msg, n);
-    printf("%d\n", __LINE__);
-    CHECK(th_rsa_sign(p_context, testHash, sizeof(testHash), p_sig, slen));
-    printf("%d\n", __LINE__);
-    ee_printmem_hex(p_sig, slen, "sig: ");
-    ee_printmem_hex(
-        g_rsa_private_key_2048, sizeof(g_rsa_private_key_2048), "pri: ");
-    ee_printmem_hex(g_rsa_associated_public_key_2048,
-                    sizeof(g_rsa_associated_public_key_2048),
-                    "pub: ");
-    th_free(p_sig);
-    th_rsa_destroy(p_context);
-}
-
-uint16_t
 wrap_rsa(rsa_id_t id, rsa_function_t func, unsigned int n, unsigned int i)
 {
     void *       p_context;
@@ -718,28 +679,11 @@ wrap_rsa(rsa_id_t id, rsa_function_t func, unsigned int n, unsigned int i)
     unsigned int slen;
     uint16_t     crc;
     int          x;
-    uint8_t *    key;
 
-    slen  = 512;
-    key   = g_rsa_private_keys[id];
-    p_msg = (uint8_t *)th_malloc(n);
-    p_sig = (uint8_t *)th_malloc(slen);
+    uint8_t *    prikey, * pubkey;
+    unsigned int prilen, publen;
 
-    switch (id)
-    {
-        case EE_RSA_2048:
-            slen   = 256;
-            keylen = sizeof(g_rsa_private_key_2048);
-            break;
-        case EE_RSA_3072:
-            slen   = 384;
-            keylen = sizeof(g_rsa_private_key_3072);
-            break;
-        case EE_RSA_4096:
-            slen   = 512;
-            keylen = sizeof(g_rsa_private_key_4096);
-            break;
-    }
+    slen = 512;
     p_msg = (uint8_t *)th_malloc(n);
     p_sig = (uint8_t *)th_malloc(slen);
     if (!p_msg || !p_sig)
@@ -749,10 +693,31 @@ wrap_rsa(rsa_id_t id, rsa_function_t func, unsigned int n, unsigned int i)
     }
     for (int x = 0; x < n; ++x)
     {
-        p_msg[x] = ee_rand();
+        p_msg[x] = testHash[x];//ee_rand();
+    }
+    switch (id) {
+        case EE_RSA_2048:
+            prikey = g_rsa_private_key_2048;
+            prilen = sizeof(g_rsa_private_key_2048);
+            pubkey = g_rsa_associated_public_key_2048;
+            publen = sizeof(g_rsa_associated_public_key_2048);
+            break;
+        case EE_RSA_3072:
+            prikey = g_rsa_private_key_3072;
+            prilen = sizeof(g_rsa_private_key_3072);
+            pubkey = g_rsa_associated_public_key_3072;
+            publen = sizeof(g_rsa_associated_public_key_3072);
+            break;
+        case EE_RSA_4096:
+            prikey = g_rsa_private_key_4096;
+            prilen = sizeof(g_rsa_private_key_4096);
+            pubkey = g_rsa_associated_public_key_4096;
+            publen = sizeof(g_rsa_associated_public_key_4096);
+            break;
     }
     if (EE_RSA_VERIFY == func)
     {
+        /*
         g_verify_mode = true;
         ee_rsa(id, EE_RSA_SIGN, key, keylen, p_msg, n, p_sig, slen, 1);
         ee_printmem_hex(p_msg, n, "in : ");
@@ -761,11 +726,14 @@ wrap_rsa(rsa_id_t id, rsa_function_t func, unsigned int n, unsigned int i)
         ee_rsa(id, EE_RSA_VERIFY, key, keylen, p_sig, slen, p_msg, n, i);
         ee_printmem_hex(p_sig, slen, "in : ");
         ee_printmem_hex(p_msg, n, "out: ");
+        */
     }
     else
     {
         g_verify_mode = false;
-        ee_rsa(id, EE_RSA_SIGN, key, keylen, p_msg, n, p_sig, slen, i);
+        printf("slen=%d\n", slen);
+        ee_rsa_sign(id, prikey, prilen, pubkey, publen, p_msg, n, p_sig, &slen, i);
+        printf("slen=%d\n", slen);
         ee_printmem_hex(p_msg, n, "in : ");
         ee_printmem_hex(p_sig, slen, "out: ");
     }
@@ -777,7 +745,13 @@ wrap_rsa(rsa_id_t id, rsa_function_t func, unsigned int n, unsigned int i)
     th_free(p_sig);
     return crc;
 }
+#define MAKE_WRAP_RSA(nick, id)                                  \
+    uint16_t wrap_rsa_sign_##nick(unsigned int n, unsigned int i) \
+    {                                                            \
+        return wrap_rsa(id, EE_RSA_SIGN, n, i);                   \
+    }                                                            
 
+/*
 #define MAKE_WRAP_RSA(nick, id)                                  \
     uint16_t wrap_rsa_enc_##nick(unsigned int n, unsigned int i) \
     {                                                            \
@@ -787,7 +761,7 @@ wrap_rsa(rsa_id_t id, rsa_function_t func, unsigned int n, unsigned int i)
     {                                                            \
         return wrap_rsa(id, EE_RSA_VERIFY, n, i);                   \
     }
-
+*/
 MAKE_WRAP_RSA(2048, EE_RSA_2048)
 MAKE_WRAP_RSA(3072, EE_RSA_3072)
 MAKE_WRAP_RSA(4096, EE_RSA_4096)
@@ -914,7 +888,7 @@ static task_entry_t g_task[] =
 #endif
 //    TASK(ecdsa_sign_p256r1    ,   32,   1.0f, 0x80bb) // Note [1,4]
   //  TASK(ecdsa_sign_p384      ,   48,   1.0f, 0x5601) // Note [1,4]
-    TASK(rsa_sign_2048, 32, 1.0, 0x6aa5)
+    TASK(rsa_sign_4096, 32, 1.0, 0x6aa5)
 
 // TODO: need a variation 001 for Light and Heavy
 #ifdef DO_VERSION_2

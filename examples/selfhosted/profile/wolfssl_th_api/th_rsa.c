@@ -1,9 +1,6 @@
 
 #include "ee_rsa.h"
-#define WOLFSSL_KEY_GEN
-//#define WC_RSA_BLINDING
-//#define WC_RSA_NO_PADDING
-//#define WC_RSA_DIRECT
+#include <wolfssl/wolfcrypt/asn.h>
 #include <wolfssl/wolfcrypt/rsa.h>
 
 /* can be set for static memory use */
@@ -17,6 +14,9 @@ typedef struct rsa_context_t
     RsaKey *prikey;
     RsaKey *pubkey;
     WC_RNG *rng;
+    uint8_t enc[MAX_ENCODED_SIG_SZ];
+    uint8_t xdigest[SHA256_DIGEST_SIZE];
+    wc_Sha256 *dctx;
 } rsa_context_t;
 
 #define FREE(x) { if (x) { th_free(x); x = NULL; }}
@@ -35,11 +35,13 @@ th_rsa_create(void **pp_context // output: portable context
     ctx->prikey = (RsaKey *)th_malloc(sizeof(RsaKey));
     ctx->pubkey = (RsaKey *)th_malloc(sizeof(RsaKey));
     ctx->rng = (WC_RNG *)th_malloc(sizeof(WC_RNG));
+    ctx->dctx = (wc_Sha256 *)th_malloc(sizeof(wc_Sha256));
     if (!ctx->prikey || !ctx->pubkey || !ctx->rng) {
         th_printf("e-[th_rsa_create failed to malloc]\r\n");
         FREE(ctx->prikey);
         FREE(ctx->pubkey);
         FREE(ctx->rng);
+        FREE(ctx->dctx);
         FREE(ctx);
         return EE_STATUS_ERROR;
     }
@@ -57,29 +59,34 @@ ee_status_t th_rsa_init(void *        p_context, // input: portable context
     int ret;
     word32 inOutIdx;
     rsa_context_t *ctx;
-    
+
     ctx = (rsa_context_t *)p_context;
     ret = wc_InitRsaKey_ex(ctx->prikey, HEAP_HINT, DEVID);
     if (ret) {
-        th_printf("e-[wc_InitRsaKey_ex on private: -%d]\r\n", -ret);
+        th_printf("e-[wc_InitRsaKey_ex on private: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
     ret = wc_InitRsaKey_ex(ctx->pubkey, HEAP_HINT, DEVID);
     if (ret) {
-        th_printf("e-[wc_InitRsaKey_ex on public: -%d]\r\n", -ret);
+        th_printf("e-[wc_InitRsaKey_ex on public: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
     wc_InitRng_ex(ctx->rng, HEAP_HINT, DEVID);
     inOutIdx = 0;
     ret = wc_RsaPrivateKeyDecode(p_prikey, &inOutIdx, ctx->prikey, prilen);
     if (ret) {
-        th_printf("e-[wc_RsaPrivateKeyDecode: -%d]\r\n", -ret);
+        th_printf("e-[wc_RsaPrivateKeyDecode: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
     inOutIdx = 0;
-    ret = wc_RsaPublicKeyDecode(p_prikey, &inOutIdx, ctx->prikey, prilen);
+    ret = wc_RsaPublicKeyDecode(p_pubkey, &inOutIdx, ctx->pubkey, publen);
     if (ret) {
-        th_printf("e-[wc_RsaPublicKeyDecode: -%d]\r\n", -ret);
+        th_printf("e-[wc_RsaPublicKeyDecode: %d]\r\n", ret);
+        return EE_STATUS_ERROR;
+    }
+    ret = wc_InitSha256(ctx->dctx);
+    if (ret) {
+        th_printf("e-[wc_InitSha256: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
     return EE_STATUS_OK;
@@ -101,25 +108,41 @@ void th_rsa_deinit(
     }
 }
 
-
 ee_status_t th_rsa_sign(void *         p_context,
                         uint8_t *      p_msg,
                         uint_fast32_t  mlen,
                         uint8_t *      p_sig,
-                        uint_fast32_t  slen)
+                        uint_fast32_t  *slen)
 {
     int ret;
+    int enclen;
+    printf("pule %d\n", __LINE__);
     rsa_context_t *ctx = (rsa_context_t *)p_context;
-printf("Signing\n");
-    ret = wc_RsaSSL_Sign(p_msg, mlen, p_sig, slen, ctx->prikey, ctx->rng);
-  /*      ret = RsaPublicEncryptEx(p_msg, mlen, p_sig, slen, ctx->prikey,
-        RSA_PRIVATE_ENCRYPT, RSA_BLOCK_TYPE_1, WC_RSA_PKCSV15_PAD,
-        WC_HASH_TYPE_NONE, WC_MGF1NONE, NULL, 0, 0, ctx->rng);*/
-printf("Ret %d\n", ret);
+    ret = wc_Sha256Update(ctx->dctx, p_msg, mlen);
+    if (ret < 0) {
+        th_printf("e-[wc_Sha256Update: %d]\r\n", ret);
+        return EE_STATUS_ERROR;
+    }
+    printf("pule %d\n", __LINE__);
+    ret = wc_Sha256Final(ctx->dctx, &(ctx->xdigest)); 
+    if (ret < 0) {
+        th_printf("e-[wc_Sha256Final: %d]\r\n", ret);
+        return EE_STATUS_ERROR;
+    }
+    printf("pule %d\n", __LINE__);
+    enclen = wc_EncodeSignature(ctx->enc, &(ctx->xdigest), SHA256_DIGEST_SIZE, SHA256h);
+    if (enclen < 0) {
+        th_printf("e-[wc_EncodeSignature: %d]\r\n", enclen);
+        return EE_STATUS_ERROR;
+    }
+    printf("pule %d\n", __LINE__);
+    ret = wc_RsaSSL_Sign(ctx->enc, enclen, p_sig, *slen, ctx->prikey, ctx->rng);
     if (ret < 0) {
         th_printf("e-[wc_RsaSSL_Sign: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
+    *slen = ret;
+    wc_Sha256Free(ctx->dctx);
     return EE_STATUS_OK;
 }
 
