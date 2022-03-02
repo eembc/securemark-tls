@@ -22,7 +22,7 @@ ee_rsa(rsa_id_t       id,     // input: EE_RSA_{2048,3072,4096}
        const uint8_t *p_in,   // input: input data (max based on keysize)
        unsigned int   ilen,   // input: input length in bytes
        uint8_t *      p_out,  // output: output bytes
-       uint_fast32_t * olen,   // inout: in: size of buffer, out: size used
+       uint_fast32_t *olen,   // inout: in: size of buffer, out: size used
        unsigned int   iter    // input: # of test iterations
 )
 {
@@ -53,17 +53,17 @@ ee_rsa(rsa_id_t       id,     // input: EE_RSA_{2048,3072,4096}
 
     th_printf("m-rsa%d-iter-%d\r\n", text, iter);
     th_printf("m-rsa%d-message-length-%d\r\n", text, ilen);
-    
+
     if (th_rsa_init(p_context, id, p_pri, prilen, p_pub, publen)
         != EE_STATUS_OK)
     {
         th_printf("e-rsa%d-[Failed to initialize]\r\n", text);
         return;
     }
-    
+
     th_timestamp();
     th_pre();
-    
+
     if (func == EE_RSA_SIGN)
     {
         while (iter-- > 0)
@@ -88,7 +88,7 @@ ee_rsa(rsa_id_t       id,     // input: EE_RSA_{2048,3072,4096}
             }
         }
     }
-    
+
     th_post();
     th_timestamp();
 

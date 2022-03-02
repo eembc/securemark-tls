@@ -15,7 +15,6 @@
 // This is an aesthetic decoder for log messages; must match aes_cipher_mode_t
 static const char *aes_cipher_mode_text[] = { "ecb", "ctr", "ccm", "gcm" };
 
-
 // All-purpose AES wrapper for all modes & keysizes.
 void
 ee_aes(aes_cipher_mode_t mode,   // input: cipher mode

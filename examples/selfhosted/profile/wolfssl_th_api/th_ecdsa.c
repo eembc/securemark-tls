@@ -170,8 +170,8 @@ sign_ecc(ecc_key *      p_context, // input: portable context
          uint_fast32_t *p_slen     // in/out: input=MAX slen, output=resultant
 )
 {
-    int    ret;
-    WC_RNG rng;
+    int     ret;
+    WC_RNG  rng;
     word32 *p_slen2 = (word32 *)p_slen; // compiler warning
 
     ret = wc_InitRng_ex(&rng, HEAP_HINT, DEVID);
@@ -198,7 +198,7 @@ sign_ed25519(ed25519_key *  p_context, // input: portable context
              uint_fast32_t *p_slen     // output: signature length in bytes
 )
 {
-    int ret;
+    int     ret;
     word32 *p_slen2 = (word32 *)p_slen; // compiler warning
 
     ret = wc_ed25519_sign_msg(p_msg, mlen, p_sig, p_slen2, p_context);

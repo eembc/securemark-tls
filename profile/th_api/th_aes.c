@@ -17,8 +17,9 @@
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-ee_status_t th_aes_create(void **p_context,      // output: portable context
-                          aes_cipher_mode_t mode // input: AES_ENC or AES_DEC
+ee_status_t
+th_aes_create(void **           p_context, // output: portable context
+              aes_cipher_mode_t mode       // input: AES_ENC or AES_DEC
 )
 {
 #warning "th_aes_create not implemented"
@@ -30,13 +31,14 @@ ee_status_t th_aes_create(void **p_context,      // output: portable context
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-ee_status_t th_aes_init(void *         p_context, // input: portable context
-                        const uint8_t *p_key,     // input: key
-                        uint_fast32_t  keylen, // input: length of key in bytes
-                        const uint8_t *iv,     // input: IV if CTR mode, or NULL
-                        uint_fast32_t  rounds, // input: number of AES rounds
-                        aes_function_t func,   // input: AES_ENC or AES_DEC
-                        aes_cipher_mode_t mode // input: see aes_cipher_mode_t
+ee_status_t
+th_aes_init(void *            p_context, // input: portable context
+            const uint8_t *   p_key,     // input: key
+            uint_fast32_t     keylen,    // input: length of key in bytes
+            const uint8_t *   iv,        // input: IV if CTR mode, or NULL
+            uint_fast32_t     rounds,    // input: number of AES rounds
+            aes_function_t    func,      // input: AES_ENC or AES_DEC
+            aes_cipher_mode_t mode       // input: see aes_cipher_mode_t
 )
 {
 #warning "th_aes_init not implemented"
@@ -49,10 +51,10 @@ ee_status_t th_aes_init(void *         p_context, // input: portable context
  * Some implementations of AES perform allocations on init and require a
  * de-init before initializing again, without destroying the context.
  */
-void th_aes_deinit(void *            context, // input: portable context
-                   aes_cipher_mode_t mode     // input: AES_ECB or AES_CCM
-)
-{
+void
+th_aes_deinit(void *            context, // input: portable context
+              aes_cipher_mode_t mode     // input: AES_ECB or AES_CCM
+) {
 #warning "th_aes_deinit not implemented"
 }
 
@@ -75,9 +77,10 @@ ee_status_t th_aes_ecb_encrypt(void *p_context,     // input: portable context
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-ee_status_t th_aes_ecb_decrypt(void *p_context,     // input: portable context
-                               const uint8_t *p_ct, // input: ciphertext
-                               uint8_t *      p_pt  // output: plaintext
+ee_status_t
+th_aes_ecb_decrypt(void *         p_context, // input: portable context
+                   const uint8_t *p_ct,      // input: ciphertext
+                   uint8_t *      p_pt       // output: plaintext
 )
 {
 #warning "th_aes_ecb_decrypt not implemented"
@@ -89,11 +92,11 @@ ee_status_t th_aes_ecb_decrypt(void *p_context,     // input: portable context
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-ee_status_t th_aes_ctr_encrypt(
-    void *         p_context, // input: portable context
-    const uint8_t *p_pt,      // input: plaintext
-    uint_fast32_t  plen,      // input: plaintext length in bytes
-    uint8_t *      p_ct       // output: ciphertext
+ee_status_t
+th_aes_ctr_encrypt(void *         p_context, // input: portable context
+                   const uint8_t *p_pt,      // input: plaintext
+                   uint_fast32_t  plen,      // input: plaintext length in bytes
+                   uint8_t *      p_ct       // output: ciphertext
 )
 {
 #warning "th_aes_ctr_encrypt not implemented"
@@ -105,11 +108,11 @@ ee_status_t th_aes_ctr_encrypt(
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-ee_status_t th_aes_ctr_decrypt(
-    void *         p_context, // input: portable context
-    const uint8_t *p_ct,      // input: ciphertext
-    uint_fast32_t  clen,      // input: ciphertext length in bytes
-    uint8_t *      p_pt       // output: plaintext
+ee_status_t
+th_aes_ctr_decrypt(void *         p_context, // input: portable context
+                   const uint8_t *p_ct,      // input: ciphertext
+                   uint_fast32_t  clen, // input: ciphertext length in bytes
+                   uint8_t *      p_pt  // output: plaintext
 )
 {
 #warning "th_aes_ctr_decrypt not implemented"
@@ -121,7 +124,8 @@ ee_status_t th_aes_ctr_decrypt(
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-ee_status_t th_aes_ccm_encrypt(
+ee_status_t
+th_aes_ccm_encrypt(
     void *         p_context, // input: portable context
     const uint8_t *p_aad,     // input: Additional Authentication Data
     uint_fast32_t  aadlen,    // input: Length of AAD in bytes
@@ -143,7 +147,8 @@ ee_status_t th_aes_ccm_encrypt(
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-ee_status_t th_aes_ccm_decrypt(
+ee_status_t
+th_aes_ccm_decrypt(
     void *         p_context, // input: portable context
     const uint8_t *p_aad,     // input: Additional Authentication Data
     uint_fast32_t  aadlen,    // input: Length of AAD in bytes
@@ -165,7 +170,8 @@ ee_status_t th_aes_ccm_decrypt(
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-ee_status_t th_aes_gcm_encrypt(
+ee_status_t
+th_aes_gcm_encrypt(
     void *         p_context, // input: portable context
     const uint8_t *p_aad,     // input: Additional Authentication Data
     uint_fast32_t  aadlen,    // input: Length of AAD in bytes
@@ -187,7 +193,8 @@ ee_status_t th_aes_gcm_encrypt(
  *
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
-ee_status_t th_aes_gcm_decrypt(
+ee_status_t
+th_aes_gcm_decrypt(
     void *         p_context, // input: portable context
     const uint8_t *p_aad,     // input: Additional Authentication Data
     uint_fast32_t  aadlen,    // input: Length of AAD in bytes
@@ -209,8 +216,9 @@ ee_status_t th_aes_gcm_decrypt(
  *
  * Indicate the mode that was used for _create()
  */
-void th_aes_destroy(void *            p_context, // input: portable context
-                    aes_cipher_mode_t mode       // input: AES_ECB or AES_CCM
+void
+th_aes_destroy(void *            p_context, // input: portable context
+               aes_cipher_mode_t mode       // input: AES_ECB or AES_CCM
 )
 {
 #warning "th_aes_destroy not implemented"

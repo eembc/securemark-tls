@@ -43,7 +43,7 @@ th_rsa_create(void **pp_context // output: portable context
     }
 
     th_memset(ctx, 0, sizeof(rsa_context_t));
-    
+
     ctx->prikey = (RsaKey *)th_malloc(sizeof(RsaKey));
     ctx->pubkey = (RsaKey *)th_malloc(sizeof(RsaKey));
     ctx->rng    = (WC_RNG *)th_malloc(sizeof(WC_RNG));
@@ -58,19 +58,19 @@ th_rsa_create(void **pp_context // output: portable context
         FREE(ctx);
         return EE_STATUS_ERROR;
     }
-    
+
     *pp_context = ctx;
-    
+
     return EE_STATUS_OK;
 }
 
 ee_status_t
-th_rsa_init(void *        p_context, // input: portable context
-            rsa_id_t      id,        // input: enum of RSA types
-            const uint8_t *     p_prikey,
-            uint_fast32_t prilen,
-            const uint8_t *     p_pubkey,
-            uint_fast32_t publen)
+th_rsa_init(void *         p_context, // input: portable context
+            rsa_id_t       id,        // input: enum of RSA types
+            const uint8_t *p_prikey,
+            uint_fast32_t  prilen,
+            const uint8_t *p_pubkey,
+            uint_fast32_t  publen)
 {
     int            ret;
     word32         inOutIdx;
@@ -144,15 +144,15 @@ th_rsa_deinit(void *p_context // input: portable context
 
 ee_status_t
 th_rsa_sign(void *         p_context,
-            const uint8_t *      p_msg,
+            const uint8_t *p_msg,
             uint_fast32_t  mlen,
             uint8_t *      p_sig,
             uint_fast32_t *slen)
 {
     int            ret;
     int            enclen;
-    rsa_context_t *ctx = (rsa_context_t *)p_context;
-    byte * p_digest = (byte *)&(ctx->xdigest);
+    rsa_context_t *ctx      = (rsa_context_t *)p_context;
+    byte *         p_digest = (byte *)&(ctx->xdigest);
 
     ret = wc_Sha256Update(ctx->dctx, p_msg, mlen);
     if (ret < 0)
@@ -168,8 +168,8 @@ th_rsa_sign(void *         p_context,
         return EE_STATUS_ERROR;
     }
 
-    enclen = wc_EncodeSignature(
-        ctx->enc, p_digest, SHA256_DIGEST_SIZE, SHA256h);
+    enclen
+        = wc_EncodeSignature(ctx->enc, p_digest, SHA256_DIGEST_SIZE, SHA256h);
     if (enclen < 0)
     {
         th_printf("e-[wc_EncodeSignature: %d]\r\n", enclen);
@@ -191,9 +191,7 @@ th_rsa_sign(void *         p_context,
 byte g_tempbuffer[512];
 
 ee_status_t
-th_rsa_verify(void *        p_context,
-              const uint8_t *     p_sig,
-              uint_fast32_t slen)
+th_rsa_verify(void *p_context, const uint8_t *p_sig, uint_fast32_t slen)
 {
     int            ret;
     rsa_context_t *ctx = (rsa_context_t *)p_context;
