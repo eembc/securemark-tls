@@ -875,7 +875,7 @@ static task_entry_t g_task[] =
     // For Heavy
     TASK(aes256_ECB_encrypt   ,  320,  1.0f, 0xba50)
     TASK(aes256_CCM_encrypt   ,   52,  1.0f, 0xd195)
-    TASK(aes256_CCM_decrypt   ,  168,  1.0f, 0x0dc3)
+    TASK(aes256_CCM_decrypt   ,  168,  1.0f, 0xd7ff)
     TASK(ecdsa_sign_p384      ,   48,  1.0f, 0x5601) // Note [1,4]
     TASK(ecdsa_verify_p384    ,   48,  2.0f, 0x5601) // Note [1,4]
     TASK(sha384               ,   23,  3.0f, 0x9f68)
@@ -908,19 +908,19 @@ static task_entry_t g_task[] =
     TASK(ecdsa_verify_ed25519 , 4104,   2.0f, 0xa473) // Note [1,4]
     // AEAD
     TASK(aes128_CCM_encrypt   ,  416,   1.0f, 0x286a)
-    TASK(aes128_CCM_decrypt   ,  444,   1.0f, 0x11b7)
+    TASK(aes128_CCM_decrypt   ,  444,   1.0f, 0x4256)
     TASK(aes128_CCM_encrypt   ,   38,   1.0f, 0x5137)
-    TASK(aes128_CCM_decrypt   ,  136,   1.0f, 0xab71)
+    TASK(aes128_CCM_decrypt   ,  136,   1.0f, 0xe8db)
     //
     TASK(aes256_CCM_encrypt   ,  416,   1.0f, 0x28dd)
-    TASK(aes256_CCM_decrypt   ,  444,   1.0f, 0x06f9)
+    TASK(aes256_CCM_decrypt   ,  444,   1.0f, 0x9dc7)
     TASK(aes256_CCM_encrypt   ,   38,   1.0f, 0xd879)
-    TASK(aes256_CCM_decrypt   ,  136,   1.0f, 0xc310)
+    TASK(aes256_CCM_decrypt   ,  136,   1.0f, 0xf288)
     //
     TASK(aes128_GCM_encrypt   ,  416,   1.0f, 0xa22f)
-    TASK(aes128_GCM_decrypt   ,  444,   1.0f, 0x11b7)
+    TASK(aes128_GCM_decrypt   ,  444,   1.0f, 0x7ca3)
     TASK(aes128_GCM_encrypt   ,   38,   1.0f, 0x9970)
-    TASK(aes128_GCM_decrypt   ,  136,   1.0f, 0xab71)
+    TASK(aes128_GCM_decrypt   ,  136,   1.0f, 0x0e7e)
     //
     TASK(chachapoly_seal      ,  416,   1.0f, 0x47fa)
     TASK(chachapoly_read      ,  444,   1.0f, 0x066a)
@@ -974,11 +974,11 @@ main(void)
            MIN_ITER);
 
     score = 0.0f;
-    printf(" # Component                    iterations/s   w  data iterations\n");
-    printf("-- ------------------------- --------------- --- ----- ----------\n");
+    printf(" # Component                  data   w    iterations/s\n");
+    printf("-- ------------------------- ----- --- ---------------\n");
     for (i = 0; i < g_numtasks; ++i)
     {
-//#define DO_SINGLE
+#define DO_SINGLE
 #ifdef DO_SINGLE
         iterations = 1;
         ee_srand(0); // CRCs are computed with seed 0
@@ -1006,13 +1006,13 @@ main(void)
          */
         component_score = g_task[i].weight / g_task[i].ips;
         score += component_score;
-        printf("%2ld %-25s %15.3f %3.0f %5d %10ld",
+        printf("%2ld %-25s %5d %3.0f %15.3f",
             i + 1,
             g_task[i].name,
-            g_task[i].ips,
-            g_task[i].weight,
             g_task[i].n,
-            iterations);
+            g_task[i].weight,
+            g_task[i].ips
+            );
         if (g_task[i].actual_crc != g_task[i].expected_crc)
         {
             printf(" ***ERROR: CRCs did not match, expected 0x%04x, got 0x%04x",
