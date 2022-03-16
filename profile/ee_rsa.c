@@ -19,7 +19,7 @@ ee_rsa(rsa_id_t       id,     // input: EE_RSA_{2048,3072,4096}
        unsigned int   prilen, // input: key length in bytes
        const uint8_t *p_pub,  // input: public key in ASN.1/DER PKCS1_v1.5
        unsigned int   publen, // input: key length in bytes
-       const uint8_t *p_in,   // input: input data (max based on keysize)
+       const uint8_t *p_in,   // input: input data
        unsigned int   ilen,   // input: input length in bytes
        uint8_t *      p_out,  // output: output bytes
        uint_fast32_t *olen,   // inout: in: size of buffer, out: size used
@@ -41,7 +41,7 @@ ee_rsa(rsa_id_t       id,     // input: EE_RSA_{2048,3072,4096}
             text = 4096;
             break;
         default:
-            th_printf("e-[ee_rsa() invalid sized\n");
+            th_printf("e-rsa-[Invalid modulus size]\r\n");
             return;
     }
 

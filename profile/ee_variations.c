@@ -148,7 +148,7 @@ ee_variation_001(uint_fast32_t iterations)
 error_exit:
     th_post();
     // TODO: Hard to be more descriptive here.
-    th_printf("e-variation-001\r\n");
+    th_printf("e-variation-001-[An error occurred]\r\n");
     // These are NULL safe
     th_aes_destroy(p_caes, AES_ECB);
     th_sha_destroy(p_csha1, EE_SHA256);

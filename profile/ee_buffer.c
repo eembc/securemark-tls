@@ -140,7 +140,7 @@ ee_buffer_parse(char *p_command)
         }
         else
         {
-            th_printf("e-[Buffer fill missing a byte]\n");
+            th_printf("e-[Buffer fill missing a byte]\r\n");
         }
     }
     else if (th_strncmp(p_subcmd, "add", EE_CMD_SIZE) == 0)

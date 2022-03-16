@@ -133,7 +133,7 @@ ee_aes(aes_cipher_mode_t mode,   // input: cipher mode
         }
         th_post();
         th_timestamp();
-        th_printf("m-e-aes%d_%s-encrypt-finish\r\n", bits, m);
+        th_printf("m-aes%d_%s-encrypt-finish\r\n", bits, m);
     }
     else
     {
@@ -204,7 +204,7 @@ ee_aes(aes_cipher_mode_t mode,   // input: cipher mode
         }
         th_post();
         th_timestamp();
-        th_printf("m-e-aes%d_%s-decrypt-finish\r\n", bits, m);
+        th_printf("m-aes%d_%s-decrypt-finish\r\n", bits, m);
     }
     goto exit;
 err_enc_exit:
