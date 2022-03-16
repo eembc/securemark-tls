@@ -49,12 +49,13 @@ ee_sha(sha_size_t     size,      // input: SHA algorithm size
             th_printf("e-sha%d-[Failed to process bytes]\r\n", size);
             goto exit;
         }
-    }
-    if (th_sha_done(p_context, size, p_result) != EE_STATUS_OK)
-    {
-        th_post();
-        th_printf("e-sha%d-[Failed to complete]\r\n", size);
-        goto exit;
+        // 2022-03-09: Vote to move `done` into the timing loop. See minutes.
+        if (th_sha_done(p_context, size, p_result) != EE_STATUS_OK)
+        {
+            th_post();
+            th_printf("e-sha%d-[Failed to complete]\r\n", size);
+            goto exit;
+        }
     }
     th_post();
     th_timestamp();
