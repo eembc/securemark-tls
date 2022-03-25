@@ -12,18 +12,34 @@
 
 #include "ee_rsa.h"
 
-void
-ee_rsa(rsa_id_t       id,     // input: EE_RSA_{2048,3072,4096}
-       rsa_function_t func,   // input: EE_RSA_SIGN/EE_RSA_VERIFY
-       const uint8_t *p_pri,  // input: private key in ASN.1/DER PKCS1_v1.5
-       unsigned int   prilen, // input: key length in bytes
-       const uint8_t *p_pub,  // input: public key in ASN.1/DER PKCS1_v1.5
-       unsigned int   publen, // input: key length in bytes
-       const uint8_t *p_in,   // input: input data
-       unsigned int   ilen,   // input: input length in bytes
-       uint8_t *      p_out,  // output: output bytes
-       uint_fast32_t *olen,   // inout: in: size of buffer, out: size used
-       unsigned int   iter    // input: # of test iterations
+/**
+ * @brief Perform an RSA operation. Currently, only sign and verify are
+ * supported. It returns no value because the host application will
+ * intepret the messages printed by `th_printf`.
+ * 
+ * @param id Size of the modulus, an `rsa_id_t` enum
+ * @param func One of the `rsa_function_t` enums
+ * @param p_pri Private key buffer, as quintuple ASN.1/DER RFC 8017 Sec 3.2
+ * @param prilen Private key buffer length
+ * @param p_pub Public key buffer, as N/E ASN.1/DER RFC 8017 Sec 3.1.2
+ * @param publen Public key buffer length
+ * @param p_in Input octet buffer
+ * @param ilen Input buffer length
+ * @param p_out Output octet buffer
+ * @param olen Output buffer length, may be inout, as operation can set it
+ * @param iter Number of iterations
+ */
+void ee_rsa(rsa_id_t       id,
+            rsa_function_t func,
+            const uint8_t *p_pri,
+            unsigned int   prilen,
+            const uint8_t *p_pub,
+            unsigned int   publen,
+            const uint8_t *p_in,
+            unsigned int   ilen,
+            uint8_t *      p_out,
+            uint_fast32_t *olen,
+            unsigned int   iter
 )
 {
     void *p_context;
@@ -80,7 +96,7 @@ ee_rsa(rsa_id_t       id,     // input: EE_RSA_{2048,3072,4096}
     {
         while (iter-- > 0)
         {
-            if (th_rsa_verify(p_context, p_out, *olen) != EE_STATUS_OK)
+            if (th_rsa_verify(p_context, p_in, ilen, p_out, *olen) != EE_STATUS_OK)
             {
                 th_post();
                 th_printf("e-rsa%d-[Failed to verify]\r\n", text);
@@ -93,6 +109,5 @@ ee_rsa(rsa_id_t       id,     // input: EE_RSA_{2048,3072,4096}
     th_timestamp();
 
 exit:
-    th_rsa_deinit(p_context);
     th_rsa_destroy(p_context);
 }

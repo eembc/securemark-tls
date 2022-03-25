@@ -691,32 +691,26 @@ wrap_rsa(rsa_id_t id, rsa_function_t func, unsigned int n, unsigned int i)
     }
     for (int x = 0; x < n; ++x)
     {
-        p_msg[x] = ee_rand();
+        p_msg[x] = testHash[x]; // ee_rand();
     }
     switch (id)
     {
         case EE_RSA_2048:
             prikey = g_rsa_private_key_2048;
-            // TODO: Do we need key size if we're using ASN.1/DER?
             prilen = sizeof(g_rsa_private_key_2048);
             pubkey = g_rsa_associated_public_key_2048;
-            // TODO: Do we need key size if we're using ASN.1/DER?
             publen = sizeof(g_rsa_associated_public_key_2048);
             break;
         case EE_RSA_3072:
             prikey = g_rsa_private_key_3072;
-            // TODO: Do we need key size if we're using ASN.1/DER?
             prilen = sizeof(g_rsa_private_key_3072);
             pubkey = g_rsa_associated_public_key_3072;
-            // TODO: Do we need key size if we're using ASN.1/DER?
             publen = sizeof(g_rsa_associated_public_key_3072);
             break;
         case EE_RSA_4096:
             prikey = g_rsa_private_key_4096;
-            // TODO: Do we need key size if we're using ASN.1/DER?
             prilen = sizeof(g_rsa_private_key_4096);
             pubkey = g_rsa_associated_public_key_4096;
-            // TODO: Do we need key size if we're using ASN.1/DER?
             publen = sizeof(g_rsa_associated_public_key_4096);
             break;
         default:
@@ -724,10 +718,12 @@ wrap_rsa(rsa_id_t id, rsa_function_t func, unsigned int n, unsigned int i)
             exit(-1);
             break;
     }
+    ee_printmem_hex(prikey, prilen, "pri: ");
+    ee_printmem_hex(pubkey, publen, "pub: ");
+
     if (EE_RSA_VERIFY == func)
     {
         g_verify_mode = true;
-        // TODO: Do we need key size if we're using ASN.1/DER?
         ee_rsa(id,
                EE_RSA_SIGN,
                prikey,
@@ -739,21 +735,22 @@ wrap_rsa(rsa_id_t id, rsa_function_t func, unsigned int n, unsigned int i)
                p_sig,
                &slen,
                1);
-        ee_printmem_hex(p_msg, n, "in : ");
-        ee_printmem_hex(p_sig, slen, "out: ");
+        ee_printmem_hex(p_msg, n, "msg: ");
+        ee_printmem_hex(p_sig, slen, "sig: ");
         g_verify_mode = false;
-        // TODO: Do we need key size if we're using ASN.1/DER?
         ee_rsa(id,
                EE_RSA_VERIFY,
                prikey,
                prilen,
                pubkey,
                publen,
-               p_msg,
-               n,
                p_sig,
-               &slen,
+               slen,
+               p_msg,
+               &n,
                i);
+        ee_printmem_hex(p_sig, slen, "sig: ");
+        ee_printmem_hex(p_msg, n, "msg: ");
     }
     else
     {
@@ -769,8 +766,8 @@ wrap_rsa(rsa_id_t id, rsa_function_t func, unsigned int n, unsigned int i)
                p_sig,
                &slen,
                i);
-        ee_printmem_hex(p_msg, n, "in : ");
-        ee_printmem_hex(p_sig, slen, "out: ");
+        ee_printmem_hex(p_msg, n, "msg: ");
+        ee_printmem_hex(p_sig, slen, "sig: ");
     }
     for (crc = 0, x = 0; x < slen; ++x)
     {
@@ -877,9 +874,11 @@ static task_entry_t g_task[] =
     // RSA not using padding, TODO: in = keysize??
     // TODO: Does everyone support "direct"? What's it like IRL?
     // TODO: For decrypt, do a memcmp to verify output = input
+    /*
 #define DO_RSA
 #define DO_VERSION_1
 #define DO_VERSION_2
+*/
     /*
      *   nickname             , data, weight, crc
      */
@@ -915,8 +914,6 @@ static task_entry_t g_task[] =
     TASK(sha384               , 4224,  4.0f, 0xb146)
     TASK(aes256_ECB_encrypt   , 2048, 10.0f, 0x2364)
 #endif
-//    TASK(ecdsa_sign_p256r1    ,   32,   1.0f, 0x80bb) // Note [1,4]
-  //  TASK(ecdsa_sign_p384      ,   48,   1.0f, 0x5601) // Note [1,4]
 
 // TODO: need a variation 001 for Light and Heavy
 #ifdef DO_VERSION_2
@@ -973,6 +970,9 @@ static task_entry_t g_task[] =
     TASK(sha384               ,  176,  14.0f, 0x660b)
     TASK(sha384               ,  130,   2.0f, 0x445b)
 #endif
+
+    TASK(rsa_sign_2048   ,  32, 1.0, 0x7e66)
+    TASK(rsa_verify_2048   ,  32, 1.0, 0x7e66)
 #ifdef DO_RSA
     TASK(rsa_sign_2048   ,  4096, 1.0, 0x61d1)
     TASK(rsa_sign_3072   ,  4096, 1.0, 0x68e4)
