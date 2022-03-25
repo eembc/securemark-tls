@@ -140,13 +140,13 @@ th_rsa_init(void *         p_context,
  * (decrypted) signature. The validity of the output will be checked by the
  * host application. This function must perform PKCS1v15 padding as
  * described in RFC 8017 9.2.
- * 
+ *
  * @param p_context Portable context
  * @param p_sig Pointer to signature octet buffer, raw bytes
  * @param slen Length of signature buffer
  * @param p_outbuf Pointer to an output buffer
  * @param olen Length of provided output buffer
- * @return ee_status_t 
+ * @return ee_status_t
  */
 ee_status_t
 th_rsa_sign(void *         p_context,
@@ -174,20 +174,20 @@ th_rsa_sign(void *         p_context,
  * @brief Perform an RSA verify (exp mod n) of a hash, and return the raw
  * (decrypted) signature. The validity of the output will be checked by the
  * host application.
- * 
+ *
  * @param p_context Portable context
  * @param p_sig Pointer to signature octet buffer, raw bytes
  * @param slen Length of signature buffer
  * @param p_outbuf Pointer to an output buffer
  * @param olen Length of provided output buffer
- * @return ee_status_t 
+ * @return ee_status_t
  */
-ee_status_t th_rsa_verify(void *         p_context,
-                          const uint8_t *p_sig,
-                          uint_fast32_t  slen,
-                          uint8_t       *p_outbuf,
-                          uint_fast32_t  olen
-)
+ee_status_t
+th_rsa_verify(void *         p_context,
+              const uint8_t *p_sig,
+              uint_fast32_t  slen,
+              uint8_t *      p_outbuf,
+              uint_fast32_t  olen)
 {
     int            ret;
     rsa_context_t *ctx = (rsa_context_t *)p_context;
