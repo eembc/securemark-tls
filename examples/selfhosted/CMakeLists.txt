@@ -136,6 +136,7 @@ if (SELFHOSTED)
 		include_directories(profile/wolfssl_th_api)
 		set(SOURCE
 			../../profile/ee_aes.c
+			../../profile/ee_bench.c
 			../../profile/ee_chachapoly.c
 			../../profile/ee_ecdh.c
 			../../profile/ee_ecdsa.c

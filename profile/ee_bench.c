@@ -12,216 +12,127 @@
 
 #include "ee_bench.h"
 
-#if EE_CFG_SELFHOSTED != 1
+void
+bench_aes(aes_cipher_mode_t mode,   // input: cipher mode
+          aes_function_t    func,   // input: func (AES_ENC|AES_DEC)
+          uint_fast32_t     keylen, // input: length of key in bytes
+          uint_fast32_t     n,      // input: length of input in bytes
+          uint_fast32_t     i,      // input: # of test iterations
+          bool              verify)
+{
+    uint8_t *buffer = NULL;
+    uint8_t *key;
+    uint8_t *in;
+    uint8_t *out;
+    uint8_t *iv;
+    uint8_t *tag;
+    int      ivlen = mode == AES_CTR ? AES_CTR_IVSIZE : AES_AEAD_IVSIZE;
+
+    buffer = th_buffer_address();
+    key    = buffer;
+    iv     = key + keylen;
+    in     = iv + ivlen;
+    out    = in + n;
+    tag    = out + n;
+    for (size_t x = 0; x < keylen; ++x)
+    {
+        key[x] = ee_rand();
+    }
+    for (size_t x = 0; x < ivlen; ++x)
+    {
+        iv[x] = ee_rand();
+    }
+    for (size_t x = 0; x < n; ++x)
+    {
+        in[x] = ee_rand();
+    }
+    if (func == AES_DEC)
+    {
+        // Encrypt something for the decrypt loop to decrypt
+        ee_aes(mode, AES_ENC, key, keylen, iv, in, n, out, tag, NULL, 0, 1);
+        th_memcpy(in, out, n);
+        ee_aes(mode, func, key, keylen, iv, out, n, in, tag, NULL, 0, i);
+        if (verify)
+        {
+            ee_printmem_hex(key, keylen, "m-bench-aesXXX_ecb_dec-key-");
+            ee_printmem_hex(iv, ivlen, "m-bench-aesXXX_ecb_dec-iv-");
+            ee_printmem_hex(out, n, "m-bench-aesXXX_ecb_dec-in-");
+            ee_printmem_hex(in, n, "m-bench-aesXXX_ecb_dec-out-");
+            ee_printmem_hex(tag, AES_TAGSIZE, "m-bench-aesXXX_ecb_dec-tag-");
+        }
+    }
+    else
+    {
+        ee_aes(mode, func, key, keylen, iv, in, n, out, tag, NULL, 0, i);
+        if (verify)
+        {
+            ee_printmem_hex(key, keylen, "m-bench-aesXXX_ecb_enc-key-");
+            ee_printmem_hex(iv, ivlen, "m-bench-aesXXX_ecb_enc-iv-");
+            ee_printmem_hex(in, n, "m-bench-aesXXX_ecb_enc-in-");
+            ee_printmem_hex(out, n, "m-bench-aesXXX_ecb_enc-out-");
+            ee_printmem_hex(tag, AES_TAGSIZE, "m-bench-aesXXX_ecb_enc-tag-");
+        }
+    }
+}
 
 void
-bench_sha256(uint_fast32_t i, uint_fast32_t n, bool verify)
+bench_sha(sha_size_t size, uint_fast32_t n, uint_fast32_t i, bool verify)
 {
-    uint8_t *     p_buffer;
-    uint_fast32_t buflen;
-    uint8_t *     p_in;
-    uint8_t *     p_out;
-    uint_fast32_t x;
-    //       in         out
-    buflen   = n + SHA_SIZE;
-    p_buffer = (uint8_t *)th_malloc(buflen);
-    if (p_buffer == NULL)
+    uint8_t *p_in;
+    uint8_t *p_out;
+    char *   hdr1;
+    char *   hdr2;
+    switch (size)
     {
-        th_printf("e-[SHA256 malloc() failed, size %d]\r\n", buflen);
-        return;
+        case EE_SHA256:
+            hdr1 = "m-bench-sha256-in-";
+            hdr2 = "m-bench-sha256-hash-";
+            break;
+        case EE_SHA384:
+            hdr1 = "m-bench-sha384-in-";
+            hdr2 = "m-bench-sha384-hash-";
+            break;
+        default:
+            th_printf("e-[bench_sha() invalid size parameter]\r\n");
+            break;
     }
-    // Assign the helper points to the region of the p_buffer
-    p_in  = p_buffer;
+    p_in  = th_buffer_address();
     p_out = p_in + n;
-    for (x = 0; x < n; ++x)
+    for (size_t x = 0; x < n; ++x)
     {
         p_in[x] = ee_rand();
     }
-    ee_sha256(p_buffer, n, p_out, i);
+    ee_sha(size, p_in, n, p_out, i);
     if (verify)
     {
-        ee_printmem_hex(p_in, n, "m-bench-sha256-in-");
-        ee_printmem_hex(p_out, SHA_SIZE, "m-bench-sha256-hash-");
+        ee_printmem_hex(p_in, n, hdr1);
+        ee_printmem_hex(p_out, size / 8, hdr2);
     }
-    th_free(p_buffer);
 }
 
 void
-bench_aes128_ecb(uint_fast32_t i, uint_fast32_t n, bool verify)
+bench_ecdh(ecdh_group_t g, uint_fast32_t i, bool verify)
 {
-
-    uint8_t *     p_buffer;
-    uint_fast32_t buflen;
-    uint8_t *     p_key;
-    uint8_t *     p_in;
-    uint8_t *     p_out;
-    uint_fast32_t x;
-    //                key   in  out
-    buflen   = AES_KEYSIZE + n + n;
-    p_buffer = (uint8_t *)th_malloc(buflen);
-    if (p_buffer == NULL)
-    {
-        th_printf("e-[AES128 ECB malloc() failed, size %d]\r\n", buflen);
-        return;
-    }
-    // Assign the helper points to the region of the buffer
-    p_key = p_buffer;
-    p_in  = p_key + AES_KEYSIZE;
-    p_out = p_in + n;
-    for (x = 0; x < AES_KEYSIZE; ++x)
-    {
-        p_key[x] = ee_rand();
-    }
-    for (x = 0; x < n; ++x)
-    {
-        p_in[x] = ee_rand();
-    }
-    ee_aes128_ecb(p_key, p_in, n, p_out, AES_ENC, i);
+    uint_fast32_t npub = ee_pub_sz[g];
+    uint_fast32_t npri = ee_pri_sz[g];
+    uint_fast32_t nsec = ee_sec_sz[g];
+    // These must be preloaded to the buffer by the host.
+    uint8_t *p_pub;
+    uint8_t *p_pri;
+    uint8_t *p_sec;
+    p_pub = th_buffer_address();
+    p_pri = p_pub + npub;
+    p_sec = p_pri + npri;
+    ee_ecdh(g, p_pub, npub, p_pri, npri, p_sec, nsec, i);
     if (verify)
     {
-        ee_printmem_hex(p_key, 16, "m-bench-aes128_ecb_enc-key-");
-        ee_printmem_hex(p_in, n, "m-bench-aes128_ecb_enc-in-");
-        ee_printmem_hex(p_out, n, "m-bench-aes128_ecb_enc-out-");
+        ee_printmem_hex(p_pub, npub, "m-bench-ecdhXXX-peer-public-");
+        ee_printmem_hex(p_pri, npri, "m-bench-ecdhXXX-own-private-");
+        ee_printmem_hex(p_sec, nsec, "m-bench-ecdhXXX-shared-");
     }
-    ee_aes128_ecb(p_key, p_out, n, p_in, AES_DEC, i);
-    if (verify)
-    {
-        ee_printmem_hex(p_key, 16, "m-bench-aes128_ecb_dec-key-");
-        ee_printmem_hex(p_out, n, "m-bench-aes128_ecb_dec-in-");
-        ee_printmem_hex(p_in, n, "m-bench-aes128_ecb_dec-out-");
-    }
-    th_free(p_buffer);
 }
 
-// TODO: What are we doing about AAD and AADLEN?
-
-void
-bench_aes128_ccm(uint_fast32_t i, uint_fast32_t n, bool verify)
-{
-    uint8_t *     p_buffer;
-    uint_fast32_t buflen;
-    uint8_t *     p_key;
-    uint8_t *     p_iv;
-    uint8_t *     p_in;
-    uint8_t *     p_tag;
-    uint8_t *     p_out;
-    uint_fast32_t x;
-    //                key           iv  in           tag   out
-    buflen   = AES_KEYSIZE + AES_IVSIZE + n + AES_TAGSIZE + n;
-    p_buffer = (uint8_t *)th_malloc(buflen);
-    if (p_buffer == NULL)
-    {
-        th_printf("e-[AES128 CCM malloc() failed, size %d]\r\n", buflen);
-        return;
-    }
-    // Assign the helper points to the region of the buffer
-    p_key = p_buffer;
-    p_iv  = p_key + AES_KEYSIZE;
-    p_in  = p_iv + AES_IVSIZE;
-    p_tag = p_in + n;
-    p_out = p_tag + AES_TAGSIZE;
-    // Fill the key, iv, and plaintext with random values
-    for (x = 0; x < AES_KEYSIZE; ++x)
-    {
-        p_key[x] = ee_rand();
-    }
-    for (x = 0; x < AES_IVSIZE; ++x)
-    {
-        p_iv[x] = ee_rand();
-    }
-    for (x = 0; x < n; ++x)
-    {
-        p_in[x] = ee_rand();
-    }
-    /**
-     * We provide decryption in this conditional because it requires
-     * a proper tag, and having the user supply this with buffer-add
-     * commands becomes very painful, so let the prim do it for us.
-     */
-    ee_aes128_ccm(p_key, NULL, 0, p_iv, p_in, n, p_tag, p_out, AES_ENC, i);
-    if (verify)
-    {
-        ee_printmem_hex(p_key, AES_KEYSIZE, "m-bench-aes128_ccm_enc-key-");
-        ee_printmem_hex(p_iv, AES_IVSIZE, "m-bench-aes128_ccm_enc-iv-");
-        ee_printmem_hex(p_in, n, "m-bench-aes128_ccm_enc-in-");
-        ee_printmem_hex(p_tag, AES_TAGSIZE, "m-bench-aes128_ccm_enc-tag-");
-        ee_printmem_hex(p_out, n, "m-bench-aes128_ccm_enc-out-");
-    }
-    ee_aes128_ccm(p_key, NULL, 0, p_iv, p_out, n, p_tag, p_in, AES_DEC, i);
-    if (verify)
-    {
-        ee_printmem_hex(p_key, AES_KEYSIZE, "m-bench-aes128_ccm_dec-key-");
-        ee_printmem_hex(p_iv, AES_IVSIZE, "m-bench-aes128_ccm_dec-iv-");
-        ee_printmem_hex(p_out, n, "m-bench-aes128_ccm_dec-in-");
-        ee_printmem_hex(p_tag, AES_TAGSIZE, "m-bench-aes128_ccm_dec-tag-");
-        ee_printmem_hex(p_in, n, "m-bench-aes128_ccm_dec-out-");
-    }
-    th_free(p_buffer);
-}
-
-void
-bench_aes128_gcm(uint_fast32_t i, uint_fast32_t n, bool verify)
-{
-    uint8_t *     p_buffer;
-    uint_fast32_t buflen;
-    uint8_t *     p_key;
-    uint8_t *     p_iv;
-    uint8_t *     p_in;
-    uint8_t *     p_tag;
-    uint8_t *     p_out;
-    uint_fast32_t x;
-    //                key           iv  in           tag   out
-    buflen   = AES_KEYSIZE + AES_IVSIZE + n + AES_TAGSIZE + n;
-    p_buffer = (uint8_t *)th_malloc(buflen);
-    if (p_buffer == NULL)
-    {
-        th_printf("e-[AES128 GCM malloc() failed, size %d]\r\n", buflen);
-        return;
-    }
-    // Assign the helper points to the region of the buffer
-    p_key = p_buffer;
-    p_iv  = p_key + AES_KEYSIZE;
-    p_in  = p_iv + AES_IVSIZE;
-    p_tag = p_in + n;
-    p_out = p_tag + AES_TAGSIZE;
-    // Fill the key, iv, and plaintext with random values
-    for (x = 0; x < AES_KEYSIZE; ++x)
-    {
-        p_key[x] = ee_rand();
-    }
-    for (x = 0; x < AES_IVSIZE; ++x)
-    {
-        p_iv[x] = ee_rand();
-    }
-    for (x = 0; x < n; ++x)
-    {
-        p_in[x] = ee_rand();
-    }
-    /**
-     * We provide decryption in this conditional because it requires
-     * a proper tag, and having the user supply this with buffer-add
-     * commands becomes very painful, so let the prim do it for us.
-     */
-    ee_aes128_gcm(p_key, NULL, 0, p_iv, p_in, n, p_tag, p_out, AES_ENC, i);
-    if (verify)
-    {
-        ee_printmem_hex(p_key, AES_KEYSIZE, "m-bench-aes128_gcm_enc-key-");
-        ee_printmem_hex(p_iv, AES_IVSIZE, "m-bench-aes128_gcm_enc-iv-");
-        ee_printmem_hex(p_in, n, "m-bench-aes128_gcm_enc-in-");
-        ee_printmem_hex(p_tag, AES_TAGSIZE, "m-bench-aes128_gcm_enc-tag-");
-        ee_printmem_hex(p_out, n, "m-bench-aes128_gcm_enc-out-");
-    }
-    ee_aes128_gcm(p_key, NULL, 0, p_iv, p_out, n, p_tag, p_in, AES_DEC, i);
-    if (verify)
-    {
-        ee_printmem_hex(p_key, AES_KEYSIZE, "m-bench-aes128_gcm_dec-key-");
-        ee_printmem_hex(p_iv, AES_IVSIZE, "m-bench-aes128_gcm_dec-iv-");
-        ee_printmem_hex(p_out, n, "m-bench-aes128_gcm_dec-in-");
-        ee_printmem_hex(p_tag, AES_TAGSIZE, "m-bench-aes128_gcm_dec-tag-");
-        ee_printmem_hex(p_in, n, "m-bench-aes128_gcm_dec-out-");
-    }
-    th_free(p_buffer);
-}
+#if 0
 
 void
 bench_chachapoly(uint_fast32_t i, uint_fast32_t n, bool verify)
@@ -292,51 +203,6 @@ bench_chachapoly(uint_fast32_t i, uint_fast32_t n, bool verify)
         ee_printmem_hex(p_in, n, "m-bench-chachapoly_dec-out-");
     }
     th_free(p_buffer);
-}
-/**
- * Note: For all ECC functions, understand the following:
- *
- * We require the ability to send our own key to the ECC functions to
- * prevent cheating the test. Some APIs make it very difficult to
- * provide our own secret, but they do offer a way to load keys. So,
- * we use the generic th_buffer to load the keys using buffer-add
- * commands on the host.
- *
- * The th_buffer MUST be preloaded with the following values.
- *
- * Value      Size (Bytes)
- * Q.X        32 (Peer public key uncompressed 32-byte X valid coord)
- * Q.Y        32 (Peer public key uncompressed 32-byte Y valid coord)
- * d          32 (Private key uncompressed 32-byte)
- * SHA256     32 (SHA256 Digest to sign)
- */
-
-void
-bench_ecdh(uint_fast32_t i, ecdh_group_t group, bool verify)
-{
-    /**
-     * ECDH Key mixing
-     *
-     * Preload buffer with:
-     *
-     * Value      Size (Bytes)
-     * Q.X        32 (Peer public key uncompressed 32-byte X valid coord)
-     * Q.Y        32 (Peer public key uncompressed 32-byte Y valid coord)
-     * d          32 (Private key uncompressed 32-byte)
-     */
-    uint8_t *p_pub;
-    uint8_t *p_pri;
-    uint8_t  p_shared[ECDH_SIZE]; // don't blow away the th_buffer!
-    // These were preloaded
-    p_pub = th_buffer_address();
-    p_pri = p_pub + ECC_QSIZE;
-    ee_ecdh(p_pub, group, ECC_QSIZE, p_pri, ECC_DSIZE, p_shared, ECDH_SIZE, i);
-    if (verify)
-    {
-        ee_printmem_hex(p_pub, 64, "m-bench-ecdh-peer-public-");
-        ee_printmem_hex(p_pri, 32, "m-bench-ecdh-own-private-");
-        ee_printmem_hex(p_shared, 32, "m-bench-ecdh-shared-");
-    }
 }
 
 void
@@ -505,4 +371,4 @@ ee_bench_parse(char *p_command, bool verify)
     return EE_ARG_CLAIMED;
 }
 
-#endif /* EE_CFG_SELFHOSTED */
+#endif // 0

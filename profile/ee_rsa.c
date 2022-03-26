@@ -16,7 +16,7 @@
  * @brief Perform an RSA operation. Currently, only sign and verify are
  * supported. It returns no value because the host application will
  * intepret the messages printed by `th_printf`.
- * 
+ *
  * @param id Size of the modulus, an `rsa_id_t` enum
  * @param func One of the `rsa_function_t` enums
  * @param p_pri Private key buffer, as quintuple ASN.1/DER RFC 8017 Sec 3.2
@@ -29,18 +29,18 @@
  * @param olen Output buffer length, may be inout, as operation can set it
  * @param iter Number of iterations
  */
-void ee_rsa(rsa_id_t       id,
-            rsa_function_t func,
-            const uint8_t *p_pri,
-            unsigned int   prilen,
-            const uint8_t *p_pub,
-            unsigned int   publen,
-            const uint8_t *p_in,
-            unsigned int   ilen,
-            uint8_t *      p_out,
-            uint_fast32_t *olen,
-            unsigned int   iter
-)
+void
+ee_rsa(rsa_id_t       id,
+       rsa_function_t func,
+       const uint8_t *p_pri,
+       unsigned int   prilen,
+       const uint8_t *p_pub,
+       unsigned int   publen,
+       const uint8_t *p_in,
+       unsigned int   ilen,
+       uint8_t *      p_out,
+       uint_fast32_t *olen,
+       unsigned int   iter)
 {
     void *p_context;
     int   text;
@@ -96,7 +96,8 @@ void ee_rsa(rsa_id_t       id,
     {
         while (iter-- > 0)
         {
-            if (th_rsa_verify(p_context, p_in, ilen, p_out, *olen) != EE_STATUS_OK)
+            if (th_rsa_verify(p_context, p_in, ilen, p_out, *olen)
+                != EE_STATUS_OK)
             {
                 th_post();
                 th_printf("e-rsa%d-[Failed to verify]\r\n", text);

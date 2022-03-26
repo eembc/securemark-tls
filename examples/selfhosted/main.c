@@ -35,7 +35,9 @@
 #include "ee_rsa.h"
 #include "ee_variations.h"
 #include "ee_util.h"
+#include "ee_bench.h"
 #include <stdint.h>
+#include <assert.h>
 
 // Pre-made keys just for this self-hosted main.c
 #include "keys.h"
@@ -268,66 +270,17 @@ wrap_aes(aes_cipher_mode_t mode,   // input: cipher mode
          uint_fast32_t     i       // input: # of test iterations
 )
 {
-    uint8_t *    buffer = NULL;
-    unsigned int buflen;
-    uint8_t *    key;
-    uint8_t *    in;
     uint8_t *    out;
-    uint8_t *    iv;
-    uint8_t *    tag;
     int          ivlen  = mode == AES_CTR ? AES_CTR_IVSIZE : AES_AEAD_IVSIZE;
-    uint8_t      taglen = AES_TAGSIZE;
-    uint16_t     crc;
-    int          x;
-
-    buflen = keylen + n + n + ivlen + taglen;
-    buffer = (uint8_t *)th_malloc(buflen);
-    assert(buffer != NULL);
-    key = buffer;
-    in  = key + keylen;
-    out = in + n;
-    iv  = out + n;
-    tag = iv + ivlen;
-    for (x = 0; x < keylen; ++x)
-    {
-        key[x] = ee_rand();
-    }
-    for (x = 0; x < ivlen; ++x)
-    {
-        iv[x] = ee_rand();
-    }
-    for (x = 0; x < n; ++x)
-    {
-        in[x] = ee_rand();
-    }
-    ee_printmem_hex(key, keylen, "> key :");
-    ee_printmem_hex(iv, ivlen, "> iv  :");
-    ee_printmem_hex(in, n, "> pt  :");
-    if (func == AES_DEC)
-    {
-        g_verify_mode = true;
-        // Encrypt something for the decrypt loop to decrypt
-        ee_aes(mode, AES_ENC, key, keylen, iv, in, n, out, tag, NULL, 0, 1);
-        th_memcpy(in, out, n);
-        ee_printmem_hex(in, n, "> pct :");
-        ee_printmem_hex(tag, AES_TAGSIZE, "> ptag:");
-        g_verify_mode = false;
-        ee_aes(mode, func, key, keylen, iv, out, n, in, tag, NULL, 0, i);
-        ee_printmem_hex(out, n, "> out :");
-        ee_printmem_hex(tag, AES_TAGSIZE, "> tag :");
-    }
-    else
-    {
-        g_verify_mode = false;
-        ee_aes(mode, func, key, keylen, iv, in, n, out, tag, NULL, 0, i);
-        ee_printmem_hex(out, n, "> out :");
-        ee_printmem_hex(tag, AES_TAGSIZE, "> tag :");
-    }
+    uint16_t crc;
+    size_t x;
+    // Emulate host by using the buffer    
+    out = th_buffer_address() + keylen + ivlen + n;
+    bench_aes(mode, func, keylen, n, i, true);
     for (crc = 0, x = 0; x < n; ++x)
     {
         crc = crcu16(crc, (uint8_t)out[x]);
     }
-    th_free(buffer);
     return crc;
 }
 
@@ -352,32 +305,16 @@ MAKE_WRAP_AES(256, CCM)
 uint16_t
 wrap_sha(sha_size_t size, unsigned int n, unsigned int i)
 {
-    uint8_t *    buffer;
-    unsigned int buflen;
-    uint8_t *    in;
-    uint8_t *    out;
-    unsigned int x;
-    unsigned int shalen = size / 8;
-    uint16_t     crc;
-
-    buflen = n + shalen;
-    buffer = (uint8_t *)th_malloc(buflen);
-    assert(buffer != NULL);
-    in  = buffer;
-    out = in + n;
-    for (x = 0; x < n; ++x)
+    uint8_t *p = th_buffer_address();
+    size_t x;
+    uint16_t crc;
+    // Emulate host by using the buffer    
+    assert(th_buffer_size() > (n + (size / 8)));
+    bench_sha(size, n, i, false);
+    for (crc = 0, x = 0; x < (size / 8); ++x)
     {
-        in[x] = ee_rand();
+        crc = crcu16(crc, (uint8_t)(p + n)[x]);
     }
-    g_verify_mode = false;
-    ee_sha(size, buffer, n, out, i);
-    ee_printmem_hex(in, n, "> in  :");
-    ee_printmem_hex(out, shalen, "> out :");
-    for (crc = 0, x = 0; x < shalen; ++x)
-    {
-        crc = crcu16(crc, (uint8_t)out[x]);
-    }
-    th_free(buffer);
     return crc;
 }
 
@@ -393,29 +330,19 @@ MAKE_WRAP_SHA(384)
 uint16_t
 wrap_ecdh(ecdh_group_t group, unsigned int n, unsigned int i)
 {
-    uint8_t *    pubkey;
-    uint8_t *    prikey;
-    uint8_t      shared[ee_sec_sz[group]];
-    unsigned int x;
-    uint16_t     crc;
-    n             = 0; // unused
-    pubkey        = g_ecc_peer_public_keys[group];
-    prikey        = g_ecc_private_keys[group];
-    g_verify_mode = false;
-    ee_printmem_hex(pubkey, ee_pub_sz[group], "pub : ");
-    ee_printmem_hex(prikey, ee_pri_sz[group], "pri : ");
-    ee_ecdh(group,
-            pubkey,
-            ee_pub_sz[group],
-            prikey,
-            ee_pri_sz[group],
-            shared,
-            ee_sec_sz[group],
-            i);
-    ee_printmem_hex(shared, ee_sec_sz[group], "sec : ");
+    uint8_t *p = th_buffer_address();
+    size_t x;
+    uint16_t crc;
+    // Emulate host download by copying our local keys into the buffer    
+    assert(th_buffer_size() > (ee_pub_sz[group] + ee_pri_sz[group] + ee_sec_sz[group]));
+    th_memcpy(p, g_ecc_peer_public_keys[group], ee_pub_sz[group]);
+    p += ee_pub_sz[group];
+    th_memcpy(p, g_ecc_private_keys[group], ee_pri_sz[group]);
+    p += ee_pri_sz[group];
+    bench_ecdh(group, i, false);
     for (crc = 0, x = 0; x < ee_sec_sz[group]; ++x)
     {
-        crc = crcu16(crc, (uint8_t)shared[x]);
+        crc = crcu16(crc, (uint8_t)p[x]);
     }
     return crc;
 }
@@ -971,8 +898,6 @@ static task_entry_t g_task[] =
     TASK(sha384               ,  130,   2.0f, 0x445b)
 #endif
 
-    TASK(rsa_sign_2048   ,  32, 1.0, 0x7e66)
-    TASK(rsa_verify_2048   ,  32, 1.0, 0x7e66)
 #ifdef DO_RSA
     TASK(rsa_sign_2048   ,  4096, 1.0, 0x61d1)
     TASK(rsa_sign_3072   ,  4096, 1.0, 0x68e4)

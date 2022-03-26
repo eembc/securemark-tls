@@ -35,7 +35,7 @@ typedef enum rsa_function_t
  * @brief Perform an RSA operation. Currently, only sign and verify are
  * supported. It returns no value because the host application will
  * intepret the messages printed by `th_printf`.
- * 
+ *
  * @param id Size of the modulus, an `rsa_id_t` enum
  * @param func One of the `rsa_function_t` enums
  * @param p_pri Private key buffer, as quintuple ASN.1/DER RFC 8017 Sec 3.2
@@ -58,12 +58,11 @@ void ee_rsa(rsa_id_t       id,
             unsigned int   ilen,
             uint8_t *      p_out,
             uint_fast32_t *olen,
-            unsigned int   iter
-);
+            unsigned int   iter);
 
 /**
  * @brief Creates a portable context structure for RSA operations.
- * 
+ *
  * @param pp_context Pointer to portable context pointer.
  * @return ee_status_t EE_STATUS_OK or EE_STATUS_FAIL
  */
@@ -73,7 +72,7 @@ ee_status_t th_rsa_create(void **pp_context);
  * @brief Initialize structures created ruing `th_rsa_create` and setup and
  * library or hardware functionality. Typically loads the private and public
  * keys, and inititalizes and RNGs or configuration options.
- * 
+ *
  * @param p_context Portable context.
  * @param id Size of the modulus, an `rsa_id_t` enum
  * @param p_pri Private key buffer, as quintuple ASN.1/DER RFC 8017 Sec 3.2
@@ -93,7 +92,7 @@ ee_status_t th_rsa_init(void *         p_context,
  * @brief Perform an RSA sign (exp mod n) of a hash, and return the raw
  * (encrypted) signature. The validity of the output will be checked by the
  * host application.
- * 
+ *
  * @param p_context Portable context pointer
  * @param p_hash Hash of data
  * @param hlen Length of hash
@@ -112,25 +111,24 @@ ee_status_t th_rsa_sign(void *         p_context,
  * (decrypted) signature. The validity of the output will be checked by the
  * host application. This function must perform PKCS1v15 padding as
  * described in RFC 8017 9.2.
- * 
+ *
  * @param p_context Portable context
  * @param p_sig Pointer to signature octet buffer, raw bytes
  * @param slen Length of signature buffer
  * @param p_outbuf Pointer to an output buffer
  * @param olen Length of provided output buffer
- * @return ee_status_t 
+ * @return ee_status_t
  */
 ee_status_t th_rsa_verify(void *         p_context,
                           const uint8_t *p_sig,
                           uint_fast32_t  slen,
-                          uint8_t       *p_outbuf,
-                          uint_fast32_t  olen
-);
+                          uint8_t *      p_outbuf,
+                          uint_fast32_t  olen);
 
 /**
  * @brief De-initialize and destroy and context created, and free up any
  * memory allocated during `th_rsa_create`.
- * 
+ *
  * @param p_context Portable context pointer
  */
 void th_rsa_destroy(void *p_context);

@@ -53,7 +53,7 @@ th_aes_init(void *            p_context, // input: portable context
     ret = wc_AesInit(aes, HEAP_HINT, DEVID);
     if (ret != 0)
     {
-        th_printf("e-[wc_AesInit: -%d]\r\n", -ret);
+        th_printf("e-[wc_AesInit: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
 
@@ -84,7 +84,7 @@ th_aes_init(void *            p_context, // input: portable context
 
     if (ret != 0)
     {
-        th_printf("e-[th_aes_init failed to set AES key: -%d]\r\n", -ret);
+        th_printf("e-[th_aes_init failed to set AES key: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
 
