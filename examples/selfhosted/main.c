@@ -36,6 +36,7 @@
 #include "ee_variations.h"
 #include "ee_util.h"
 #include "ee_bench.h"
+#include "ee_buffer.h"
 #include <stdint.h>
 #include <assert.h>
 
@@ -270,13 +271,16 @@ wrap_aes(aes_cipher_mode_t mode,   // input: cipher mode
          uint_fast32_t     i       // input: # of test iterations
 )
 {
-    uint8_t *    out;
-    int          ivlen  = mode == AES_CTR ? AES_CTR_IVSIZE : AES_AEAD_IVSIZE;
+    uint8_t *out;
+    int      ivlen = mode == AES_CTR ? AES_CTR_IVSIZE : AES_AEAD_IVSIZE;
     uint16_t crc;
-    size_t x;
-    // Emulate host by using the buffer    
+    size_t   x;
+
+    // Emulate host by using the buffer
     out = th_buffer_address() + keylen + ivlen + n;
+
     bench_aes(mode, func, keylen, n, i, true);
+
     for (crc = 0, x = 0; x < n; ++x)
     {
         crc = crcu16(crc, (uint8_t)out[x]);
@@ -306,11 +310,14 @@ uint16_t
 wrap_sha(sha_size_t size, unsigned int n, unsigned int i)
 {
     uint8_t *p = th_buffer_address();
-    size_t x;
+    size_t   x;
     uint16_t crc;
-    // Emulate host by using the buffer    
+
+    // Emulate host by using the buffer
     assert(th_buffer_size() > (n + (size / 8)));
+
     bench_sha(size, n, i, false);
+
     for (crc = 0, x = 0; x < (size / 8); ++x)
     {
         crc = crcu16(crc, (uint8_t)(p + n)[x]);
@@ -328,19 +335,22 @@ MAKE_WRAP_SHA(256)
 MAKE_WRAP_SHA(384)
 
 uint16_t
-wrap_ecdh(ecdh_group_t group, unsigned int n, unsigned int i)
+wrap_ecdh(ecdh_group_t g, unsigned int n, unsigned int i)
 {
     uint8_t *p = th_buffer_address();
-    size_t x;
+    size_t   x;
     uint16_t crc;
-    // Emulate host download by copying our local keys into the buffer    
-    assert(th_buffer_size() > (ee_pub_sz[group] + ee_pri_sz[group] + ee_sec_sz[group]));
-    th_memcpy(p, g_ecc_peer_public_keys[group], ee_pub_sz[group]);
-    p += ee_pub_sz[group];
-    th_memcpy(p, g_ecc_private_keys[group], ee_pri_sz[group]);
-    p += ee_pri_sz[group];
-    bench_ecdh(group, i, false);
-    for (crc = 0, x = 0; x < ee_sec_sz[group]; ++x)
+
+    // Emulate host download by copying our local keys into the buffer
+    assert(th_buffer_size() > (ee_pub_sz[g] + ee_pri_sz[g] + ee_sec_sz[g]));
+    th_memcpy(p, g_ecc_peer_public_keys[g], ee_pub_sz[g]);
+    p += ee_pub_sz[g];
+    th_memcpy(p, g_ecc_private_keys[g], ee_pri_sz[g]);
+    p += ee_pri_sz[g];
+
+    bench_ecdh(g, i, false);
+
+    for (crc = 0, x = 0; x < ee_sec_sz[g]; ++x)
     {
         crc = crcu16(crc, (uint8_t)p[x]);
     }
@@ -358,101 +368,59 @@ MAKE_WRAP_ECDH(p384, EE_P384)
 MAKE_WRAP_ECDH(x25519, EE_C25519)
 
 uint16_t
-wrap_ecdsa_sign(ecdh_group_t group, unsigned int n, unsigned int i)
+wrap_ecdsa(ecdh_group_t     g,
+           ecdsa_function_t func,
+           uint_fast32_t    n,
+           uint_fast32_t    i)
 {
-    uint8_t *    buffer;
-    unsigned int buflen;
-    uint8_t *    privkey;
-    uint8_t *    sig;
-    // Note this is an in/out to slen, as input it is the max siglen
-    uint_fast32_t slen = 256;
-    unsigned int  x;
-    uint16_t      crc;
-    size_t        keydex;
+    uint8_t *p= th_buffer_address();
+    size_t   x;
+    uint16_t crc;
 
-    // This is a hack because the keys for Ed25519 are not the same as keys
-    // made on Curve25519 by mod math. TODO: Fix this...
-    keydex = group == EE_C25519 ? 3 : group;
+    // We ALWAYS sign a SHA256 hash, regardless of the algorithm.
+    assert(n == 32);
+    // Emulate host download by copying our local keys into the buffer
+    // ASN.1 adds 3 encode bytes, 3 size bytes, and up to two pad bytes
+    assert(th_buffer_size() > (ee_pri_sz[g] + n + (ee_sig_sz[g] + 8)));
 
-    buflen = n + slen;
-    buffer = (uint8_t *)th_malloc(buflen);
-    assert(buffer != NULL);
-    sig = buffer + n;
-    memset(sig, 0x0, slen);
-    for (x = 0; x < n; ++x)
+    // Since bench_ecdsa doesn't return slen, we CRC the entire buffer!
+    ee_buffer_fill(0);
+
+    // Later we'll generate a public key from the private one & self-verify.
+    th_memcpy(p, g_ecc_private_keys[g], ee_pri_sz[g]);
+    p += ee_pri_sz[g];
+    th_memcpy(p, g_dsa_message, 32);
+    p += 32;
+
+    if (func == EE_ECDSA_VERIFY)
     {
-        buffer[x] = ee_rand();
+        // can't use the DUT to create the verify to check against. We are
+        // Byte 1 of the ASN.1 signature is the # of bytes after the first two.
+        th_memcpy(p, g_dsa_signatures[g], g_dsa_signatures[g][1] + 2);
     }
-    privkey       = g_ecc_private_keys[keydex];
-    g_verify_mode = false;
-    ee_printmem_hex(privkey, ee_pri_sz[group], "pri ");
-    ee_printmem_hex(buffer, n, "msg ");
-    ee_ecdsa_sign(group, buffer, n, sig, &slen, privkey, ee_pri_sz[group], i);
-    ee_printmem_hex(sig, slen, "sig ");
-    for (crc = 0, x = 0; x < slen; ++x)
+
+    bench_ecdsa(g, func, n, i, true);
+
+    for (crc = 0, x = 0, p = th_buffer_address(); x < th_buffer_size(); ++x)
     {
-        crc = crcu16(crc, (uint8_t)sig[x]);
+        crc = crcu16(crc, (uint8_t)p[x]);
     }
-    th_free(buffer);
     return crc;
 }
 
-// TODO - remove this, its 90% redundant with sign
-uint16_t
-wrap_ecdsa_verify(ecdh_group_t group, unsigned int n, unsigned int i)
-{
-    uint8_t *    buffer;
-    unsigned int buflen;
-    uint8_t *    privkey;
-    uint8_t *    sig;
-    // Note this is an in/out to slen, as input it is the max siglen
-    uint_fast32_t slen = 256;
-    unsigned int  x;
-    uint16_t      crc;
-    size_t        keydex;
-
-    // This is a hack because the keys for Ed25519 are not the same as keys
-    // made on Curve25519 by mod math. TODO: Fix this...
-    keydex = group == EE_C25519 ? 3 : group;
-
-    buflen = n + slen;
-    buffer = (uint8_t *)th_malloc(buflen);
-    assert(buffer != NULL);
-    sig = buffer + n;
-    memset(sig, 0x0, slen);
-    for (x = 0; x < n; ++x)
-    {
-        buffer[x] = ee_rand();
-    }
-    privkey       = g_ecc_private_keys[keydex];
-    g_verify_mode = true;
-    ee_ecdsa_sign(group, buffer, n, sig, &slen, privkey, ee_pri_sz[group], i);
-    ee_printmem_hex(privkey, ee_pri_sz[group], "pri ");
-    ee_printmem_hex(buffer, n, "msg ");
-    ee_printmem_hex(sig, slen, "sig ");
-    g_verify_mode = false;
-    ee_ecdsa_verify(group, buffer, n, sig, slen, privkey, ee_pri_sz[group], i);
-    for (crc = 0, x = 0; x < slen; ++x)
-    {
-        crc = crcu16(crc, (uint8_t)sig[x]);
-    }
-    th_free(buffer);
-    return crc;
-}
-
-#define MAKE_WRAP_ECC_DSA(nick, group)                                \
+#define MAKE_WRAP_ECDSA(nick, group)                                  \
     uint16_t wrap_ecdsa_sign_##nick(unsigned int n, unsigned int i)   \
     {                                                                 \
-        return wrap_ecdsa_sign(group, n, i);                          \
+        return wrap_ecdsa(group, EE_ECDSA_SIGN, n, i);                \
     }                                                                 \
     uint16_t wrap_ecdsa_verify_##nick(unsigned int n, unsigned int i) \
     {                                                                 \
-        return wrap_ecdsa_verify(group, n, i);                        \
+        return wrap_ecdsa(group, EE_ECDSA_VERIFY, n, i);              \
     }
 
-MAKE_WRAP_ECC_DSA(p256r1, EE_P256R1)
-MAKE_WRAP_ECC_DSA(p384, EE_P384)
-MAKE_WRAP_ECC_DSA(ed25519, EE_C25519)
+MAKE_WRAP_ECDSA(p256r1, EE_P256R1)
+MAKE_WRAP_ECDSA(p384, EE_P384)
+MAKE_WRAP_ECDSA(ed25519, EE_Ed25519)
 
 uint16_t
 wrap_variation_001(unsigned int n, unsigned int i)
@@ -798,9 +766,10 @@ typedef struct
 // clang-format off
 static task_entry_t g_task[] =
 {
-    // RSA not using padding, TODO: in = keysize??
-    // TODO: Does everyone support "direct"? What's it like IRL?
-    // TODO: For decrypt, do a memcmp to verify output = input
+    TASK(ecdsa_sign_ed25519   ,   32,  1.0f, 0x80bb) // Note [1,4]
+    TASK(ecdsa_verify_ed25519 ,   32,  1.0f, 0x80bb) // Note [1,4]
+
+    // TODO: For decrypt, do a memcmp to verify output = input? verf too?
     /*
 #define DO_RSA
 #define DO_VERSION_1

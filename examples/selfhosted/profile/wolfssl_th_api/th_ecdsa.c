@@ -42,7 +42,7 @@ th_ecdsa_create(void **      p_context, // output: portable context
         case EE_P384:
             ptr = th_malloc(sizeof(ecc_key));
             break;
-        case EE_C25519:
+        case EE_Ed25519:
             ptr = th_malloc(sizeof(ed25519_key));
             break;
         default:
@@ -130,6 +130,10 @@ init_ed25519(ed25519_key *p_key, uint8_t *p_private, uint_fast32_t plen)
         th_printf("e-[wc_ed25519_import_public: -%d]\r\n", -ret);
         return EE_STATUS_ERROR;
     }
+    for (int x =0;x<ED25519_PUB_KEY_SIZE; ++x) {
+        printf("%02x", tmp_public[x]);
+    }
+    printf("\n");
     return EE_STATUS_OK;
 }
 
@@ -154,7 +158,7 @@ th_ecdsa_init(void *        p_context, // input: portable context
         case EE_P384:
             return init_ecc(
                 (ecc_key *)p_context, p_private, plen, ECC_SECP384R1);
-        case EE_C25519:
+        case EE_Ed25519:
             return init_ed25519((ed25519_key *)p_context, p_private, plen);
         default:
             th_printf("e-[Invalid ECC curve in th_ecdsa_init]\r\n");
@@ -224,7 +228,7 @@ th_ecdsa_sign(void *         p_context, // input: portable context
         case EE_P256R1:
         case EE_P384:
             return sign_ecc((ecc_key *)p_context, p_msg, mlen, p_sig, p_slen);
-        case EE_C25519:
+        case EE_Ed25519:
             return sign_ed25519(
                 (ed25519_key *)p_context, p_msg, mlen, p_sig, p_slen);
         default:
@@ -287,7 +291,7 @@ th_ecdsa_verify(void *        p_context, // input: portable context
         case EE_P256R1:
         case EE_P384:
             return verify_ecc((ecc_key *)p_context, p_msg, mlen, p_sig, slen);
-        case EE_C25519:
+        case EE_Ed25519:
             return verify_ed25519(
                 (ed25519_key *)p_context, p_msg, mlen, p_sig, slen);
         default:
@@ -310,7 +314,7 @@ th_ecdsa_destroy(void *       p_context, // portable context
         case EE_P384:
             wc_ecc_free((ecc_key *)p_context);
             break;
-        case EE_C25519:
+        case EE_Ed25519:
             wc_ed25519_free((ed25519_key *)p_context);
             break;
         default:

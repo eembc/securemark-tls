@@ -13,100 +13,75 @@
 #include "ee_ecdsa.h"
 
 /**
- * Perform an ECDSA sign a given number of times.
+ * @brief Performs an ECDSA sign or verify operation some number of iterations.
+ *
+ * @param group The ECC curve to use (non-Edwards)
+ * @param func The operation enum to perform
+ * @param p_msg Pointer to the message octet buffer to sign
+ * @param mlen Length of the message buffer
+ * @param p_sig Pointer to a buffer for the signature
+ * @param p_slen As input, size of the buffer; as output, octets used
+ * @param p_private The private key for the context (public will be generated)
+ * @param plen Length of private key
+ * @param iter Number of iterations
  */
 void
-ee_ecdsa_sign(ecdh_group_t   group,  // input: see `ecdh_group_t`
-              uint8_t *      p_msg,  // input: message
-              uint_fast32_t  mlen,   // input: length of message in bytes
-              uint8_t *      p_sig,  // output: signature
-              uint_fast32_t *p_slen, // in/out: input=MAX slen, output=resultant
-              uint8_t *      p_private, // input: private key (from host)
-              uint_fast32_t  plen,      // input: private key length in bytes
-              uint_fast32_t  iterations // input: # of test iterations
-)
+ee_ecdsa(ecdh_group_t     group,
+         ecdsa_function_t func,
+         uint8_t *        p_msg,
+         uint_fast32_t    mlen,
+         uint8_t *        p_sig,
+         uint_fast32_t *  p_slen,
+         uint8_t *        p_private,
+         uint_fast32_t    plen,
+         uint_fast32_t    iter)
 {
     void *p_context; // Generic context if needed by implementation
 
     if (th_ecdsa_create(&p_context, group) != EE_STATUS_OK)
     {
-        th_printf("e-ecdsa_sign-[Failed to create context]\r\n");
+        th_printf("e-ecdsa-[Failed to create context]\r\n");
         return;
     }
 
     if (th_ecdsa_init(p_context, group, p_private, plen) != EE_STATUS_OK)
     {
-        th_printf("e-ecdsa_sign-[Failed to initialize]\r\n");
+        th_printf("e-ecdsa-[Failed to initialize]\r\n");
         return;
     }
 
-    th_printf("m-ecdsa_sign-iterations-%d\r\n", iterations);
-    th_printf("m-ecdsa_sign-start\r\n");
+    th_printf("m-ecdsa-start\r\n");
     th_timestamp();
     th_pre();
-    while (iterations-- > 0)
+    if (func == EE_ECDSA_SIGN)
     {
-        if (th_ecdsa_sign(p_context, group, p_msg, mlen, p_sig, p_slen)
-            != EE_STATUS_OK)
+        while (iter-- > 0)
         {
-            th_post();
-            th_printf("e-ecdsa_sign-[Failed to sign]\r\n");
-            goto exit;
+            if (th_ecdsa_sign(p_context, group, p_msg, mlen, p_sig, p_slen)
+                != EE_STATUS_OK)
+            {
+                th_post();
+                th_printf("e-ecdsa-[Failed to sign]\r\n");
+                goto exit;
+            }
+        }
+    }
+    else
+    {
+        while (iter-- > 0)
+        {
+            if (th_ecdsa_verify(p_context, group, p_msg, mlen, p_sig, *p_slen)
+                != EE_STATUS_OK)
+            {
+                th_post();
+                th_printf("e-ecdsa-[Failed to verify]\r\n");
+                goto exit;
+            }
         }
     }
     th_post();
     th_timestamp();
-    th_printf("m-ecdsa_sign-finish\r\n");
-exit:
-    th_ecdsa_destroy(p_context, group);
-}
-
-/**
- * Perform an ECDSA verify a given number of times.
- */
-void
-ee_ecdsa_verify(ecdh_group_t  group,     // input: see `ecdh_group_t`
-                uint8_t *     p_msg,     // input: message
-                uint_fast32_t mlen,      // input: length of message in bytes
-                uint8_t *     p_sig,     // input: signature
-                uint_fast32_t slen,      // input: length of signature in bytes
-                uint8_t *     p_private, // input: private key (from host)
-                uint_fast32_t plen,      // input: private key length in bytes
-                uint_fast32_t iterations // input: # of test iterations
-)
-{
-    void *p_context; // Generic context if needed by implementation
-
-    if (th_ecdsa_create(&p_context, group) != EE_STATUS_OK)
-    {
-        th_printf("e-ecdsa_verify-[Failed to create context]\r\n");
-        return;
-    }
-
-    if (th_ecdsa_init(p_context, group, p_private, plen) != EE_STATUS_OK)
-    {
-        th_printf("e-ecdsa_verify-[Failed to initialize]\r\n");
-        return;
-    }
-
-    th_printf("m-ecdsa_verify-iterations-%d\r\n", iterations);
-    th_printf("m-ecdsa_verify-start\r\n");
-    th_timestamp();
-    th_pre();
-    while (iterations-- > 0)
-    {
-        // The public key should already be in the context.
-        if (th_ecdsa_verify(p_context, group, p_msg, mlen, p_sig, slen)
-            != EE_STATUS_OK)
-        {
-            th_post();
-            th_printf("e-ecdsa_verify-[Vailed to verify]\r\n");
-            goto exit;
-        }
-    }
-    th_post();
-    th_timestamp();
-    th_printf("m-ecdsa_verify-finish\r\n");
+    th_printf("m-ecdsa-finish\r\n");
 exit:
     th_ecdsa_destroy(p_context, group);
 }

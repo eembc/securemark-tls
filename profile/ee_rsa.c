@@ -68,7 +68,7 @@ ee_rsa(rsa_id_t       id,
     }
 
     th_printf("m-rsa%d-iter-%d\r\n", text, iter);
-    th_printf("m-rsa%d-message-length-%d\r\n", text, ilen);
+    th_printf("m-rsa%d-n-%d\r\n", text, ilen);
 
     if (th_rsa_init(p_context, id, p_pri, prilen, p_pub, publen)
         != EE_STATUS_OK)
@@ -77,6 +77,7 @@ ee_rsa(rsa_id_t       id,
         return;
     }
 
+    th_printf("m-rsa%d-start\r\n", text);
     th_timestamp();
     th_pre();
 
@@ -108,6 +109,7 @@ ee_rsa(rsa_id_t       id,
 
     th_post();
     th_timestamp();
+    th_printf("m-rsa%d-finish\r\n", text);
 
 exit:
     th_rsa_destroy(p_context);

@@ -12,8 +12,6 @@
 
 #include "ee_buffer.h"
 
-#if EE_CFG_SELFHOSTED != 1
-
 // This var is used for the generic buffer ee_buffer_* routines
 static uint_fast32_t g_buffer_pos = 0;
 
@@ -184,5 +182,3 @@ ee_buffer_parse(char *p_command)
     }
     return EE_ARG_CLAIMED;
 }
-
-#endif /* EE_CFG_SELFHOSTED */

@@ -20,20 +20,15 @@ bench_aes(aes_cipher_mode_t mode,   // input: cipher mode
           uint_fast32_t     i,      // input: # of test iterations
           bool              verify)
 {
-    uint8_t *buffer = NULL;
-    uint8_t *key;
-    uint8_t *in;
-    uint8_t *out;
-    uint8_t *iv;
-    uint8_t *tag;
-    int      ivlen = mode == AES_CTR ? AES_CTR_IVSIZE : AES_AEAD_IVSIZE;
+    int      ivlen  = mode == AES_CTR ? AES_CTR_IVSIZE : AES_AEAD_IVSIZE;
+    uint8_t *buffer = th_buffer_address();
+    uint8_t *key    = buffer;
+    uint8_t *iv     = key + keylen;
+    uint8_t *in     = iv + ivlen;
+    uint8_t *out    = in + n;
+    uint8_t *tag    = out + n;
 
-    buffer = th_buffer_address();
-    key    = buffer;
-    iv     = key + keylen;
-    in     = iv + ivlen;
-    out    = in + n;
-    tag    = out + n;
+    // We create random data here because it saves Host-to-DUT download time.
     for (size_t x = 0; x < keylen; ++x)
     {
         key[x] = ee_rand();
@@ -51,62 +46,43 @@ bench_aes(aes_cipher_mode_t mode,   // input: cipher mode
         // Encrypt something for the decrypt loop to decrypt
         ee_aes(mode, AES_ENC, key, keylen, iv, in, n, out, tag, NULL, 0, 1);
         th_memcpy(in, out, n);
-        ee_aes(mode, func, key, keylen, iv, out, n, in, tag, NULL, 0, i);
-        if (verify)
-        {
-            ee_printmem_hex(key, keylen, "m-bench-aesXXX_ecb_dec-key-");
-            ee_printmem_hex(iv, ivlen, "m-bench-aesXXX_ecb_dec-iv-");
-            ee_printmem_hex(out, n, "m-bench-aesXXX_ecb_dec-in-");
-            ee_printmem_hex(in, n, "m-bench-aesXXX_ecb_dec-out-");
-            ee_printmem_hex(tag, AES_TAGSIZE, "m-bench-aesXXX_ecb_dec-tag-");
-        }
+        //ee_aes(mode, func, key, keylen, iv, out, n, in, tag, NULL, 0, i);
+        uint8_t *tmp = in;
+        in = out;
+        out = tmp;
     }
-    else
-    {
+    //else
+    //{
         ee_aes(mode, func, key, keylen, iv, in, n, out, tag, NULL, 0, i);
-        if (verify)
-        {
-            ee_printmem_hex(key, keylen, "m-bench-aesXXX_ecb_enc-key-");
-            ee_printmem_hex(iv, ivlen, "m-bench-aesXXX_ecb_enc-iv-");
-            ee_printmem_hex(in, n, "m-bench-aesXXX_ecb_enc-in-");
-            ee_printmem_hex(out, n, "m-bench-aesXXX_ecb_enc-out-");
-            ee_printmem_hex(tag, AES_TAGSIZE, "m-bench-aesXXX_ecb_enc-tag-");
-        }
+    //}
+    if (verify)
+    {
+        ee_printmem_hex(key, keylen, "m-bench-aesXXX-key-");
+        ee_printmem_hex(iv, ivlen, "m-bench-aesXXX-iv-");
+        ee_printmem_hex(in, n, "m-bench-aesXXX-in-");
+        ee_printmem_hex(out, n, "m-bench-aesXXX-out-");
+        ee_printmem_hex(tag, AES_TAGSIZE, "m-bench-aesXXX-tag-");
     }
 }
 
 void
 bench_sha(sha_size_t size, uint_fast32_t n, uint_fast32_t i, bool verify)
 {
-    uint8_t *p_in;
-    uint8_t *p_out;
-    char *   hdr1;
-    char *   hdr2;
-    switch (size)
-    {
-        case EE_SHA256:
-            hdr1 = "m-bench-sha256-in-";
-            hdr2 = "m-bench-sha256-hash-";
-            break;
-        case EE_SHA384:
-            hdr1 = "m-bench-sha384-in-";
-            hdr2 = "m-bench-sha384-hash-";
-            break;
-        default:
-            th_printf("e-[bench_sha() invalid size parameter]\r\n");
-            break;
-    }
-    p_in  = th_buffer_address();
-    p_out = p_in + n;
+    uint8_t *p_in  = th_buffer_address();
+    uint8_t *p_out = p_in + n;
+
+    // We create random data here because it saves Host-to-DUT download time.
     for (size_t x = 0; x < n; ++x)
     {
         p_in[x] = ee_rand();
     }
+
     ee_sha(size, p_in, n, p_out, i);
+
     if (verify)
     {
-        ee_printmem_hex(p_in, n, hdr1);
-        ee_printmem_hex(p_out, size / 8, hdr2);
+        ee_printmem_hex(p_in, n, "m-bench-sha-in");
+        ee_printmem_hex(p_out, size / 8, "m-bench-sha-out");
     }
 }
 
@@ -116,19 +92,62 @@ bench_ecdh(ecdh_group_t g, uint_fast32_t i, bool verify)
     uint_fast32_t npub = ee_pub_sz[g];
     uint_fast32_t npri = ee_pri_sz[g];
     uint_fast32_t nsec = ee_sec_sz[g];
+
     // These must be preloaded to the buffer by the host.
-    uint8_t *p_pub;
-    uint8_t *p_pri;
-    uint8_t *p_sec;
-    p_pub = th_buffer_address();
-    p_pri = p_pub + npub;
-    p_sec = p_pri + npri;
+    uint8_t *p_pub = th_buffer_address();
+    uint8_t *p_pri = p_pub + npub;
+    uint8_t *p_sec = p_pri + npri;
+
     ee_ecdh(g, p_pub, npub, p_pri, npri, p_sec, nsec, i);
+
     if (verify)
     {
         ee_printmem_hex(p_pub, npub, "m-bench-ecdhXXX-peer-public-");
         ee_printmem_hex(p_pri, npri, "m-bench-ecdhXXX-own-private-");
         ee_printmem_hex(p_sec, nsec, "m-bench-ecdhXXX-shared-");
+    }
+}
+
+void
+bench_ecdsa(ecdh_group_t     g,
+            ecdsa_function_t func,
+            uint_fast32_t    n,
+            uint_fast32_t    i,
+            bool             verify)
+{
+    // These must be preloaded to the buffer by the host.
+    uint8_t *     p_pri = th_buffer_address();
+    uint_fast32_t npri  = ee_pri_sz[g];
+    uint8_t *     p_msg = p_pri + npri;
+    uint8_t *     p_sig = p_msg + n;
+    uint_fast32_t slen;
+
+    if (func == EE_ECDSA_VERIFY)
+    {
+        if (g == EE_Ed25519)
+        {
+            // Ed25519 signatures are raw {R|S} little endian
+            slen = 64;
+        }
+        else
+        {
+            // EcDSA signatures are ASN.1, and are < 256 bytes for our case.
+            slen = p_sig[1] + 2;
+        }
+    }
+    else
+    {
+        // Provide max size as entire remaining buffer on sign
+        slen = th_buffer_size() - (p_sig - p_pri) - 1;
+    }
+
+    ee_ecdsa(g, func, p_msg, n, p_sig, &slen, p_pri, npri, i);
+
+    if (verify)
+    {
+        ee_printmem_hex(p_pri, npri, "m-bench-ecdsaXXX-private-");
+        ee_printmem_hex(p_msg, n, "m-bench-ecdsaXXX-msg-");
+        ee_printmem_hex(p_sig, slen, "m-bench-ecdsaXXX-sig-");
     }
 }
 
@@ -203,47 +222,6 @@ bench_chachapoly(uint_fast32_t i, uint_fast32_t n, bool verify)
         ee_printmem_hex(p_in, n, "m-bench-chachapoly_dec-out-");
     }
     th_free(p_buffer);
-}
-
-void
-bench_ecdsa(uint_fast32_t i, ecdh_group_t group, bool verify)
-{
-    // Note: verify, the parameter is not the ECDSA verify, it is the
-    //       function verification mode!
-    /**
-     * ECDSA Sign & Verify a hash
-     *
-     * Preload buffer with:
-     *
-     * Value      Size (Bytes)
-     * unused     32
-     * unused     32
-     * d          32 (Private key uncompressed 32-byte)
-     * SHA256     32 (SHA256 Digest to sign)
-     */
-    uint8_t *     p_pri;
-    uint8_t *     p_hmac;
-    uint8_t *     p_sig;
-    uint_fast32_t slen;
-    slen  = 256; // Note: this is also an input to ee_ecdsa_sign
-    p_sig = (uint8_t *)th_malloc(slen); // should be 71, 72 B
-    if (p_sig == NULL)
-    {
-        th_printf("e-[ECDSA malloc() failed, size %d]\r\n", 256);
-        return;
-    }
-    p_pri  = th_buffer_address() + 64;
-    p_hmac = p_pri + ECC_DSIZE;
-    ee_ecdsa_sign(group, p_hmac, HMAC_SIZE, p_sig, &slen, p_pri, ECC_DSIZE, i);
-    if (verify)
-    {
-        ee_printmem_hex(p_pri, ECC_DSIZE, "m-bench-ecdsa-sign-own-private-");
-        ee_printmem_hex(p_sig, slen, "m-bench-ecdsa-sign-signature-");
-        ee_printmem_hex(p_hmac, HMAC_SIZE, "m-bench-ecdsa-sign-hash-");
-    }
-    // TODO: The verify function is currently not ... verified!!! BUGBUG
-    ee_ecdsa_verify(group, p_hmac, HMAC_SIZE, p_sig, slen, p_pri, ECC_DSIZE, i);
-    th_free(p_sig);
 }
 
 /**

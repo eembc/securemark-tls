@@ -20,15 +20,17 @@
 
 typedef enum ecdh_group_t
 {
-    EE_P256R1 = 0,
-    EE_P384   = 1,
-    EE_C25519 = 2,
+    EE_P256R1  = 0,
+    EE_P384    = 1,
+    EE_C25519  = 2,
+    EE_Ed25519 = 3, // I know, not a group; TODO: Rename enum.
 } ecdh_group_t;
 
 // Ordering respective of above enumeration
-static const uint8_t ee_pub_sz[] = { 64, 96, 32 };
-static const uint8_t ee_pri_sz[] = { 32, 48, 32 };
-static const uint8_t ee_sec_sz[] = { 32, 48, 32 };
+static const uint8_t ee_pub_sz[] = { 64, 96, 32, 32 };
+static const uint8_t ee_pri_sz[] = { 32, 48, 32, 32 };
+static const uint8_t ee_sec_sz[] = { 32, 48, 32, 32 };
+static const uint8_t ee_sig_sz[] = { 64, 96, 64, 64 };
 
 // Fixed test API
 

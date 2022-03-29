@@ -30,7 +30,14 @@ void bench_aes(aes_cipher_mode_t mode,
                bool              verify);
 
 void bench_sha(sha_size_t size, uint_fast32_t n, uint_fast32_t i, bool verify);
+
 void bench_ecdh(ecdh_group_t g, uint_fast32_t i, bool verify);
+
+void bench_ecdsa(ecdh_group_t     g,
+                 ecdsa_function_t func,
+                 uint_fast32_t    n,
+                 uint_fast32_t    i,
+                 bool             verify);
 
 arg_claimed_t ee_bench_parse(char *p_command, bool verify);
 
