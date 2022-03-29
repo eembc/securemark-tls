@@ -17,16 +17,16 @@
  * Perform a ChaCha20/Poly1305 operation a given number of times.
  */
 void
-ee_chachapoly(uint8_t *      p_key,  // input: key
-              const uint8_t *p_add,  // input: additional authentication data
-              uint_fast32_t  addlen, // input: length of AAD in bytes
-              uint8_t *      p_iv,   // input: initialization vector
-              uint8_t *      p_in, // input: pointer to source input (pt or ct)
-              uint_fast32_t  len,  // input: length of input in bytes
-              uint8_t *p_tag,      // inout: output in encrypt, input on decrypt
-              uint8_t *p_out,      // output: pointer to output buffer
-              chachapoly_func_t func,      // input: CHACHAPOLY_(ENC|DEC)
-              uint_fast32_t     iterations // input: # of test iterations
+ee_chachapoly(chachapoly_func_t func,   // input: EE_CHACHAPOLY_(ENC|DEC)
+              uint8_t *         p_key,  // input: key
+              const uint8_t *   p_add,  // input: additional authentication data
+              uint_fast32_t     addlen, // input: length of AAD in bytes
+              uint8_t *         p_iv,   // input: initialization vector
+              uint8_t *     p_in,  // input: pointer to source input (pt or ct)
+              uint_fast32_t len,   // input: length of input in bytes
+              uint8_t *     p_tag, // inout: output in encrypt, input on decrypt
+              uint8_t *     p_out, // output: pointer to output buffer
+              uint_fast32_t iterations // input: # of test iterations
 )
 {
     void *p_context; // Generic context if needed by implementation
@@ -40,7 +40,7 @@ ee_chachapoly(uint8_t *      p_key,  // input: key
     th_printf("m-chachapoly-iterations-%d\r\n", iterations);
     th_printf("m-chachapoly-message-length-%d\r\n", len);
 
-    if (func == CHACHAPOLY_ENC)
+    if (func == EE_CHACHAPOLY_ENC)
     {
         th_printf("m-chachapoly-encrypt-start\r\n");
         th_timestamp();
@@ -48,7 +48,7 @@ ee_chachapoly(uint8_t *      p_key,  // input: key
         while (iterations-- > 0)
         {
             if (th_chachapoly_init(
-                    p_context, p_key, CHACHAPOLY_KEYSIZE, CHACHAPOLY_ENC)
+                    p_context, p_key, EE_CHACHAPOLY_KEYSIZE, EE_CHACHAPOLY_ENC)
                 != EE_STATUS_OK)
             {
                 th_post();
@@ -62,16 +62,16 @@ ee_chachapoly(uint8_t *      p_key,  // input: key
                                       len,
                                       p_out,
                                       p_tag,
-                                      CHACHAPOLY_TAGSIZE,
+                                      EE_CHACHAPOLY_TAGSIZE,
                                       p_iv,
-                                      CHACHAPOLY_IVSIZE)
+                                      EE_CHACHAPOLY_IVSIZE)
                 != EE_STATUS_OK)
             {
                 th_post();
                 th_printf("e-chachapoly-[Failed to encrypt]\r\n");
                 goto exit;
             }
-            th_chachapoly_deinit(p_context, CHACHAPOLY_ENC);
+            th_chachapoly_deinit(p_context, EE_CHACHAPOLY_ENC);
         }
         th_post();
         th_timestamp();
@@ -85,7 +85,7 @@ ee_chachapoly(uint8_t *      p_key,  // input: key
         while (iterations-- > 0)
         {
             if (th_chachapoly_init(
-                    p_context, p_key, CHACHAPOLY_KEYSIZE, CHACHAPOLY_DEC)
+                    p_context, p_key, EE_CHACHAPOLY_KEYSIZE, EE_CHACHAPOLY_DEC)
                 != EE_STATUS_OK)
             {
                 th_post();
@@ -99,16 +99,16 @@ ee_chachapoly(uint8_t *      p_key,  // input: key
                                       len,
                                       p_out,
                                       p_tag,
-                                      CHACHAPOLY_TAGSIZE,
+                                      EE_CHACHAPOLY_TAGSIZE,
                                       p_iv,
-                                      CHACHAPOLY_IVSIZE)
+                                      EE_CHACHAPOLY_IVSIZE)
                 != EE_STATUS_OK)
             {
                 th_post();
                 th_printf("e-chachapoly-[Failed to decrypt]\r\n");
                 goto exit;
             }
-            th_chachapoly_deinit(p_context, CHACHAPOLY_DEC);
+            th_chachapoly_deinit(p_context, EE_CHACHAPOLY_DEC);
         }
         th_post();
         th_timestamp();

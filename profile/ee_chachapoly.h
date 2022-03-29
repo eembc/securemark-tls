@@ -20,17 +20,18 @@
 
 typedef enum
 {
-    CHACHAPOLY_ENC = 0,
-    CHACHAPOLY_DEC
+    EE_CHACHAPOLY_ENC = 0,
+    EE_CHACHAPOLY_DEC
 } chachapoly_func_t;
 
-#define CHACHAPOLY_KEYSIZE 32u
-#define CHACHAPOLY_IVSIZE  12u
-#define CHACHAPOLY_TAGSIZE 16u
+#define EE_CHACHAPOLY_KEYSIZE 32u
+#define EE_CHACHAPOLY_IVSIZE  12u
+#define EE_CHACHAPOLY_TAGSIZE 16u
 
 // Fixed test API
 
 void ee_chachapoly(
+    chachapoly_func_t func,      // input: CHACHAPOLY_(ENC|DEC)
     uint8_t *         p_key,     // input: key
     const uint8_t *   p_add,     // input: additional authentication data
     uint_fast32_t     addlen,    // input: length of AAD in bytes
@@ -39,7 +40,6 @@ void ee_chachapoly(
     uint_fast32_t     len,       // input: length of input in bytes
     uint8_t *         p_tag,     // inout: output in encrypt, input on decrypt
     uint8_t *         p_out,     // output: pointer to output buffer
-    chachapoly_func_t func,      // input: CHACHAPOLY_(ENC|DEC)
     uint_fast32_t     iterations // input: # of test iterations
 );
 

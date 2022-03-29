@@ -24,7 +24,6 @@
 typedef struct rsa_context_t
 {
     RsaKey *prikey;
-    RsaKey *pubkey;
     WC_RNG *rng;
 } rsa_context_t;
 
@@ -58,13 +57,12 @@ th_rsa_create(void **pp_context)
     th_memset(ctx, 0, sizeof(rsa_context_t));
 
     ctx->prikey = (RsaKey *)th_malloc(sizeof(RsaKey));
-    ctx->pubkey = (RsaKey *)th_malloc(sizeof(RsaKey));
     ctx->rng    = (WC_RNG *)th_malloc(sizeof(WC_RNG));
-    if (!ctx->prikey || !ctx->pubkey || !ctx->rng)
+
+    if (!ctx->prikey || !ctx->rng)
     {
         th_printf("e-[th_rsa_create failed to malloc]\r\n");
         FREE(ctx->prikey);
-        FREE(ctx->pubkey);
         FREE(ctx->rng);
         FREE(ctx);
         return EE_STATUS_ERROR;
@@ -75,30 +73,15 @@ th_rsa_create(void **pp_context)
     return EE_STATUS_OK;
 }
 
-/**
- * @brief Initialize structures created ruing `th_rsa_create` and setup and
- * library or hardware functionality. Typically loads the private and public
- * keys, and inititalizes and RNGs or configuration options.
- *
- * @param p_context Portable context.
- * @param id Size of the modulus, an `rsa_id_t` enum
- * @param p_pri Private key buffer, as quintuple ASN.1/DER RFC 8017 Sec 3.2
- * @param prilen Private key buffer length
- * @param p_pub Public key buffer, as N/E ASN.1/DER RFC 8017 Sec 3.1.2
- * @param publen Public key buffer length
- * @return ee_status_t EE_STATUS_OK or EE_STATUS_FAIL
- */
 ee_status_t
 th_rsa_init(void *         p_context,
-            rsa_id_t       id,
+            ee_rsa_id_t    id,
             const uint8_t *p_prikey,
-            uint_fast32_t  prilen,
-            const uint8_t *p_pubkey,
-            uint_fast32_t  publen)
+            uint_fast32_t  prilen)
 {
     int            ret;
-    word32         inOutIdx;
-    rsa_context_t *ctx = (rsa_context_t *)p_context;
+    word32         inOutIdx = 0;
+    rsa_context_t *ctx      = (rsa_context_t *)p_context;
 
     ret = wc_InitRsaKey_ex(ctx->prikey, HEAP_HINT, DEVID);
     if (ret)
@@ -107,26 +90,11 @@ th_rsa_init(void *         p_context,
         return EE_STATUS_ERROR;
     }
 
-    ret = wc_InitRsaKey_ex(ctx->pubkey, HEAP_HINT, DEVID);
-    if (ret)
-    {
-        th_printf("e-[wc_InitRsaKey_ex on public: %d]\r\n", ret);
-        return EE_STATUS_ERROR;
-    }
+    ret = wc_RsaPrivateKeyDecode(p_prikey, &inOutIdx, ctx->prikey, prilen);
 
-    inOutIdx = 0;
-    ret      = wc_RsaPrivateKeyDecode(p_prikey, &inOutIdx, ctx->prikey, prilen);
     if (ret)
     {
         th_printf("e-[wc_RsaPrivateKeyDecode: %d]\r\n", ret);
-        return EE_STATUS_ERROR;
-    }
-
-    inOutIdx = 0;
-    ret      = wc_RsaPublicKeyDecode(p_pubkey, &inOutIdx, ctx->pubkey, publen);
-    if (ret)
-    {
-        th_printf("e-[wc_RsaPublicKeyDecode: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
 
@@ -135,19 +103,6 @@ th_rsa_init(void *         p_context,
     return EE_STATUS_OK;
 }
 
-/**
- * @brief Perform an RSA verify (exp mod n) of a hash, and return the raw
- * (decrypted) signature. The validity of the output will be checked by the
- * host application. This function must perform PKCS1v15 padding as
- * described in RFC 8017 9.2.
- *
- * @param p_context Portable context
- * @param p_sig Pointer to signature octet buffer, raw bytes
- * @param slen Length of signature buffer
- * @param p_outbuf Pointer to an output buffer
- * @param olen Length of provided output buffer
- * @return ee_status_t
- */
 ee_status_t
 th_rsa_sign(void *         p_context,
             const uint8_t *p_hash,
@@ -155,8 +110,8 @@ th_rsa_sign(void *         p_context,
             uint8_t *      p_sig,
             uint_fast32_t *p_slen)
 {
-    int            ret;
     rsa_context_t *ctx = (rsa_context_t *)p_context;
+    int            ret;
 
     ret = wc_RsaSSL_Sign(p_hash, hlen, p_sig, *p_slen, ctx->prikey, ctx->rng);
     if (ret < 0)
@@ -170,18 +125,6 @@ th_rsa_sign(void *         p_context,
     return EE_STATUS_OK;
 }
 
-/**
- * @brief Perform an RSA verify (exp mod n) of a hash, and return the raw
- * (decrypted) signature. The validity of the output will be checked by the
- * host application.
- *
- * @param p_context Portable context
- * @param p_sig Pointer to signature octet buffer, raw bytes
- * @param slen Length of signature buffer
- * @param p_outbuf Pointer to an output buffer
- * @param olen Length of provided output buffer
- * @return ee_status_t
- */
 ee_status_t
 th_rsa_verify(void *         p_context,
               const uint8_t *p_sig,
@@ -189,10 +132,10 @@ th_rsa_verify(void *         p_context,
               uint8_t *      p_outbuf,
               uint_fast32_t  olen)
 {
-    int            ret;
     rsa_context_t *ctx = (rsa_context_t *)p_context;
+    int            ret;
 
-    ret = wc_RsaSSL_Verify(p_sig, slen, p_outbuf, olen, ctx->pubkey);
+    ret = wc_RsaSSL_Verify(p_sig, slen, p_outbuf, olen, ctx->prikey);
     if (ret < 0)
     {
         th_printf("e-[wc_RsaSSL_Verify: %d]\r\n", ret);
@@ -213,7 +156,6 @@ th_rsa_destroy(void *p_context)
 {
     rsa_context_t *ctx = (rsa_context_t *)p_context;
     FREE(ctx->prikey);
-    FREE(ctx->pubkey);
     FREE(ctx->rng);
     FREE(ctx);
 }

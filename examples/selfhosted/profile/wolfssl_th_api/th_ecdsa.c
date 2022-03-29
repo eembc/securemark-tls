@@ -70,19 +70,19 @@ init_ecc(ecc_key *     p_key,
     ret = wc_ecc_init_ex(p_key, HEAP_HINT, DEVID);
     if (ret != 0)
     {
-        th_printf("e-[wc_ecc_init_ex: -%d]\r\n", -ret);
+        th_printf("e-[wc_ecc_init_ex: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
     ret = wc_ecc_import_private_key_ex(p_private, plen, NULL, 0, p_key, id);
     if (ret != 0)
     {
-        th_printf("e-[wc_ecc_import_private_key_ex: -%d]\r\n", -ret);
+        th_printf("e-[wc_ecc_import_private_key_ex: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
     ret = wc_ecc_make_pub(p_key, NULL);
     if (ret != 0)
     {
-        th_printf("e-[wc_ecc_make_pub: -%d]\r\n", -ret);
+        th_printf("e-[wc_ecc_make_pub: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
 #ifdef WOLFSSL_ECDSA_DETERMINISTIC_K
@@ -91,7 +91,7 @@ init_ecc(ecc_key *     p_key,
     ret = wc_ecc_set_deterministic(p_key, 1);
     if (ret != 0)
     {
-        th_printf("e-[wc_ecc_set_deterministic: -%d]\r\n", -ret);
+        th_printf("e-[wc_ecc_set_deterministic: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
 #else
@@ -109,31 +109,27 @@ init_ed25519(ed25519_key *p_key, uint8_t *p_private, uint_fast32_t plen)
     ret = wc_ed25519_init_ex(p_key, HEAP_HINT, DEVID);
     if (ret != 0)
     {
-        th_printf("e-[wc_ed25519_init_ex: -%d]\r\n", -ret);
+        th_printf("e-[wc_ed25519_init_ex: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
     ret = wc_ed25519_import_private_only(p_private, plen, p_key);
     if (ret != 0)
     {
-        th_printf("e-[wc_ed25519_import_private_only: -%d]\r\n", -ret);
+        th_printf("e-[wc_ed25519_import_private_only: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
     ret = wc_ed25519_make_public(p_key, tmp_public, ED25519_PUB_KEY_SIZE);
     if (ret != 0)
     {
-        th_printf("e-[wc_ed25519_make_public: -%d]\r\n", -ret);
+        th_printf("e-[wc_ed25519_make_public: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
     ret = wc_ed25519_import_public(tmp_public, ED25519_PUB_KEY_SIZE, p_key);
     if (ret != 0)
     {
-        th_printf("e-[wc_ed25519_import_public: -%d]\r\n", -ret);
+        th_printf("e-[wc_ed25519_import_public: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
-    for (int x =0;x<ED25519_PUB_KEY_SIZE; ++x) {
-        printf("%02x", tmp_public[x]);
-    }
-    printf("\n");
     return EE_STATUS_OK;
 }
 
@@ -181,13 +177,13 @@ sign_ecc(ecc_key *      p_context, // input: portable context
     ret = wc_InitRng_ex(&rng, HEAP_HINT, DEVID);
     if (ret != 0)
     {
-        th_printf("e-[wc_InitRng_ex: -%d]\r\n", -ret);
+        th_printf("e-[wc_InitRng_ex: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
     ret = wc_ecc_sign_hash(p_hash, hlen, p_sig, p_slen2, &rng, p_context);
     if (ret != 0)
     {
-        th_printf("e-[wc_ecc_sign_hash: -%d]\r\n", -ret);
+        th_printf("e-[wc_ecc_sign_hash: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
     wc_FreeRng(&rng);
@@ -208,7 +204,7 @@ sign_ed25519(ed25519_key *  p_context, // input: portable context
     ret = wc_ed25519_sign_msg(p_msg, mlen, p_sig, p_slen2, p_context);
     if (ret != 0)
     {
-        th_printf("e-[wc_ed25519_sign_msg: -%d]\r\n", -ret);
+        th_printf("e-[wc_ed25519_sign_msg: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
     return EE_STATUS_OK;
@@ -251,9 +247,10 @@ verify_ecc(ecc_key *     p_context,
     ret = wc_ecc_verify_hash(p_sig, slen, p_hash, hlen, &verify, p_context);
     if (ret != 0 || verify != 1)
     {
-        th_printf("e-[wc_ecc_verify_hash: -%d]\r\n", -ret);
+        th_printf("e-[wc_ecc_verify_hash: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
+
     return EE_STATUS_OK;
 }
 
@@ -271,9 +268,10 @@ verify_ed25519(ed25519_key * p_context,
     ret = wc_ed25519_verify_msg(p_sig, slen, p_msg, mlen, &verify, p_context);
     if (ret != 0 || verify != 1)
     {
-        th_printf("e-[wc_ed25519_verify_msg: -%d]\r\n", -ret);
+        th_printf("e-[wc_ed25519_verify_msg: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
+
     return EE_STATUS_OK;
 }
 

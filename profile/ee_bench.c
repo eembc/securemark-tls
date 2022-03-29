@@ -12,6 +12,24 @@
 
 #include "ee_bench.h"
 
+extern bool g_verify_mode;
+
+/**
+ * @brief Helper function to copy a number of pseudo-random octets to a buffer.
+ *
+ * @param p_buffer Destination buffer.
+ * @param len Number of octets.
+ */
+static void
+fill_rand(uint8_t *p_buffer, size_t len)
+{
+    // We create random data here because it saves Host-to-DUT download time.
+    for (size_t x = 0; x < len; ++x)
+    {
+        p_buffer[x] = ee_rand();
+    }
+}
+
 void
 bench_aes(aes_cipher_mode_t mode,   // input: cipher mode
           aes_function_t    func,   // input: func (AES_ENC|AES_DEC)
@@ -20,48 +38,48 @@ bench_aes(aes_cipher_mode_t mode,   // input: cipher mode
           uint_fast32_t     i,      // input: # of test iterations
           bool              verify)
 {
-    int      ivlen  = mode == AES_CTR ? AES_CTR_IVSIZE : AES_AEAD_IVSIZE;
-    uint8_t *buffer = th_buffer_address();
-    uint8_t *key    = buffer;
-    uint8_t *iv     = key + keylen;
-    uint8_t *in     = iv + ivlen;
-    uint8_t *out    = in + n;
-    uint8_t *tag    = out + n;
+    int      ivlen = mode == AES_CTR ? AES_CTR_IVSIZE : AES_AEAD_IVSIZE;
+    uint8_t *p_key = th_buffer_address();
+    uint8_t *p_iv  = p_key + keylen;
+    uint8_t *p_in  = p_iv + ivlen;
+    uint8_t *p_out = p_in + n;
+    uint8_t *p_tag = p_out + n;
 
     // We create random data here because it saves Host-to-DUT download time.
-    for (size_t x = 0; x < keylen; ++x)
-    {
-        key[x] = ee_rand();
-    }
-    for (size_t x = 0; x < ivlen; ++x)
-    {
-        iv[x] = ee_rand();
-    }
-    for (size_t x = 0; x < n; ++x)
-    {
-        in[x] = ee_rand();
-    }
+    fill_rand(p_key, keylen);
+    fill_rand(p_iv, ivlen);
+    fill_rand(p_in, n);
+
     if (func == AES_DEC)
     {
         // Encrypt something for the decrypt loop to decrypt
-        ee_aes(mode, AES_ENC, key, keylen, iv, in, n, out, tag, NULL, 0, 1);
-        th_memcpy(in, out, n);
-        //ee_aes(mode, func, key, keylen, iv, out, n, in, tag, NULL, 0, i);
-        uint8_t *tmp = in;
-        in = out;
-        out = tmp;
+        g_verify_mode = true;
+        ee_aes(mode,
+               AES_ENC,
+               p_key,
+               keylen,
+               p_iv,
+               p_in,
+               n,
+               p_out,
+               p_tag,
+               NULL,
+               0,
+               1);
+        g_verify_mode = false;
+        th_memcpy(p_in, p_out, n);
+        uint8_t *tmp = p_in;
+        p_in         = p_out;
+        p_out        = tmp;
     }
-    //else
-    //{
-        ee_aes(mode, func, key, keylen, iv, in, n, out, tag, NULL, 0, i);
-    //}
+    ee_aes(mode, func, p_key, keylen, p_iv, p_in, n, p_out, p_tag, NULL, 0, i);
     if (verify)
     {
-        ee_printmem_hex(key, keylen, "m-bench-aesXXX-key-");
-        ee_printmem_hex(iv, ivlen, "m-bench-aesXXX-iv-");
-        ee_printmem_hex(in, n, "m-bench-aesXXX-in-");
-        ee_printmem_hex(out, n, "m-bench-aesXXX-out-");
-        ee_printmem_hex(tag, AES_TAGSIZE, "m-bench-aesXXX-tag-");
+        ee_printmem_hex(p_key, keylen, "m-bench-aesXXX-key-");
+        ee_printmem_hex(p_iv, ivlen, "m-bench-aesXXX-iv-");
+        ee_printmem_hex(p_in, n, "m-bench-aesXXX-in-");
+        ee_printmem_hex(p_out, n, "m-bench-aesXXX-out-");
+        ee_printmem_hex(p_tag, AES_TAGSIZE, "m-bench-aesXXX-tag-");
     }
 }
 
@@ -93,7 +111,7 @@ bench_ecdh(ecdh_group_t g, uint_fast32_t i, bool verify)
     uint_fast32_t npri = ee_pri_sz[g];
     uint_fast32_t nsec = ee_sec_sz[g];
 
-    // These must be preloaded to the buffer by the host.
+    // The th_buffer has been pre-loaded with this data
     uint8_t *p_pub = th_buffer_address();
     uint8_t *p_pri = p_pub + npub;
     uint8_t *p_sec = p_pri + npri;
@@ -115,7 +133,7 @@ bench_ecdsa(ecdh_group_t     g,
             uint_fast32_t    i,
             bool             verify)
 {
-    // These must be preloaded to the buffer by the host.
+    // The th_buffer has been pre-loaded with this data
     uint8_t *     p_pri = th_buffer_address();
     uint_fast32_t npri  = ee_pri_sz[g];
     uint8_t *     p_msg = p_pri + npri;
@@ -151,78 +169,87 @@ bench_ecdsa(ecdh_group_t     g,
     }
 }
 
-#if 0
+void
+bench_chachapoly(chachapoly_func_t func, int n, int i, bool verify)
+{
+    uint8_t *p_key = th_buffer_address();
+    uint8_t *p_iv  = p_key + EE_CHACHAPOLY_KEYSIZE;
+    uint8_t *p_in  = p_iv + EE_CHACHAPOLY_IVSIZE;
+    uint8_t *p_out = p_in + n;
+    uint8_t *p_tag = p_out + n;
+
+    // We create random data here because it saves Host-to-DUT download time.
+    fill_rand(p_key, EE_CHACHAPOLY_KEYSIZE);
+    fill_rand(p_iv, EE_CHACHAPOLY_IVSIZE);
+    fill_rand(p_in, n);
+
+    if (func == EE_CHACHAPOLY_DEC)
+    {
+        // Encrypt something for the decrypt loop to decrypt
+        g_verify_mode = true;
+        ee_chachapoly(
+            EE_CHACHAPOLY_ENC, p_key, NULL, 0, p_iv, p_in, n, p_tag, p_out, 1);
+        g_verify_mode = false;
+        th_memcpy(p_in, p_out, n);
+        uint8_t *tmp = p_in;
+        p_in         = p_out;
+        p_out        = tmp;
+    }
+
+    ee_chachapoly(func, p_key, NULL, 0, p_iv, p_in, n, p_tag, p_out, i);
+
+    if (verify)
+    {
+        ee_printmem_hex(
+            p_key, EE_CHACHAPOLY_KEYSIZE, "m-bench-chachapoly-key-");
+        ee_printmem_hex(p_iv, EE_CHACHAPOLY_IVSIZE, "m-bench-chachapoly-iv-");
+        ee_printmem_hex(p_in, n, "m-bench-chachapoly-in-");
+        ee_printmem_hex(p_out, n, "m-bench-chachapoly-out-");
+        ee_printmem_hex(p_tag, AES_TAGSIZE, "m-bench-chachapoly-tag-");
+    }
+}
+
+/*
+    private key length - 4 bytes, sizeof the pre-computed key in keys.h
+    private key        - ASN.1 quintuple
+    message length     - 4 bytes
+    message            - n bytes
+    signature length   - 4 bytes
+    signature           - signature length bytes
+*/
 
 void
-bench_chachapoly(uint_fast32_t i, uint_fast32_t n, bool verify)
+bench_rsa(ee_rsa_id_t       id,
+          ee_rsa_function_t func,
+          unsigned int      n,
+          unsigned int      i,
+          bool              verify)
 {
-    uint8_t *     p_buffer;
-    uint_fast32_t buflen;
-    uint8_t *     p_key;
-    uint8_t *     p_iv;
-    uint8_t *     p_in;
-    uint8_t *     p_tag;
-    uint8_t *     p_out;
-    uint_fast32_t x;
-    //                      key                  iv  in                tag   out
-    buflen
-        = CHACHAPOLY_KEYSIZE + CHACHAPOLY_IVSIZE + n + CHACHAPOLY_TAGSIZE + n;
-    p_buffer = (uint8_t *)th_malloc(buflen);
-    if (p_buffer == NULL)
-    {
-        th_printf("e-[AES128 GCM malloc() failed, size %d]\r\n", buflen);
-        return;
-    }
-    // Assign the helper points to the region of the buffer
-    p_key = p_buffer;
-    p_iv  = p_key + CHACHAPOLY_KEYSIZE;
-    p_in  = p_iv + CHACHAPOLY_IVSIZE;
-    p_tag = p_in + n;
-    p_out = p_tag + CHACHAPOLY_TAGSIZE;
-    // Fill the key, iv, and plaintext with random values
-    for (x = 0; x < CHACHAPOLY_KEYSIZE; ++x)
-    {
-        p_key[x] = ee_rand();
-    }
-    for (x = 0; x < CHACHAPOLY_IVSIZE; ++x)
-    {
-        p_iv[x] = ee_rand();
-    }
-    for (x = 0; x < n; ++x)
-    {
-        p_in[x] = ee_rand();
-    }
-    /**
-     * We provide decryption in this conditional because it requires
-     * a proper tag, and having the user supply this with buffer-add
-     * commands becomes very painful, so let the prim do it for us.
-     */
-    ee_chachapoly(
-        p_key, NULL, 0, p_iv, p_in, n, p_tag, p_out, CHACHAPOLY_ENC, i);
+    uint32_t *p_prilen;
+    uint8_t * p_pri;
+    uint32_t *p_msglen;
+    uint8_t * p_msg;
+    uint32_t *p_siglen;
+    uint8_t * p_sig;
+
+    p_prilen = (uint32_t *)th_buffer_address();
+    p_pri    = (uint8_t *)p_prilen + sizeof(uint32_t);
+    p_msglen = (uint32_t *)(p_pri + *p_prilen);
+    p_msg    = (uint8_t *)p_msglen + sizeof(uint32_t);
+    p_siglen = (uint32_t *)(p_msg + *p_msglen);
+    p_sig    = (uint8_t *)p_siglen + sizeof(uint32_t);
+
+    ee_rsa(id, func, p_pri, *p_prilen, p_msg, *p_msglen, p_sig, p_siglen, i);
+
     if (verify)
     {
-        ee_printmem_hex(
-            p_key, CHACHAPOLY_KEYSIZE, "m-bench-chachapoly_enc-key-");
-        ee_printmem_hex(p_iv, CHACHAPOLY_IVSIZE, "m-bench-chachapoly_enc-iv-");
-        ee_printmem_hex(p_in, n, "m-bench-chachapoly_enc-in-");
-        ee_printmem_hex(
-            p_tag, CHACHAPOLY_TAGSIZE, "m-bench-chachapoly_enc-tag-");
-        ee_printmem_hex(p_out, n, "m-bench-chachapoly_enc-out-");
+        ee_printmem_hex(p_pri, *p_prilen, "m-bench-rsa-pri-");
+        ee_printmem_hex(p_msg, *p_msglen, "m-bench-rsa-msg-");
+        ee_printmem_hex(p_sig, *p_siglen, "m-bench-rsa-sig-");
     }
-    ee_chachapoly(
-        p_key, NULL, 0, p_iv, p_out, n, p_tag, p_in, CHACHAPOLY_DEC, i);
-    if (verify)
-    {
-        ee_printmem_hex(
-            p_key, CHACHAPOLY_KEYSIZE, "m-bench-chachapoly_dec-key-");
-        ee_printmem_hex(p_iv, CHACHAPOLY_IVSIZE, "m-bench-chachapoly_dec-iv-");
-        ee_printmem_hex(p_out, n, "m-bench-chachapoly_dec-in-");
-        ee_printmem_hex(
-            p_tag, CHACHAPOLY_TAGSIZE, "m-bench-chachapoly_dec-tag-");
-        ee_printmem_hex(p_in, n, "m-bench-chachapoly_dec-out-");
-    }
-    th_free(p_buffer);
 }
+
+#if 0
 
 /**
  * Route the 'bench' commands (see the help text in the main parser).

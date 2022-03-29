@@ -18,9 +18,12 @@
 #include "ee_chachapoly.h"
 #include "ee_ecdh.h"
 #include "ee_ecdsa.h"
+#include "ee_rsa.h"
 #include "ee_sha.h"
 #include "ee_variations.h"
 #include "ee_util.h"
+
+void bench_sha(sha_size_t size, uint_fast32_t n, uint_fast32_t i, bool verify);
 
 void bench_aes(aes_cipher_mode_t mode,
                aes_function_t    func,
@@ -29,7 +32,7 @@ void bench_aes(aes_cipher_mode_t mode,
                uint_fast32_t     i,
                bool              verify);
 
-void bench_sha(sha_size_t size, uint_fast32_t n, uint_fast32_t i, bool verify);
+void bench_chachapoly(chachapoly_func_t func, int n, int i, bool verify);
 
 void bench_ecdh(ecdh_group_t g, uint_fast32_t i, bool verify);
 
@@ -38,6 +41,12 @@ void bench_ecdsa(ecdh_group_t     g,
                  uint_fast32_t    n,
                  uint_fast32_t    i,
                  bool             verify);
+
+void bench_rsa(ee_rsa_id_t       id,
+               ee_rsa_function_t func,
+               unsigned int      n,
+               unsigned int      i,
+               bool              verify);
 
 arg_claimed_t ee_bench_parse(char *p_command, bool verify);
 
