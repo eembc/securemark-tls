@@ -60,8 +60,8 @@
 #define MAX_TIMESTAMPS 64u
 // `true` to turn on debugging messages
 #define DEBUG_VERIFY false
-// To a single run
-//#define DO_SINGLE
+// Only run a single iteration of each task (for debug)
+#define DO_SINGLE
 // All wrapper functions fit this prototype (n=dataset octets, i=iterations)
 typedef uint16_t wrapper_function_t(unsigned int n, unsigned int i);
 /**
@@ -631,30 +631,23 @@ typedef struct
     { wrap_##name, n, 0.0, (float)w, 0x0, crc, #name },
 
 /**
- * The weights are used for scoring and were defined by the team in 2018.
+ * The weights are used for scoring and are defined by the EEMBC working group.
  *
- * The expected_crc value was computed by EEMBC using wolfSSL. The intent
- * of this field is to help detected mistakes in the implementation, or errant
- * bugs introduced while porting the firmware.
- *
+ * The expected_crc values were computed by EEMBC for the given parameters.
  * The CRC of the resulting output should be the same regardless of the
- * software or hardware implementation. Changing the seeds or the input
- * Q/d ECC keys will break the CRC.
+ * software or hardware implementation. Changing the random seed, the number
+ * of input bytes, or any of the values in keys.h will cause CRC errors.
  *
- * Note 1: This CRC is based on the signature in ASN1 encoding.
- * Note 3: This CRC is based on the signature as raw little-endian bytes.
- * Note 4: All ECDSA is done according to RFC6979, SHA should be Curve n size
+ * Note: The deterministic K function must use SHA256 to get the right CRC
+ * Note: All sign/verify operations must be 32-byte messages; Ed25519 will
+ *       hash this *again* with SHA512. This is unavoidable.
  */
 // clang-format off
-#define DO_RSA
-#define DO_VERSION_1
-#define DO_VERSION_2
 static task_entry_t g_task[] =
 {
     /*
-     *   nickname             , data, weight, crc
+     *   Macro nickname       ,Bytes, weight, crc
      */
-#ifdef DO_VERSION_1
     // V1 - TLS 1.2 (note CRCs changed due to new keys & wrappers)
     // For Medium
     TASK(aes128_ecb_encrypt   ,  320,  1.0f, 0x0b7a)
@@ -677,15 +670,14 @@ static task_entry_t g_task[] =
     TASK(aes256_ecb_encrypt   ,  320,  1.0f, 0xba50)
     TASK(aes256_ccm_encrypt   ,   52,  1.0f, 0xd195)
     TASK(aes256_ccm_decrypt   ,  168,  1.0f, 0xd7ff)
-    TASK(ecdsa_sign_p384      ,   32,  1.0f, 0xaf78) // TODO: SHA256 though?
+    // NOTE: WolfCrypt has a problem here, compute CRC with mbedTLS
+    TASK(ecdsa_sign_p384      ,   32,  1.0f, 0xac10)
     TASK(ecdsa_verify_p384    ,   32,  2.0f, 0xfe20)
     TASK(sha384               ,   23,  3.0f, 0x9f68)
     TASK(sha384               ,   57,  1.0f, 0x8a5c)
     TASK(sha384               ,  384,  1.0f, 0xb5e8)
     TASK(sha384               , 4224,  4.0f, 0xb146)
     TASK(aes256_ecb_encrypt   , 2048, 10.0f, 0x2364)
-#endif
-#ifdef DO_VERSION_2
     // V2 - TLS 1.3 & Secure Boot Components
     // Key Exchange
     TASK(ecdh_p256r1          ,    0,  1.0f, 0x32af)
@@ -698,9 +690,7 @@ static task_entry_t g_task[] =
     TASK(sha384               , 1539,  1.0f, 0x7cbc)
     TASK(ecdsa_sign_ed25519   ,   32,  1.0f, 0x7dbb)
     // DSA Verify
-    // TASK(ecdsa_verify_p256r1  ,   32,  2.0f, 0x4cc0)
     TASK(sha256               , 4104,  2.0f, 0x39c9)
-    // TASK(ecdsa_verify_p384    ,   32,  2.0f, 0x562d) // TODO: SHA256 though?
     TASK(sha384               , 4104,  2.0f, 0xa424)
     TASK(ecdsa_verify_ed25519 ,   32,  2.0f, 0x7dbb)
     // AEAD
@@ -738,13 +728,10 @@ static task_entry_t g_task[] =
     TASK(sha384               ,  204, 15.0f, 0x4b8a)
     TASK(sha384               ,  176, 14.0f, 0x660b)
     TASK(sha384               ,  130,  2.0f, 0x445b)
-#endif
-#ifdef DO_RSA
     // Secure boot verify only
     TASK(rsa_verify_2048      ,   32,  1.0f, 0x8a62)
     TASK(rsa_verify_3072      ,   32,  1.0f, 0x1ed4)
     TASK(rsa_verify_4096      ,   32,  1.0f, 0x7147)
-#endif
 };
 // clang-format on
 static const size_t g_numtasks = sizeof(g_task) / sizeof(task_entry_t);
@@ -815,7 +802,3 @@ main(void)
         "official score, please contact support@eembc.org.\n");
     return 0;
 }
-
-// TODO verify in = out for decrypt, seal/read, sign/verify
-// TODO rename SIZE to len to be consistent
-// TODO check var names in wrappers for consistency
