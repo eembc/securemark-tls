@@ -26,8 +26,6 @@ ee_aes(ee_aes_mode_t mode,   // input: cipher mode
        uint_fast32_t     len,    // input: length of input in bytes
        uint8_t *         p_out,  // output: pointer to output buffer
        uint8_t *         p_tag,  // inout: output in encrypt, input on decrypt
-       const uint8_t *   p_add,  // input: additional authentication data
-       uint_fast32_t     addlen, // input: length of AAD in bytes
        uint_fast32_t     iter    // input: # of test iterations
 )
 {
@@ -72,7 +70,7 @@ ee_aes(ee_aes_mode_t mode,   // input: cipher mode
         while (iter-- > 0)
         {
             if (th_aes_init(
-                    p_context, p_key, keylen, p_iv, EE_AES_ROUNDS, func, mode)
+                    p_context, p_key, keylen, p_iv, func, mode)
                 != EE_STATUS_OK)
             {
                 th_post();
@@ -98,8 +96,6 @@ ee_aes(ee_aes_mode_t mode,   // input: cipher mode
                     break;
                 case EE_AES_CCM:
                     ret = th_aes_ccm_encrypt(p_context,
-                                             p_add,
-                                             addlen,
                                              p_in,
                                              len,
                                              p_out,
@@ -110,8 +106,6 @@ ee_aes(ee_aes_mode_t mode,   // input: cipher mode
                     break;
                 case EE_AES_GCM:
                     ret = th_aes_gcm_encrypt(p_context,
-                                             p_add,
-                                             addlen,
                                              p_in,
                                              len,
                                              p_out,
@@ -143,7 +137,7 @@ ee_aes(ee_aes_mode_t mode,   // input: cipher mode
         while (iter-- > 0)
         {
             if (th_aes_init(
-                    p_context, p_key, keylen, p_iv, EE_AES_ROUNDS, func, mode)
+                    p_context, p_key, keylen, p_iv, func, mode)
                 != EE_STATUS_OK)
             {
                 th_post();
@@ -169,8 +163,6 @@ ee_aes(ee_aes_mode_t mode,   // input: cipher mode
                     break;
                 case EE_AES_CCM:
                     ret = th_aes_ccm_decrypt(p_context,
-                                             p_add,
-                                             addlen,
                                              p_in,
                                              len,
                                              p_out,
@@ -181,8 +173,6 @@ ee_aes(ee_aes_mode_t mode,   // input: cipher mode
                     break;
                 case EE_AES_GCM:
                     ret = th_aes_gcm_decrypt(p_context,
-                                             p_add,
-                                             addlen,
                                              p_in,
                                              len,
                                              p_out,

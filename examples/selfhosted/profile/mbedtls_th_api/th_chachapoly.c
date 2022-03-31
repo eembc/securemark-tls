@@ -74,8 +74,6 @@ th_chachapoly_deinit(void *            p_context, // input: portable context
 ee_status_t
 th_chachapoly_encrypt(
     void *         p_context, // input: portable context
-    const uint8_t *p_aad,     // input: Additional Authentication Data
-    uint_fast32_t  aadlen,    // input: Length of AAD in bytes
     const uint8_t *p_pt,      // input: plaintext
     uint_fast32_t  ptlen,     // input: length of plaintext in bytes
     uint8_t *      p_ct,      // output_ ciphertext
@@ -89,8 +87,8 @@ th_chachapoly_encrypt(
                (mbedtls_chachapoly_context *)p_context,
                ptlen,
                p_iv,
-               p_aad,
-               aadlen,
+               NULL,
+               0,
                p_pt,
                p_ct,
                p_tag)
@@ -107,8 +105,6 @@ th_chachapoly_encrypt(
 ee_status_t
 th_chachapoly_decrypt(
     void *         p_context, // input: portable context
-    const uint8_t *p_aad,     // input: Additional Authentication Data
-    uint_fast32_t  aadlen,    // input: Length of AAD in bytes
     const uint8_t *p_ct,      // input: ciphertext
     uint_fast32_t  ctlen,     // input: length of ciphertext in bytes
     uint8_t *      p_pt,      // output_ plaintext
@@ -122,8 +118,8 @@ th_chachapoly_decrypt(
                (mbedtls_chachapoly_context *)p_context,
                ctlen,
                p_iv,
-               p_aad,
-               aadlen,
+               NULL,
+               0,
                p_tag,
                p_ct,
                p_pt)

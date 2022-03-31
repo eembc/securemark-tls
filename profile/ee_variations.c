@@ -117,13 +117,13 @@ ee_variation_001(uint_fast32_t iterations)
 
         CHECK(th_aes_create(&p_caes, EE_AES_ECB));
         CHECK(
-            th_aes_init(p_caes, p_key, 16, NULL, EE_AES_ROUNDS, EE_AES_ENC, EE_AES_ECB));
+            th_aes_init(p_caes, p_key, 16, NULL, EE_AES_ENC, EE_AES_ECB));
         CHECK(th_aes_ecb_encrypt(p_caes, p_pt, p_ct));
         th_aes_destroy(p_caes, EE_AES_ECB);
 
         CHECK(th_aes_create(&p_caes, EE_AES_ECB));
         CHECK(
-            th_aes_init(p_caes, p_key, 16, NULL, EE_AES_ROUNDS, EE_AES_ENC, EE_AES_ECB));
+            th_aes_init(p_caes, p_key, 16, NULL, EE_AES_ENC, EE_AES_ECB));
         CHECK(th_aes_ecb_encrypt(p_caes, p_pt, p_ct));
         th_aes_destroy(p_caes, EE_AES_ECB);
 
@@ -134,7 +134,7 @@ ee_variation_001(uint_fast32_t iterations)
 
         CHECK(th_aes_create(&p_caes, EE_AES_ECB));
         CHECK(
-            th_aes_init(p_caes, p_key, 16, NULL, EE_AES_ROUNDS, EE_AES_ENC, EE_AES_ECB));
+            th_aes_init(p_caes, p_key, 16, NULL, EE_AES_ENC, EE_AES_ECB));
         CHECK(th_aes_ecb_encrypt(p_caes, p_pt, p_ct));
         th_aes_destroy(p_caes, EE_AES_ECB);
 

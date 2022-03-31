@@ -72,8 +72,6 @@ th_chachapoly_deinit(void *            p_context, // input: portable context
 ee_status_t
 th_chachapoly_encrypt(
     void *         p_context, // input: portable context
-    const uint8_t *p_aad,     // input: Additional Authentication Data
-    uint_fast32_t  aadlen,    // input: Length of AAD in bytes
     const uint8_t *p_pt,      // input: plaintext
     uint_fast32_t  ptlen,     // input: length of plaintext in bytes
     uint8_t *      p_ct,      // output_ ciphertext
@@ -84,7 +82,7 @@ th_chachapoly_encrypt(
 )
 {
     return wc_ChaCha20Poly1305_Encrypt(
-               g_localKey, p_iv, p_aad, aadlen, p_pt, ptlen, p_ct, p_tag)
+               g_localKey, p_iv, NULL, 0, p_pt, ptlen, p_ct, p_tag)
                    == 0
                ? EE_STATUS_OK
                : EE_STATUS_ERROR;
@@ -98,8 +96,6 @@ th_chachapoly_encrypt(
 ee_status_t
 th_chachapoly_decrypt(
     void *         p_context, // input: portable context
-    const uint8_t *p_aad,     // input: Additional Authentication Data
-    uint_fast32_t  aadlen,    // input: Length of AAD in bytes
     const uint8_t *p_ct,      // input: ciphertext
     uint_fast32_t  ctlen,     // input: length of ciphertext in bytes
     uint8_t *      p_pt,      // output_ plaintext
@@ -110,7 +106,7 @@ th_chachapoly_decrypt(
 )
 {
     return wc_ChaCha20Poly1305_Decrypt(
-               g_localKey, p_iv, p_aad, aadlen, p_ct, ctlen, p_tag, p_pt)
+               g_localKey, p_iv, NULL, 0, p_ct, ctlen, p_tag, p_pt)
                    == 0
                ? EE_STATUS_OK
                : EE_STATUS_ERROR;

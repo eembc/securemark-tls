@@ -36,7 +36,6 @@ th_aes_init(void *            p_context, // input: portable context
             const uint8_t *   p_key,     // input: key
             uint_fast32_t     keylen,    // input: length of key in bytes
             const uint8_t *   iv,        // input: IV if CTR mode, or NULL
-            uint_fast32_t     rounds,    // input: number of AES rounds
             ee_aes_func_t    func,      // input: AES_ENC or EE_AES_DEC
             ee_aes_mode_t mode       // input: see ee_aes_mode_t
 )
@@ -127,8 +126,6 @@ th_aes_ctr_decrypt(void *         p_context, // input: portable context
 ee_status_t
 th_aes_ccm_encrypt(
     void *         p_context, // input: portable context
-    const uint8_t *p_aad,     // input: Additional Authentication Data
-    uint_fast32_t  aadlen,    // input: Length of AAD in bytes
     const uint8_t *p_pt,      // input: plaintext
     uint_fast32_t  ptlen,     // input: length of plaintext in bytes
     uint8_t *      p_ct,      // output: ciphertext
@@ -150,8 +147,6 @@ th_aes_ccm_encrypt(
 ee_status_t
 th_aes_ccm_decrypt(
     void *         p_context, // input: portable context
-    const uint8_t *p_aad,     // input: Additional Authentication Data
-    uint_fast32_t  aadlen,    // input: Length of AAD in bytes
     const uint8_t *p_ct,      // input: ciphertext
     uint_fast32_t  ctlen,     // input: length of ciphertext in bytes
     uint8_t *      p_pt,      // output: plaintext
@@ -173,8 +168,6 @@ th_aes_ccm_decrypt(
 ee_status_t
 th_aes_gcm_encrypt(
     void *         p_context, // input: portable context
-    const uint8_t *p_aad,     // input: Additional Authentication Data
-    uint_fast32_t  aadlen,    // input: Length of AAD in bytes
     const uint8_t *p_pt,      // input: plaintext
     uint_fast32_t  ptlen,     // input: length of plaintext in bytes
     uint8_t *      p_ct,      // output: ciphertext
@@ -196,8 +189,6 @@ th_aes_gcm_encrypt(
 ee_status_t
 th_aes_gcm_decrypt(
     void *         p_context, // input: portable context
-    const uint8_t *p_aad,     // input: Additional Authentication Data
-    uint_fast32_t  aadlen,    // input: Length of AAD in bytes
     const uint8_t *p_ct,      // input: ciphertext
     uint_fast32_t  ctlen,     // input: length of plaintext in bytes
     uint8_t *      p_pt,      // output: plaintext

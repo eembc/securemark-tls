@@ -19,8 +19,6 @@
 void
 ee_chachapoly(ee_chachapoly_func_t func,   // input: EE_CHACHAPOLY_(ENC|DEC)
               uint8_t *         p_key,  // input: key
-              const uint8_t *   p_add,  // input: additional authentication data
-              uint_fast32_t     addlen, // input: length of AAD in bytes
               uint8_t *         p_iv,   // input: initialization vector
               uint8_t *     p_in,  // input: pointer to source input (pt or ct)
               uint_fast32_t len,   // input: length of input in bytes
@@ -56,8 +54,6 @@ ee_chachapoly(ee_chachapoly_func_t func,   // input: EE_CHACHAPOLY_(ENC|DEC)
                 goto exit;
             }
             if (th_chachapoly_encrypt(p_context,
-                                      p_add,
-                                      addlen,
                                       p_in,
                                       len,
                                       p_out,
@@ -93,8 +89,6 @@ ee_chachapoly(ee_chachapoly_func_t func,   // input: EE_CHACHAPOLY_(ENC|DEC)
                 goto exit;
             }
             if (th_chachapoly_decrypt(p_context,
-                                      p_add,
-                                      addlen,
                                       p_in,
                                       len,
                                       p_out,

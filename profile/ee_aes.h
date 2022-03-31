@@ -37,7 +37,6 @@ typedef enum ee_aes_func_t
 #define EE_AES_CTR_IVLEN  16u
 #define EE_AES_AEAD_IVLEN 12u
 #define EE_AES_TAGLEN     16u
-#define EE_AES_ROUNDS      0u
 
 // Testing function.
 
@@ -50,8 +49,6 @@ void ee_aes(ee_aes_mode_t mode,   // input: cipher mode
             uint_fast32_t     len,  // input: length of input in bytes
             uint8_t *         p_out, // output: pointer to output buffer
             uint8_t *      p_tag,  // inout: output in encrypt, input on decrypt
-            const uint8_t *p_add,  // input: additional authentication data
-            uint_fast32_t  addlen, // input: length of AAD in bytes
             uint_fast32_t  iterations // input: # of test iterations
 );
 
@@ -75,7 +72,6 @@ ee_status_t th_aes_init(void *         p_context, // input: portable context
                         const uint8_t *p_key,     // input: key
                         uint_fast32_t  keylen, // input: length of key in bytes
                         const uint8_t *iv,     // input: IV if CTR mode, or NULL
-                        uint_fast32_t  rounds, // input: number of AES rounds
                         ee_aes_func_t func,   // input: AES_ENC or EE_AES_DEC
                         ee_aes_mode_t mode // input: see ee_aes_mode_t
 );
@@ -141,8 +137,6 @@ ee_status_t th_aes_ctr_decrypt(
  */
 ee_status_t th_aes_ccm_encrypt(
     void *         p_context, // input: portable context
-    const uint8_t *p_aad,     // input: Additional Authentication Data
-    uint_fast32_t  aadlen,    // input: Length of AAD in bytes
     const uint8_t *p_pt,      // input: plaintext
     uint_fast32_t  ptlen,     // input: length of plaintext in bytes
     uint8_t *      p_ct,      // output: ciphertext
@@ -159,8 +153,6 @@ ee_status_t th_aes_ccm_encrypt(
  */
 ee_status_t th_aes_ccm_decrypt(
     void *         p_context, // input: portable context
-    const uint8_t *p_aad,     // input: Additional Authentication Data
-    uint_fast32_t  aadlen,    // input: Length of AAD in bytes
     const uint8_t *p_ct,      // input: ciphertext
     uint_fast32_t  ctlen,     // input: length of ciphertext in bytes
     uint8_t *      p_pt,      // output: plaintext
@@ -177,8 +169,6 @@ ee_status_t th_aes_ccm_decrypt(
  */
 ee_status_t th_aes_gcm_encrypt(
     void *         p_context, // input: portable context
-    const uint8_t *p_aad,     // input: Additional Authentication Data
-    uint_fast32_t  aadlen,    // input: Length of AAD in bytes
     const uint8_t *p_pt,      // input: plaintext
     uint_fast32_t  ptlen,     // input: length of plaintext in bytes
     uint8_t *      p_ct,      // output: ciphertext
@@ -195,8 +185,6 @@ ee_status_t th_aes_gcm_encrypt(
  */
 ee_status_t th_aes_gcm_decrypt(
     void *         p_context, // input: portable context
-    const uint8_t *p_aad,     // input: Additional Authentication Data
-    uint_fast32_t  aadlen,    // input: Length of AAD in bytes
     const uint8_t *p_ct,      // input: ciphertext
     uint_fast32_t  ctlen,     // input: length of plaintext in bytes
     uint8_t *      p_pt,      // output: plaintext

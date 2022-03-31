@@ -65,7 +65,6 @@ ee_status_t
 th_aes128_init(void *            p_context, // input: portable context
                const uint8_t *   p_key,     // input: key
                uint_fast32_t     keylen,    // input: length of key in bytes
-               uint_fast32_t     rounds,    // input: number of AES rounds
                ee_aes_func_t    func,      // input: EE_AES_ENC or EE_AES_DEC
                ee_aes_mode_t mode       // input: EE_AES_ECB|CCM|GCM
 )
@@ -203,8 +202,6 @@ th_aes128_ecb_decrypt(
 ee_status_t
 th_aes128_ccm_encrypt(
     void *         p_context, // input: portable context
-    const uint8_t *p_aad,     // input: additional authentication data
-    uint_fast32_t  aadlen,    // input: length of AAD in bytes
     const uint8_t *p_pt,      // input: plaintext
     uint_fast32_t  ptlen,     // input: length of plaintext in bytes
     uint8_t *      p_ct,      // output: ciphertext
@@ -238,8 +235,6 @@ th_aes128_ccm_encrypt(
 ee_status_t
 th_aes128_ccm_decrypt(
     void *         p_context, // input: portable context
-    const uint8_t *p_aad,     // input: additional authentication data
-    uint_fast32_t  aadlen,    // input: length of AAD in bytes
     const uint8_t *p_ct,      // input: ciphertext
     uint_fast32_t  ctlen,     // input: length of ciphertext in bytes
     uint8_t *      p_pt,      // output: plaintext
@@ -254,8 +249,8 @@ th_aes128_ccm_decrypt(
                ctlen,                            // length of the input data,
                p_iv,   // nonce (initialization vector)
                ivlen,  // length of IV in bytes
-               p_aad,  // additional data
-               aadlen, // length of additional data in bytes
+               NULL,  // additional data
+               0, // length of additional data in bytes
                p_ct,   // buffer holding the input data
                p_pt,   // buffer holding the output data
                p_tag,  // buffer holding the tag
@@ -273,8 +268,6 @@ th_aes128_ccm_decrypt(
 ee_status_t
 th_aes128_gcm_encrypt(
     void *         p_context, // input: portable context
-    const uint8_t *p_aad,     // input: additional authentication data
-    uint_fast32_t  aadlen,    // input: length of AAD in bytes
     const uint8_t *p_pt,      // input: plaintext
     uint_fast32_t  ptlen,     // input: length of plaintext in bytes
     uint8_t *      p_ct,      // output: ciphertext
@@ -290,8 +283,8 @@ th_aes128_gcm_encrypt(
                ptlen,  // length of the input data in bytes
                p_iv,   // nonce (initialization vector)
                ivlen,  // length of IV in bytes
-               p_aad,  // additional data
-               aadlen, // length of additional data in bytes
+               NULL,  // additional data
+               0, // length of additional data in bytes
                p_pt,   // buffer holding the input data
                p_ct,   // buffer holding the output data
                taglen, // length of the tag to generate in bytes
@@ -309,8 +302,6 @@ th_aes128_gcm_encrypt(
 ee_status_t
 th_aes128_gcm_decrypt(
     void *         p_context, // input: portable context
-    const uint8_t *p_aad,     // input: additional authentication data
-    uint_fast32_t  aadlen,    // input: length of AAD in bytes
     const uint8_t *p_ct,      // input: ciphertext
     uint_fast32_t  ctlen,     // input: length of plaintext in bytes
     uint8_t *      p_pt,      // output: plaintext
@@ -325,8 +316,8 @@ th_aes128_gcm_decrypt(
                ctlen,                            // length of the input data,
                p_iv,   // nonce (initialization vector)
                ivlen,  // length of IV in bytes
-               p_aad,  // additional data
-               aadlen, // length of additional data in bytes
+               NULL,  // additional data
+               0, // length of additional data in bytes
                p_tag,  // buffer holding the tag
                taglen, // length of the tag to generate in bytes
                p_ct,   // buffer holding the input data

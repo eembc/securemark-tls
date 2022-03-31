@@ -66,8 +66,6 @@ ee_bench_aes(ee_aes_mode_t mode,   // input: cipher mode
                n,
                p_out,
                p_tag,
-               NULL,
-               0,
                1);
         g_mute_timestamps = false;
         th_memcpy(p_in, p_out, n);
@@ -75,7 +73,7 @@ ee_bench_aes(ee_aes_mode_t mode,   // input: cipher mode
         p_in         = p_out;
         p_out        = tmp;
     }
-    ee_aes(mode, func, p_key, keylen, p_iv, p_in, n, p_out, p_tag, NULL, 0, i);
+    ee_aes(mode, func, p_key, keylen, p_iv, p_in, n, p_out, p_tag,i);
     if (verify)
     {
         ee_printmem_hex(p_key, keylen, "m-bench-aesXXX-key-");
@@ -191,7 +189,7 @@ ee_bench_chachapoly(ee_chachapoly_func_t func, int n, int i, bool verify)
         // Encrypt something for the decrypt loop to decrypt
         g_mute_timestamps = true;
         ee_chachapoly(
-            EE_CHACHAPOLY_ENC, p_key, NULL, 0, p_iv, p_in, n, p_tag, p_out, 1);
+            EE_CHACHAPOLY_ENC, p_key, p_iv, p_in, n, p_tag, p_out, 1);
         g_mute_timestamps = false;
         th_memcpy(p_in, p_out, n);
         uint8_t *tmp = p_in;
@@ -199,7 +197,7 @@ ee_bench_chachapoly(ee_chachapoly_func_t func, int n, int i, bool verify)
         p_out        = tmp;
     }
 
-    ee_chachapoly(func, p_key, NULL, 0, p_iv, p_in, n, p_tag, p_out, i);
+    ee_chachapoly(func, p_key, p_iv, p_in, n, p_tag, p_out, i);
 
     if (verify)
     {
