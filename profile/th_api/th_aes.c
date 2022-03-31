@@ -19,7 +19,7 @@
  */
 ee_status_t
 th_aes_create(void **           p_context, // output: portable context
-              aes_cipher_mode_t mode       // input: AES_ENC or AES_DEC
+              ee_aes_mode_t mode       // input: AES_ENC or EE_AES_DEC
 )
 {
 #warning "th_aes_create not implemented"
@@ -37,8 +37,8 @@ th_aes_init(void *            p_context, // input: portable context
             uint_fast32_t     keylen,    // input: length of key in bytes
             const uint8_t *   iv,        // input: IV if CTR mode, or NULL
             uint_fast32_t     rounds,    // input: number of AES rounds
-            aes_function_t    func,      // input: AES_ENC or AES_DEC
-            aes_cipher_mode_t mode       // input: see aes_cipher_mode_t
+            ee_aes_func_t    func,      // input: AES_ENC or EE_AES_DEC
+            ee_aes_mode_t mode       // input: see ee_aes_mode_t
 )
 {
 #warning "th_aes_init not implemented"
@@ -53,7 +53,7 @@ th_aes_init(void *            p_context, // input: portable context
  */
 void
 th_aes_deinit(void *            context, // input: portable context
-              aes_cipher_mode_t mode     // input: AES_ECB or AES_CCM
+              ee_aes_mode_t mode     // input: EE_AES_ECB or EE_AES_CCM
 ) {
 #warning "th_aes_deinit not implemented"
 }
@@ -218,7 +218,7 @@ th_aes_gcm_decrypt(
  */
 void
 th_aes_destroy(void *            p_context, // input: portable context
-               aes_cipher_mode_t mode       // input: AES_ECB or AES_CCM
+               ee_aes_mode_t mode       // input: EE_AES_ECB or EE_AES_CCM
 )
 {
 #warning "th_aes_destroy not implemented"

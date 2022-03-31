@@ -17,7 +17,7 @@
 #include "ee_sha.h"
 
 ee_status_t
-th_sha_create(void **pp_context, sha_size_t size)
+th_sha_create(void **pp_context, ee_sha_size_t size)
 {
     switch (size)
     {
@@ -40,7 +40,7 @@ th_sha_create(void **pp_context, sha_size_t size)
 }
 
 ee_status_t
-th_sha_init(void *p_context, sha_size_t size)
+th_sha_init(void *p_context, ee_sha_size_t size)
 {
     int ret;
     switch (size)
@@ -65,7 +65,7 @@ th_sha_init(void *p_context, sha_size_t size)
 
 ee_status_t
 th_sha_process(void *         p_context, // input: portable context
-               sha_size_t     size,      // input: SHA algorithm size
+               ee_sha_size_t     size,      // input: SHA algorithm size
                const uint8_t *p_in,      // input: data to hash
                uint_fast32_t  len        // input: length of data in bytes
 )
@@ -93,7 +93,7 @@ th_sha_process(void *         p_context, // input: portable context
 
 ee_status_t
 th_sha_done(void *     p_context, // input: portable context
-            sha_size_t size,      // input: SHA algorithm size
+            ee_sha_size_t size,      // input: SHA algorithm size
             uint8_t *  p_result   // output: digest, SHA_SIZE bytes
 )
 {
@@ -120,7 +120,7 @@ th_sha_done(void *     p_context, // input: portable context
 
 void
 th_sha_destroy(void *     p_context, // input: portable context
-               sha_size_t size       // input: SHA algorithm size
+               ee_sha_size_t size       // input: SHA algorithm size
 )
 {
     if (NULL == p_context)

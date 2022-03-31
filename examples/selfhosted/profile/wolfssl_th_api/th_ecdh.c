@@ -42,7 +42,7 @@ typedef struct ecc_context
  */
 ee_status_t
 th_ecdh_create(void **      p_context, // output: portable context
-               ecdh_group_t group      // input: curve group
+               ee_ecdh_group_t group      // input: curve group
 )
 {
     ecc_context *ctx = NULL;
@@ -110,7 +110,7 @@ error:
  */
 ee_status_t
 th_ecdh_init(void *        p_context, // input: portable context
-             ecdh_group_t  group,     // input: see `ecdh_group_t` for options
+             ee_ecdh_group_t  group,     // input: see `ee_ecdh_group_t` for options
              uint8_t *     p_private, // input: private key, from host
              uint_fast32_t prilen,    // input: private key length in bytes
              uint8_t *     p_public,  // input: peer public key, from host
@@ -184,7 +184,7 @@ th_ecdh_init(void *        p_context, // input: portable context
 ee_status_t
 th_ecdh_calc_secret(
     void *        p_context, // input: portable context
-    ecdh_group_t  group,     // input: curve group
+    ee_ecdh_group_t  group,     // input: curve group
     uint8_t *     p_secret,  // output: shared secret
     uint_fast32_t slen       // input: length of shared buffer in bytes
 )

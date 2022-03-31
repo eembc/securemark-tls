@@ -20,7 +20,7 @@
  * private key is 32-byte value used in G * m = R (the 'm' value).
  */
 void
-ee_ecdh(ecdh_group_t  group, // input: input: see `ecdh_group_t` for options
+ee_ecdh(ee_ecdh_group_t  group, // input: input: see `ee_ecdh_group_t` for options
         uint8_t *     p_public,  // input: peer public key, from host
         uint_fast32_t publen,    // input: peer public key length in bytes
         uint8_t *     p_private, // input: private key, from host

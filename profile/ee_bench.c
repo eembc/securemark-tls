@@ -31,14 +31,14 @@ fill_rand(uint8_t *p_buffer, size_t len)
 }
 
 void
-bench_aes(aes_cipher_mode_t mode,   // input: cipher mode
-          aes_function_t    func,   // input: func (AES_ENC|AES_DEC)
+ee_bench_aes(ee_aes_mode_t mode,   // input: cipher mode
+          ee_aes_func_t    func,   // input: func (AES_ENC|EE_AES_DEC)
           uint_fast32_t     keylen, // input: length of key in bytes
           uint_fast32_t     n,      // input: length of input in bytes
           uint_fast32_t     i,      // input: # of test iterations
           bool              verify)
 {
-    int      ivlen = mode == AES_CTR ? AES_CTR_IVSIZE : AES_AEAD_IVSIZE;
+    int      ivlen = mode == EE_AES_CTR ? EE_AES_CTR_IVLEN : EE_AES_AEAD_IVLEN;
     uint8_t *p_key = th_buffer_address();
     uint8_t *p_iv  = p_key + keylen;
     uint8_t *p_in  = p_iv + ivlen;
@@ -50,12 +50,12 @@ bench_aes(aes_cipher_mode_t mode,   // input: cipher mode
     fill_rand(p_iv, ivlen);
     fill_rand(p_in, n);
 
-    if (func == AES_DEC)
+    if (func == EE_AES_DEC)
     {
         // Encrypt something for the decrypt loop to decrypt
         g_verify_mode = true;
         ee_aes(mode,
-               AES_ENC,
+               EE_AES_ENC,
                p_key,
                keylen,
                p_iv,
@@ -79,12 +79,12 @@ bench_aes(aes_cipher_mode_t mode,   // input: cipher mode
         ee_printmem_hex(p_iv, ivlen, "m-bench-aesXXX-iv-");
         ee_printmem_hex(p_in, n, "m-bench-aesXXX-in-");
         ee_printmem_hex(p_out, n, "m-bench-aesXXX-out-");
-        ee_printmem_hex(p_tag, AES_TAGSIZE, "m-bench-aesXXX-tag-");
+        ee_printmem_hex(p_tag, EE_AES_TAGLEN, "m-bench-aesXXX-tag-");
     }
 }
 
 void
-bench_sha(sha_size_t size, uint_fast32_t n, uint_fast32_t i, bool verify)
+ee_bench_sha(ee_sha_size_t size, uint_fast32_t n, uint_fast32_t i, bool verify)
 {
     uint8_t *p_in  = th_buffer_address();
     uint8_t *p_out = p_in + n;
@@ -105,7 +105,7 @@ bench_sha(sha_size_t size, uint_fast32_t n, uint_fast32_t i, bool verify)
 }
 
 void
-bench_ecdh(ecdh_group_t g, uint_fast32_t i, bool verify)
+ee_bench_ecdh(ee_ecdh_group_t g, uint_fast32_t i, bool verify)
 {
     uint_fast32_t npub = ee_pub_sz[g];
     uint_fast32_t npri = ee_pri_sz[g];
@@ -127,8 +127,8 @@ bench_ecdh(ecdh_group_t g, uint_fast32_t i, bool verify)
 }
 
 void
-bench_ecdsa(ecdh_group_t     g,
-            ecdsa_function_t func,
+ee_bench_ecdsa(ee_ecdh_group_t     g,
+            ee_ecdsa_func_t func,
             uint_fast32_t    n,
             uint_fast32_t    i,
             bool             verify)
@@ -170,17 +170,17 @@ bench_ecdsa(ecdh_group_t     g,
 }
 
 void
-bench_chachapoly(chachapoly_func_t func, int n, int i, bool verify)
+ee_bench_chachapoly(ee_chachapoly_func_t func, int n, int i, bool verify)
 {
     uint8_t *p_key = th_buffer_address();
-    uint8_t *p_iv  = p_key + EE_CHACHAPOLY_KEYSIZE;
-    uint8_t *p_in  = p_iv + EE_CHACHAPOLY_IVSIZE;
+    uint8_t *p_iv  = p_key + EE_CHACHAPOLY_KEYLEN;
+    uint8_t *p_in  = p_iv + EE_CHACHAPOLY_IVLEN;
     uint8_t *p_out = p_in + n;
     uint8_t *p_tag = p_out + n;
 
     // We create random data here because it saves Host-to-DUT download time.
-    fill_rand(p_key, EE_CHACHAPOLY_KEYSIZE);
-    fill_rand(p_iv, EE_CHACHAPOLY_IVSIZE);
+    fill_rand(p_key, EE_CHACHAPOLY_KEYLEN);
+    fill_rand(p_iv, EE_CHACHAPOLY_IVLEN);
     fill_rand(p_in, n);
 
     if (func == EE_CHACHAPOLY_DEC)
@@ -201,11 +201,11 @@ bench_chachapoly(chachapoly_func_t func, int n, int i, bool verify)
     if (verify)
     {
         ee_printmem_hex(
-            p_key, EE_CHACHAPOLY_KEYSIZE, "m-bench-chachapoly-key-");
-        ee_printmem_hex(p_iv, EE_CHACHAPOLY_IVSIZE, "m-bench-chachapoly-iv-");
+            p_key, EE_CHACHAPOLY_KEYLEN, "m-bench-chachapoly-key-");
+        ee_printmem_hex(p_iv, EE_CHACHAPOLY_IVLEN, "m-bench-chachapoly-iv-");
         ee_printmem_hex(p_in, n, "m-bench-chachapoly-in-");
         ee_printmem_hex(p_out, n, "m-bench-chachapoly-out-");
-        ee_printmem_hex(p_tag, AES_TAGSIZE, "m-bench-chachapoly-tag-");
+        ee_printmem_hex(p_tag, EE_AES_TAGLEN, "m-bench-chachapoly-tag-");
     }
 }
 
@@ -219,7 +219,7 @@ bench_chachapoly(chachapoly_func_t func, int n, int i, bool verify)
 */
 
 void
-bench_rsa(ee_rsa_id_t       id,
+ee_bench_rsa(ee_rsa_id_t       id,
           ee_rsa_function_t func,
           unsigned int      n,
           unsigned int      i,
@@ -347,23 +347,23 @@ ee_bench_parse(char *p_command, bool verify)
     }
     else if (th_strncmp(p_subcmd, "chachapoly", EE_CMD_SIZE) == 0)
     {
-        bench_chachapoly(i, n, verify);
+        ee_bench_chachapoly(i, n, verify);
     }
     else if (th_strncmp(p_subcmd, "ecdh256", EE_CMD_SIZE) == 0)
     {
-        bench_ecdh(i, EE_P256R1, verify);
+        ee_bench_ecdh(i, EE_P256R1, verify);
     }
     else if (th_strncmp(p_subcmd, "ecdh25519", EE_CMD_SIZE) == 0)
     {
-        bench_ecdh(i, EE_C25519, verify);
+        ee_bench_ecdh(i, EE_C25519, verify);
     }
     else if (th_strncmp(p_subcmd, "ecdsa256", EE_CMD_SIZE) == 0)
     {
-        bench_ecdsa(i, EE_P256R1, verify);
+        ee_bench_ecdsa(i, EE_P256R1, verify);
     }
     else if (th_strncmp(p_subcmd, "ecdsa25519", EE_CMD_SIZE) == 0)
     {
-        bench_ecdsa(i, EE_C25519, verify);
+        ee_bench_ecdsa(i, EE_C25519, verify);
     }
     else if (th_strncmp(p_subcmd, "var01", EE_CMD_SIZE) == 0)
     {

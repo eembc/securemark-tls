@@ -129,7 +129,7 @@ load_private_key(void *p_context, unsigned char *p_private, size_t prilen)
  */
 ee_status_t
 th_ecdh_init(void *        p_context, // input: portable context
-             ecdh_group_t  group,     // input: see `ecdh_group_t` for options
+             ee_ecdh_group_t  group,     // input: see `ee_ecdh_group_t` for options
              uint8_t *     p_private, // input: private key, from host
              uint_fast32_t prilen,    // input: private key length in bytes
              uint8_t *     p_public,  // input: peer public key, from host

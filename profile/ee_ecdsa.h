@@ -19,11 +19,11 @@
 #include "th_libc.h"
 #include "th_util.h"
 
-typedef enum ecdsa_function_t
+typedef enum ee_ecdsa_func_t
 {
     EE_ECDSA_SIGN = 0,
     EE_ECDSA_VERIFY
-} ecdsa_function_t;
+} ee_ecdsa_func_t;
 
 /**
  * @brief Performs an ECDSA sign or verify operation some number of iterations.
@@ -38,8 +38,8 @@ typedef enum ecdsa_function_t
  * @param plen Length of private key
  * @param iter Number of iterations
  */
-void ee_ecdsa(ecdh_group_t     group,
-              ecdsa_function_t func,
+void ee_ecdsa(ee_ecdh_group_t     group,
+              ee_ecdsa_func_t func,
               uint8_t *        p_msg,
               uint_fast32_t    mlen,
               uint8_t *        p_sig,
@@ -55,7 +55,7 @@ void ee_ecdsa(ecdh_group_t     group,
  */
 ee_status_t th_ecdsa_create(
     void **      p_context, // output: portable context
-    ecdh_group_t group      // input: see `ecdh_group_t` for options
+    ee_ecdh_group_t group      // input: see `ee_ecdh_group_t` for options
 );
 
 /**
@@ -66,7 +66,7 @@ ee_status_t th_ecdsa_create(
  */
 ee_status_t th_ecdsa_init(
     void *        p_context, // input: portable context
-    ecdh_group_t  group,     // input: see `ecdh_group_t` for options
+    ee_ecdh_group_t  group,     // input: see `ee_ecdh_group_t` for options
     uint8_t *     p_private, // input: private key from host
     uint_fast32_t plen       // input: length of private key in bytes
 );
@@ -78,7 +78,7 @@ ee_status_t th_ecdsa_init(
  */
 ee_status_t th_ecdsa_sign(
     void *         p_context, // input: portable context
-    ecdh_group_t   group,     // input: see `ecdh_group_t` for options
+    ee_ecdh_group_t   group,     // input: see `ee_ecdh_group_t` for options
     uint8_t *      p_hash,    // input: sha256 digest
     uint_fast32_t  hlen,      // input: length of digest in bytes
     uint8_t *      p_sig,     // output: signature
@@ -92,7 +92,7 @@ ee_status_t th_ecdsa_sign(
  */
 ee_status_t th_ecdsa_verify(
     void *        p_context, // input: portable context
-    ecdh_group_t  group,     // input: see `ecdh_group_t` for options
+    ee_ecdh_group_t  group,     // input: see `ee_ecdh_group_t` for options
     uint8_t *     p_hash,    // input: sha256 digest
     uint_fast32_t hlen,      // input: length of digest in bytes
     uint8_t *     p_sig,     // output: signature
@@ -104,7 +104,7 @@ ee_status_t th_ecdsa_verify(
  */
 void th_ecdsa_destroy(
     void *       p_context, // portable context
-    ecdh_group_t group      // input: see `ecdh_group_t` for options
+    ee_ecdh_group_t group      // input: see `ee_ecdh_group_t` for options
 );
 
 #endif // __EE_ECDSA_H

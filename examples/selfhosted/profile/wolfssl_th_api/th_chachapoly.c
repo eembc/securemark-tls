@@ -40,7 +40,7 @@ ee_status_t
 th_chachapoly_init(void *            p_context, // input: portable context
                    const uint8_t *   p_key,     // input: key
                    uint_fast32_t     keylen,    // input: length of key in bytes
-                   chachapoly_func_t func       // input: CHACHAPOLY_(ENC|DEC)
+                   ee_chachapoly_func_t func       // input: CHACHAPOLY_(ENC|DEC)
 )
 {
     if (keylen != CHACHA20_POLY1305_AEAD_KEYSIZE)
@@ -58,7 +58,7 @@ th_chachapoly_init(void *            p_context, // input: portable context
  */
 void
 th_chachapoly_deinit(void *            p_context, // input: portable context
-                     chachapoly_func_t func       // input: CHACHAPOLY_(ENC|DEC)
+                     ee_chachapoly_func_t func       // input: CHACHAPOLY_(ENC|DEC)
 )
 {
     // wolfCrypt creates uses a local context in its chachapoly functions

@@ -22,16 +22,16 @@ typedef enum
 {
     EE_CHACHAPOLY_ENC = 0,
     EE_CHACHAPOLY_DEC
-} chachapoly_func_t;
+} ee_chachapoly_func_t;
 
-#define EE_CHACHAPOLY_KEYSIZE 32u
-#define EE_CHACHAPOLY_IVSIZE  12u
-#define EE_CHACHAPOLY_TAGSIZE 16u
+#define EE_CHACHAPOLY_KEYLEN 32u
+#define EE_CHACHAPOLY_IVLEN  12u
+#define EE_CHACHAPOLY_TAGLEN 16u
 
 // Fixed test API
 
 void ee_chachapoly(
-    chachapoly_func_t func,      // input: CHACHAPOLY_(ENC|DEC)
+    ee_chachapoly_func_t func,      // input: CHACHAPOLY_(ENC|DEC)
     uint8_t *         p_key,     // input: key
     const uint8_t *   p_add,     // input: additional authentication data
     uint_fast32_t     addlen,    // input: length of AAD in bytes
@@ -61,14 +61,14 @@ ee_status_t th_chachapoly_init(
     void *            p_context, // input: portable context
     const uint8_t *   p_key,     // input: key
     uint_fast32_t     keylen,    // input: length of key in bytes
-    chachapoly_func_t func       // input: CHACHAPOLY_(ENC|DEC)
+    ee_chachapoly_func_t func       // input: CHACHAPOLY_(ENC|DEC)
 );
 
 /**
  * Perform any cleanup required by init, but don't destroy the context.
  */
 void th_chachapoly_deinit(void *p_context,       // input: portable context
-                          chachapoly_func_t func // input: CHACHAPOLY_(ENC|DEC)
+                          ee_chachapoly_func_t func // input: CHACHAPOLY_(ENC|DEC)
 );
 
 /**

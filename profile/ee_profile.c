@@ -81,7 +81,7 @@ ee_profile_parse(char *p_command)
             "  ecdh256-*         : ECDH secret generation (p256r1)\r\n"
             "  ecdsa256-*        : ECDSA sign and verify (p256r1)\r\n"
             "  var01-*           : Varation #1 (mixed contexts)\r\n"
-            "     Where *=SEED-ITER-SIZE\r\n"
+            "     Where *=SEED-ITER-LEN\r\n"
             "     Each subcmd takes a PRNG seed, #iterations & #bytes\r\n"
             "buffer-SUBCMD       : Issue a 'buffer' subcommand\r\n"
             "  fill-XX           : File the buffer with XX hex byte\r\n"

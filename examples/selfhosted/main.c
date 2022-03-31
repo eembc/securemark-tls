@@ -264,7 +264,7 @@ crcu16(uint16_t newval, uint16_t crc)
  */
 
 uint16_t
-pre_wrap_sha(sha_size_t size, unsigned int n, unsigned int i)
+pre_wrap_sha(ee_sha_size_t size, unsigned int n, unsigned int i)
 {
     uint8_t *p = th_buffer_address();
     size_t   x;
@@ -273,7 +273,7 @@ pre_wrap_sha(sha_size_t size, unsigned int n, unsigned int i)
     // Emulate host by using the buffer
     assert(th_buffer_size() > (n + (size / 8)));
 
-    bench_sha(size, n, i, DEBUG_VERIFY);
+    ee_bench_sha(size, n, i, DEBUG_VERIFY);
 
     for (crc = 0, x = 0; x < (size / 8); ++x)
     {
@@ -292,15 +292,15 @@ MAKE_WRAP_SHA(256)
 MAKE_WRAP_SHA(384)
 
 uint16_t
-pre_wrap_aes(aes_cipher_mode_t mode,   // input: cipher mode
-             aes_function_t    func,   // input: func (AES_ENC|AES_DEC)
+pre_wrap_aes(ee_aes_mode_t mode,   // input: cipher mode
+             ee_aes_func_t    func,   // input: func (EE_AES_ENC|EE_AES_DEC)
              uint32_t          keylen, // input: length of key in bytes
              uint32_t          n,      // input: length of input in bytes
              uint32_t          i       // input: # of test iterations
 )
 {
     uint8_t *p_out;
-    int      ivlen = mode == AES_CTR ? AES_CTR_IVSIZE : AES_AEAD_IVSIZE;
+    int      ivlen = mode == EE_AES_CTR ? EE_AES_CTR_IVLEN : EE_AES_AEAD_IVLEN;
     uint16_t crc;
     size_t   x;
 
@@ -308,7 +308,7 @@ pre_wrap_aes(aes_cipher_mode_t mode,   // input: cipher mode
     assert(th_buffer_size() > (keylen + ivlen + keylen /*tag*/ + n + n));
     p_out = th_buffer_address() + keylen + ivlen + n;
 
-    bench_aes(mode, func, keylen, n, i, DEBUG_VERIFY);
+    ee_bench_aes(mode, func, keylen, n, i, DEBUG_VERIFY);
 
     for (crc = 0, x = 0; x < n; ++x)
     {
@@ -320,11 +320,11 @@ pre_wrap_aes(aes_cipher_mode_t mode,   // input: cipher mode
 #define MAKE_WRAP_AES(bits, MODE, nick)                                        \
     uint16_t wrap_aes##bits##_##nick##_encrypt(unsigned int n, unsigned int i) \
     {                                                                          \
-        return pre_wrap_aes(AES_##MODE, AES_ENC, bits / 8, n, i);              \
+        return pre_wrap_aes(EE_AES_##MODE, EE_AES_ENC, bits / 8, n, i);              \
     }                                                                          \
     uint16_t wrap_aes##bits##_##nick##_decrypt(unsigned int n, unsigned int i) \
     {                                                                          \
-        return pre_wrap_aes(AES_##MODE, AES_DEC, bits / 8, n, i);              \
+        return pre_wrap_aes(EE_AES_##MODE, EE_AES_DEC, bits / 8, n, i);              \
     }
 
 MAKE_WRAP_AES(128, ECB, ecb)
@@ -336,19 +336,19 @@ MAKE_WRAP_AES(256, CTR, ctr)
 MAKE_WRAP_AES(256, CCM, ccm)
 
 uint16_t
-pre_wrap_chachapoly(chachapoly_func_t func, unsigned int n, unsigned int i)
+pre_wrap_chachapoly(ee_chachapoly_func_t func, unsigned int n, unsigned int i)
 {
     uint8_t *p_out;
     uint16_t crc;
     size_t   x;
 
     // Emulate host by using the buffer
-    assert(th_buffer_size() > (EE_CHACHAPOLY_KEYSIZE + EE_CHACHAPOLY_IVSIZE
-                               + EE_CHACHAPOLY_TAGSIZE + +n));
-    p_out = th_buffer_address() + EE_CHACHAPOLY_KEYSIZE + EE_CHACHAPOLY_IVSIZE
+    assert(th_buffer_size() > (EE_CHACHAPOLY_KEYLEN + EE_CHACHAPOLY_IVLEN
+                               + EE_CHACHAPOLY_TAGLEN + +n));
+    p_out = th_buffer_address() + EE_CHACHAPOLY_KEYLEN + EE_CHACHAPOLY_IVLEN
             + n;
 
-    bench_chachapoly(func, n, i, DEBUG_VERIFY);
+    ee_bench_chachapoly(func, n, i, DEBUG_VERIFY);
 
     for (crc = 0, x = 0; x < n; ++x)
     {
@@ -369,7 +369,7 @@ wrap_chachapoly_decrypt(unsigned int n, unsigned int i)
 }
 
 uint16_t
-pre_wrap_ecdh(ecdh_group_t g, unsigned int n, unsigned int i)
+pre_wrap_ecdh(ee_ecdh_group_t g, unsigned int n, unsigned int i)
 {
     uint8_t *p = th_buffer_address();
     size_t   x;
@@ -382,7 +382,7 @@ pre_wrap_ecdh(ecdh_group_t g, unsigned int n, unsigned int i)
     th_memcpy(p, g_ecc_private_keys[g], ee_pri_sz[g]);
     p += ee_pri_sz[g];
 
-    bench_ecdh(g, i, DEBUG_VERIFY);
+    ee_bench_ecdh(g, i, DEBUG_VERIFY);
 
     for (crc = 0, x = 0; x < ee_sec_sz[g]; ++x)
     {
@@ -402,7 +402,7 @@ MAKE_WRAP_ECDH(p384, EE_P384)
 MAKE_WRAP_ECDH(x25519, EE_C25519)
 
 uint16_t
-pre_wrap_ecdsa(ecdh_group_t g, ecdsa_function_t func, uint32_t n, uint32_t i)
+pre_wrap_ecdsa(ee_ecdh_group_t g, ee_ecdsa_func_t func, uint32_t n, uint32_t i)
 {
     uint8_t *p = th_buffer_address();
     size_t   x;
@@ -436,9 +436,9 @@ pre_wrap_ecdsa(ecdh_group_t g, ecdsa_function_t func, uint32_t n, uint32_t i)
         }
     }
 
-    bench_ecdsa(g, func, n, i, DEBUG_VERIFY);
+    ee_bench_ecdsa(g, func, n, i, DEBUG_VERIFY);
 
-    // Since bench_ecdsa doesn't return slen, we CRC 512 bytes of the buffer,
+    // Since ee_bench_ecdsa doesn't return slen, we CRC 512 bytes of the buffer,
     // which we already zeroed, and 512 is definitely more than we used.
     for (crc = 0, x = 0, p = th_buffer_address(); x < 512; ++x)
     {
@@ -531,7 +531,7 @@ pre_wrap_rsa(ee_rsa_id_t       id,
             break;
     }
 
-    bench_rsa(id, func, n, i, DEBUG_VERIFY);
+    ee_bench_rsa(id, func, n, i, DEBUG_VERIFY);
 
     for (crc = 0, x = 0; x < *p_siglen; ++x)
     {

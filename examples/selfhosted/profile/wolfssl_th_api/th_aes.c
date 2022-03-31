@@ -23,7 +23,7 @@
 
 ee_status_t
 th_aes_create(void **           p_context, // output: portable context
-              aes_cipher_mode_t mode       // input: AES_ENC or AES_DEC
+              ee_aes_mode_t mode       // input: EE_AES_ENC or EE_AES_DEC
 )
 {
     *p_context = (Aes *)th_malloc(sizeof(Aes));
@@ -41,8 +41,8 @@ th_aes_init(void *            p_context, // input: portable context
             uint_fast32_t     keylen,    // input: length of key in bytes
             const uint8_t *   iv,        // input: IV if CTR mode, or NULL
             uint_fast32_t     rounds,    // input: number of AES rounds
-            aes_function_t    func,      // input: AES_ENC or AES_DEC
-            aes_cipher_mode_t mode       // input: see aes_cipher_mode_t
+            ee_aes_func_t    func,      // input: EE_AES_ENC or EE_AES_DEC
+            ee_aes_mode_t mode       // input: see ee_aes_mode_t
 )
 {
     int  ret = -1;
@@ -57,22 +57,22 @@ th_aes_init(void *            p_context, // input: portable context
         return EE_STATUS_ERROR;
     }
 
-    if (mode == AES_ECB)
+    if (mode == EE_AES_ECB)
     {
-        dir = (func == AES_ENC) ? AES_ENCRYPTION : AES_DECRYPTION;
+        dir = (func == EE_AES_ENC) ? AES_ENCRYPTION : AES_DECRYPTION;
         ret = wc_AesSetKey(aes, p_key, keylen, NULL, dir);
     }
-    else if (mode == AES_CTR)
+    else if (mode == EE_AES_CTR)
     {
         /* NOTE: CTR modes also use ENCRYPTION for the decrypt side */
         dir = AES_ENCRYPTION;
         ret = wc_AesSetKey(aes, p_key, keylen, iv, dir);
     }
-    else if (mode == AES_CCM)
+    else if (mode == EE_AES_CCM)
     {
         ret = wc_AesCcmSetKey(aes, p_key, keylen);
     }
-    else if (mode == AES_GCM)
+    else if (mode == EE_AES_GCM)
     {
         ret = wc_AesGcmSetKey(aes, p_key, keylen);
     }
@@ -93,7 +93,7 @@ th_aes_init(void *            p_context, // input: portable context
 
 void
 th_aes_deinit(void *            p_context, // input: portable context
-              aes_cipher_mode_t mode       // input: see aes_cipher_mode_t
+              ee_aes_mode_t mode       // input: see ee_aes_mode_t
 )
 {
     if (p_context)
@@ -262,7 +262,7 @@ th_aes_gcm_decrypt(
 
 void
 th_aes_destroy(void *            p_context, // input: portable context
-               aes_cipher_mode_t mode       // input: AES_ECB or AES_CCM
+               ee_aes_mode_t mode       // input: EE_AES_ECB or EE_AES_CCM
 )
 {
     if (p_context)

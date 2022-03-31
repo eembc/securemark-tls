@@ -18,16 +18,16 @@
 #include "th_libc.h"
 #include "th_util.h"
 
-typedef enum sha_size_t
+typedef enum ee_sha_size_t
 {
     EE_SHA256 = 256,
     EE_SHA384 = 384,
     // SHA_512 = 512 // future expansion
-} sha_size_t;
+} ee_sha_size_t;
 
 // Fixed test API
 
-void ee_sha(sha_size_t     size,      // input: SHA algorithm size
+void ee_sha(ee_sha_size_t     size,      // input: SHA algorithm size
             const uint8_t *p_in,      // input: bytes to hash
             uint_fast32_t  len,       // input: length of input in bytes
             uint8_t *      p_result,  // output: resulting digest
@@ -42,7 +42,7 @@ void ee_sha(sha_size_t     size,      // input: SHA algorithm size
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t th_sha_create(void **    p_context, // output: portable context
-                          sha_size_t size       // input: SHA algorithm size
+                          ee_sha_size_t size       // input: SHA algorithm size
 );
 
 /**
@@ -51,7 +51,7 @@ ee_status_t th_sha_create(void **    p_context, // output: portable context
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t th_sha_init(void *     p_context, // input: portable context
-                        sha_size_t size       // input: SHA algorithm size
+                        ee_sha_size_t size       // input: SHA algorithm size
 );
 
 /**
@@ -60,7 +60,7 @@ ee_status_t th_sha_init(void *     p_context, // input: portable context
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t th_sha_process(void *         p_context, // input: portable context
-                           sha_size_t     size, // input: SHA algorithm size
+                           ee_sha_size_t     size, // input: SHA algorithm size
                            const uint8_t *p_in, // input: data to hash
                            uint_fast32_t  len // input: length of data in bytes
 );
@@ -71,7 +71,7 @@ ee_status_t th_sha_process(void *         p_context, // input: portable context
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t th_sha_done(void *     p_context, // input: portable context
-                        sha_size_t size,      // input: SHA algorithm size
+                        ee_sha_size_t size,      // input: SHA algorithm size
                         uint8_t *  p_result   // output: digest, SHA_SIZE bytes
 );
 
@@ -81,7 +81,7 @@ ee_status_t th_sha_done(void *     p_context, // input: portable context
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 void th_sha_destroy(void *     p_context, // input: portable context
-                    sha_size_t size       // input: SHA algorithm size
+                    ee_sha_size_t size       // input: SHA algorithm size
 );
 
 #endif // __EE_SHA_H

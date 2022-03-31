@@ -574,7 +574,7 @@ static uint8_t g_rsa_associated_public_key_4096[] =
 */
 
 
-// Order must follow ecdh_group_t in profile/ee_ecdh.h
+// Order must follow ee_ecdh_group_t in profile/ee_ecdh.h
 static uint8_t *g_ecc_peer_public_keys[] = {
     g_ecc_peer_public_key_p256r1,
     g_ecc_peer_public_key_p384,
@@ -582,7 +582,7 @@ static uint8_t *g_ecc_peer_public_keys[] = {
     g_ecc_peer_public_key_ed25519,
 };
 
-// Order must follow ecdh_group_t in profile/ee_ecdh.h
+// Order must follow ee_ecdh_group_t in profile/ee_ecdh.h
 static uint8_t *g_ecc_private_keys[] = {
     g_ecc_private_key_p256r1,
     g_ecc_private_key_p384,
@@ -590,7 +590,7 @@ static uint8_t *g_ecc_private_keys[] = {
     g_ecc_private_key_ed25519,
 };
 
-// Order must follow ecdh_group_t in profile/ee_ecdh.h
+// Order must follow ee_ecdh_group_t in profile/ee_ecdh.h
 static uint8_t *g_ecc_public_keys[] = {
     g_ecc_public_key_p256r1,
     g_ecc_public_key_p384,
@@ -636,7 +636,7 @@ static uint8_t g_dsa_signature_ed25519[] =
 0xbf,0x96,0x8a,0x3f,0xba,0xa8,0xf0,0x15,0xe8,0x5b,0xce,0xce,0xca,0x01,0x1d,0x0f,
 };
 
-// Order must follow ecdh_group_t in profile/ee_ecdh.h
+// Order must follow ee_ecdh_group_t in profile/ee_ecdh.h
 uint8_t *g_dsa_signatures[] =
 {
     g_dsa_signature_p256r1,

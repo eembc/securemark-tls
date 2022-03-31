@@ -19,7 +19,7 @@
  */
 ee_status_t
 th_ecdsa_create(void **      p_context, // output: portable context
-                ecdh_group_t group      // input: see `ecdh_group_t` for options
+                ee_ecdh_group_t group      // input: see `ee_ecdh_group_t` for options
 )
 {
 #warning "th_ecdsa_create not implemented"
@@ -34,7 +34,7 @@ th_ecdsa_create(void **      p_context, // output: portable context
  */
 ee_status_t
 th_ecdsa_init(void *        p_context, // input: portable context
-              ecdh_group_t  group,     // input: see `ecdh_group_t` for options
+              ee_ecdh_group_t  group,     // input: see `ee_ecdh_group_t` for options
               uint8_t *     p_private, // input: private key from host
               uint_fast32_t plen       // input: length of private key in bytes
 )
@@ -56,7 +56,7 @@ th_ecdsa_init(void *        p_context, // input: portable context
  */
 ee_status_t
 th_ecdsa_sign(void *         p_context, // input: portable context
-              ecdh_group_t   group,     // input: see `ecdh_group_t` for options
+              ee_ecdh_group_t   group,     // input: see `ee_ecdh_group_t` for options
               uint8_t *      p_msg,     // input: message
               uint_fast32_t  mlen,      // input: length of message in bytes
               uint8_t *      p_sig,     // output: signature
@@ -82,7 +82,7 @@ th_ecdsa_sign(void *         p_context, // input: portable context
  */
 ee_status_t
 th_ecdsa_verify(void *        p_context, // input: portable context
-                ecdh_group_t  group, // input: see `ecdh_group_t` for options
+                ee_ecdh_group_t  group, // input: see `ee_ecdh_group_t` for options
                 uint8_t *     p_msg, // input: message
                 uint_fast32_t mlen,  // input: length of message in bytes
                 uint8_t *     p_sig, // output: signature
@@ -98,7 +98,7 @@ th_ecdsa_verify(void *        p_context, // input: portable context
  */
 void
 th_ecdsa_destroy(void *       p_context, // portable context
-                 ecdh_group_t group // input: see `ecdh_group_t` for options
+                 ee_ecdh_group_t group // input: see `ee_ecdh_group_t` for options
 )
 {
 #warning "th_ecdsa_destroy not implemented"

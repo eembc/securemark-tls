@@ -23,20 +23,20 @@
  */
 ee_status_t
 th_aes128_create(void **           p_context, // output: portable context
-                 aes_cipher_mode_t mode       // input: AES_ENC or AES_DEC
+                 ee_aes_mode_t mode       // input: EE_AES_ENC or EE_AES_DEC
 )
 {
-    if (mode == AES_ECB)
+    if (mode == EE_AES_ECB)
     {
         *p_context
             = (mbedtls_aes_context *)th_malloc(sizeof(mbedtls_aes_context));
     }
-    else if (mode == AES_CCM)
+    else if (mode == EE_AES_CCM)
     {
         *p_context
             = (mbedtls_ccm_context *)th_malloc(sizeof(mbedtls_ccm_context));
     }
-    else if (mode == AES_GCM)
+    else if (mode == EE_AES_GCM)
     {
         *p_context
             = (mbedtls_gcm_context *)th_malloc(sizeof(mbedtls_gcm_context));
@@ -66,8 +66,8 @@ th_aes128_init(void *            p_context, // input: portable context
                const uint8_t *   p_key,     // input: key
                uint_fast32_t     keylen,    // input: length of key in bytes
                uint_fast32_t     rounds,    // input: number of AES rounds
-               aes_function_t    func,      // input: AES_ENC or AES_DEC
-               aes_cipher_mode_t mode       // input: AES_ECB|CCM|GCM
+               ee_aes_func_t    func,      // input: EE_AES_ENC or EE_AES_DEC
+               ee_aes_mode_t mode       // input: EE_AES_ECB|CCM|GCM
 )
 {
     int                  ret;
@@ -78,11 +78,11 @@ th_aes128_init(void *            p_context, // input: portable context
 
     keybits = keylen * 8;
 
-    if (mode == AES_ECB)
+    if (mode == EE_AES_ECB)
     {
         p_ecb = (mbedtls_aes_context *)p_context;
         mbedtls_aes_init(p_ecb);
-        if (func == AES_ENC)
+        if (func == EE_AES_ENC)
         {
             ret = mbedtls_aes_setkey_enc(p_ecb, p_key, keybits);
             if (ret != 0)
@@ -91,7 +91,7 @@ th_aes128_init(void *            p_context, // input: portable context
                 return EE_STATUS_ERROR;
             }
         }
-        else if (func == AES_DEC)
+        else if (func == EE_AES_DEC)
         {
             ret = mbedtls_aes_setkey_dec(p_ecb, p_key, keybits);
             if (ret != 0)
@@ -101,7 +101,7 @@ th_aes128_init(void *            p_context, // input: portable context
             }
         }
     }
-    else if (mode == AES_CCM)
+    else if (mode == EE_AES_CCM)
     {
         p_ccm = (mbedtls_ccm_context *)p_context;
         mbedtls_ccm_init(p_ccm);
@@ -112,7 +112,7 @@ th_aes128_init(void *            p_context, // input: portable context
             return EE_STATUS_ERROR;
         }
     }
-    else if (mode == AES_GCM)
+    else if (mode == EE_AES_GCM)
     {
         p_gcm = (mbedtls_gcm_context *)p_context;
         mbedtls_gcm_init(p_gcm);
@@ -140,14 +140,14 @@ th_aes128_init(void *            p_context, // input: portable context
  */
 void
 th_aes128_deinit(void *            p_context, // input: portable context
-                 aes_cipher_mode_t mode       // input: AES_ECB|CCM|GCM
+                 ee_aes_mode_t mode       // input: EE_AES_ECB|CCM|GCM
 )
 {
-    if (mode == AES_CCM)
+    if (mode == EE_AES_CCM)
     {
         mbedtls_ccm_free((mbedtls_ccm_context *)p_context);
     }
-    else if (mode == AES_GCM)
+    else if (mode == EE_AES_GCM)
     {
         mbedtls_gcm_free((mbedtls_gcm_context *)p_context);
     }
@@ -343,14 +343,14 @@ th_aes128_gcm_decrypt(
  */
 void
 th_aes128_destroy(void *            p_context, // input: portable context
-                  aes_cipher_mode_t mode       // input: AES_ECB|CCM|GCM
+                  ee_aes_mode_t mode       // input: EE_AES_ECB|CCM|GCM
 )
 {
-    if (mode == AES_CCM)
+    if (mode == EE_AES_CCM)
     {
         mbedtls_ccm_free((mbedtls_ccm_context *)p_context);
     }
-    else if (mode == AES_GCM)
+    else if (mode == EE_AES_GCM)
     {
         mbedtls_gcm_free((mbedtls_gcm_context *)p_context);
     }

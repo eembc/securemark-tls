@@ -34,8 +34,8 @@ uint8_t ee_rand(void);
  * we see in the TLS handshake. This function does not need validation since
  * the primitives are validated through the host UI.
  */
-#define VAR001_SESSION_SIZE 1495
-#define VAR001_AES_SIZE     16
+#define VAR001_SESSION_LEN 1495u
+#define VAR001_AES_LEN     16u
 void
 ee_variation_001(uint_fast32_t iterations)
 {
@@ -46,13 +46,13 @@ ee_variation_001(uint_fast32_t iterations)
     uint8_t *     p_buf1;                  // SHA1's buffer
     uint8_t *     p_buf2;                  // SHA2's buffer
     uint8_t       p_digest[EE_SHA256 / 8]; // SHA digest
-    uint8_t       p_pt[VAR001_AES_SIZE];   // AES plaintext
-    uint8_t       p_ct[VAR001_AES_SIZE];   // AES ciphertext
+    uint8_t       p_pt[VAR001_AES_LEN];   // AES plaintext
+    uint8_t       p_ct[VAR001_AES_LEN];   // AES ciphertext
     uint8_t       p_key[16];               // AES key, forcing AES128
     uint_fast32_t idx;                     // Loop index
 
     // Total number of bytes in the TLS handshake session-hash
-    p_msg = (uint8_t *)th_malloc(VAR001_SESSION_SIZE);
+    p_msg = (uint8_t *)th_malloc(VAR001_SESSION_LEN);
     if (p_msg == NULL)
     {
         th_printf("e-variation-001-[malloc() fail]\r\n");
@@ -63,14 +63,14 @@ ee_variation_001(uint_fast32_t iterations)
      * Fill the input data with random bits since free memory tends to be 0x00
      * and toggle pattern does impact power.
      */
-    for (idx = 0; idx < VAR001_SESSION_SIZE; ++idx)
+    for (idx = 0; idx < VAR001_SESSION_LEN; ++idx)
     {
         p_msg[idx] = ee_rand();
         if (idx < 16)
         {
             p_key[idx] = ee_rand();
         }
-        if (idx < VAR001_AES_SIZE)
+        if (idx < VAR001_AES_LEN)
         {
             p_pt[idx] = ee_rand();
         }
@@ -115,28 +115,28 @@ ee_variation_001(uint_fast32_t iterations)
         CHECK(th_sha_process(p_csha1, EE_SHA256, p_buf1, 78));
         p_buf1 += 78;
 
-        CHECK(th_aes_create(&p_caes, AES_ECB));
+        CHECK(th_aes_create(&p_caes, EE_AES_ECB));
         CHECK(
-            th_aes_init(p_caes, p_key, 16, NULL, AES_ROUNDS, AES_ENC, AES_ECB));
+            th_aes_init(p_caes, p_key, 16, NULL, EE_AES_ROUNDS, EE_AES_ENC, EE_AES_ECB));
         CHECK(th_aes_ecb_encrypt(p_caes, p_pt, p_ct));
-        th_aes_destroy(p_caes, AES_ECB);
+        th_aes_destroy(p_caes, EE_AES_ECB);
 
-        CHECK(th_aes_create(&p_caes, AES_ECB));
+        CHECK(th_aes_create(&p_caes, EE_AES_ECB));
         CHECK(
-            th_aes_init(p_caes, p_key, 16, NULL, AES_ROUNDS, AES_ENC, AES_ECB));
+            th_aes_init(p_caes, p_key, 16, NULL, EE_AES_ROUNDS, EE_AES_ENC, EE_AES_ECB));
         CHECK(th_aes_ecb_encrypt(p_caes, p_pt, p_ct));
-        th_aes_destroy(p_caes, AES_ECB);
+        th_aes_destroy(p_caes, EE_AES_ECB);
 
         CHECK(th_sha_process(p_csha1, EE_SHA256, p_buf1, 16));
         p_buf1 += 16;
         CHECK(th_sha_process(p_csha1, EE_SHA256, p_buf1, 16));
         p_buf1 += 16;
 
-        CHECK(th_aes_create(&p_caes, AES_ECB));
+        CHECK(th_aes_create(&p_caes, EE_AES_ECB));
         CHECK(
-            th_aes_init(p_caes, p_key, 16, NULL, AES_ROUNDS, AES_ENC, AES_ECB));
+            th_aes_init(p_caes, p_key, 16, NULL, EE_AES_ROUNDS, EE_AES_ENC, EE_AES_ECB));
         CHECK(th_aes_ecb_encrypt(p_caes, p_pt, p_ct));
-        th_aes_destroy(p_caes, AES_ECB);
+        th_aes_destroy(p_caes, EE_AES_ECB);
 
         CHECK(th_sha_done(p_csha1, EE_SHA256, p_digest));
         th_sha_destroy(p_csha1, EE_SHA256);
@@ -150,7 +150,7 @@ error_exit:
     // TODO: Hard to be more descriptive here.
     th_printf("e-variation-001-[An error occurred]\r\n");
     // These are NULL safe
-    th_aes_destroy(p_caes, AES_ECB);
+    th_aes_destroy(p_caes, EE_AES_ECB);
     th_sha_destroy(p_csha1, EE_SHA256);
     th_sha_destroy(p_csha2, EE_SHA256);
 

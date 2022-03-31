@@ -16,7 +16,7 @@
  * Runs a SHA-256 hash on an input message a given number of times.
  */
 void
-ee_sha(sha_size_t     size,      // input: SHA algorithm size
+ee_sha(ee_sha_size_t     size,      // input: SHA algorithm size
        const uint8_t *p_in,      // input: bytes to hash
        uint_fast32_t  len,       // input: length of input in bytes
        uint8_t *      p_result,  // output: resulting digest

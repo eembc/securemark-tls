@@ -18,13 +18,13 @@
 #include "th_libc.h"
 #include "th_util.h"
 
-typedef enum ecdh_group_t
+typedef enum ee_ecdh_group_t
 {
     EE_P256R1  = 0,
     EE_P384    = 1,
     EE_C25519  = 2,
     EE_Ed25519 = 3, // I know, not a group; TODO: Rename enum.
-} ecdh_group_t;
+} ee_ecdh_group_t;
 
 // Ordering respective of above enumeration
 static const uint8_t ee_pub_sz[] = { 64, 96, 32, 32 };
@@ -34,7 +34,7 @@ static const uint8_t ee_sig_sz[] = { 64, 96, 64, 64 };
 
 // Fixed test API
 
-void ee_ecdh(ecdh_group_t group, // input: input: see `ecdh_group_t` for options
+void ee_ecdh(ee_ecdh_group_t group, // input: input: see `ee_ecdh_group_t` for options
              uint8_t *    p_public,   // input: peer public key, from host
              uint_fast32_t publen,    // input: peer public key length in bytes
              uint8_t *     p_private, // input: private key, from host
@@ -53,7 +53,7 @@ void ee_ecdh(ecdh_group_t group, // input: input: see `ecdh_group_t` for opt
  */
 ee_status_t th_ecdh_create(
     void **      p_context, // output: portable context
-    ecdh_group_t group      // input: see `ecdh_group_t` for options
+    ee_ecdh_group_t group      // input: see `ee_ecdh_group_t` for options
 );
 
 /**
@@ -63,7 +63,7 @@ ee_status_t th_ecdh_create(
  */
 ee_status_t th_ecdh_init(
     void *        p_context, // input: portable context
-    ecdh_group_t  group,     // input: see `ecdh_group_t` for options
+    ee_ecdh_group_t  group,     // input: see `ee_ecdh_group_t` for options
     uint8_t *     p_private, // input: private key, from host
     uint_fast32_t prilen,    // input: private key length in bytes
     uint8_t *     p_public,  // input: peer public key, from host
@@ -77,7 +77,7 @@ ee_status_t th_ecdh_init(
  */
 ee_status_t th_ecdh_calc_secret(
     void *        p_context, // input: portable context
-    ecdh_group_t  group,     // input: curve group
+    ee_ecdh_group_t  group,     // input: curve group
     uint8_t *     p_secret,  // output: shared secret
     uint_fast32_t slen       // input: length of shared buffer in bytes
 );

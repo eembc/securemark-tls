@@ -17,7 +17,7 @@
  * Perform a ChaCha20/Poly1305 operation a given number of times.
  */
 void
-ee_chachapoly(chachapoly_func_t func,   // input: EE_CHACHAPOLY_(ENC|DEC)
+ee_chachapoly(ee_chachapoly_func_t func,   // input: EE_CHACHAPOLY_(ENC|DEC)
               uint8_t *         p_key,  // input: key
               const uint8_t *   p_add,  // input: additional authentication data
               uint_fast32_t     addlen, // input: length of AAD in bytes
@@ -48,7 +48,7 @@ ee_chachapoly(chachapoly_func_t func,   // input: EE_CHACHAPOLY_(ENC|DEC)
         while (iterations-- > 0)
         {
             if (th_chachapoly_init(
-                    p_context, p_key, EE_CHACHAPOLY_KEYSIZE, EE_CHACHAPOLY_ENC)
+                    p_context, p_key, EE_CHACHAPOLY_KEYLEN, EE_CHACHAPOLY_ENC)
                 != EE_STATUS_OK)
             {
                 th_post();
@@ -62,9 +62,9 @@ ee_chachapoly(chachapoly_func_t func,   // input: EE_CHACHAPOLY_(ENC|DEC)
                                       len,
                                       p_out,
                                       p_tag,
-                                      EE_CHACHAPOLY_TAGSIZE,
+                                      EE_CHACHAPOLY_TAGLEN,
                                       p_iv,
-                                      EE_CHACHAPOLY_IVSIZE)
+                                      EE_CHACHAPOLY_IVLEN)
                 != EE_STATUS_OK)
             {
                 th_post();
@@ -85,7 +85,7 @@ ee_chachapoly(chachapoly_func_t func,   // input: EE_CHACHAPOLY_(ENC|DEC)
         while (iterations-- > 0)
         {
             if (th_chachapoly_init(
-                    p_context, p_key, EE_CHACHAPOLY_KEYSIZE, EE_CHACHAPOLY_DEC)
+                    p_context, p_key, EE_CHACHAPOLY_KEYLEN, EE_CHACHAPOLY_DEC)
                 != EE_STATUS_OK)
             {
                 th_post();
@@ -99,9 +99,9 @@ ee_chachapoly(chachapoly_func_t func,   // input: EE_CHACHAPOLY_(ENC|DEC)
                                       len,
                                       p_out,
                                       p_tag,
-                                      EE_CHACHAPOLY_TAGSIZE,
+                                      EE_CHACHAPOLY_TAGLEN,
                                       p_iv,
-                                      EE_CHACHAPOLY_IVSIZE)
+                                      EE_CHACHAPOLY_IVLEN)
                 != EE_STATUS_OK)
             {
                 th_post();

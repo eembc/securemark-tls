@@ -18,31 +18,31 @@
 #include "th_libc.h"
 #include "th_util.h"
 
-typedef enum aes_cipher_mode_t
+typedef enum ee_aes_mode_t
 {
-    AES_ECB = 0,
-    AES_CTR,
-    AES_CCM,
-    AES_GCM,
-} aes_cipher_mode_t;
+    EE_AES_ECB = 0,
+    EE_AES_CTR,
+    EE_AES_CCM,
+    EE_AES_GCM,
+} ee_aes_mode_t;
 
-typedef enum aes_function_t
+typedef enum ee_aes_func_t
 {
-    AES_ENC = 0,
-    AES_DEC
-} aes_function_t;
+    EE_AES_ENC = 0,
+    EE_AES_DEC
+} ee_aes_func_t;
 
 // These must remain fixed for EEMBC profile (bytes)
-#define AES_BLOCKLEN    16u
-#define AES_CTR_IVSIZE  16u
-#define AES_AEAD_IVSIZE 12u
-#define AES_TAGSIZE     16u
-#define AES_ROUNDS      0u
+#define EE_AES_BLOCKLEN    16u
+#define EE_AES_CTR_IVLEN  16u
+#define EE_AES_AEAD_IVLEN 12u
+#define EE_AES_TAGLEN     16u
+#define EE_AES_ROUNDS      0u
 
 // Testing function.
 
-void ee_aes(aes_cipher_mode_t mode,   // input: cipher mode
-            aes_function_t    func,   // input: func (AES_ENC|AES_DEC)
+void ee_aes(ee_aes_mode_t mode,   // input: cipher mode
+            ee_aes_func_t    func,   // input: func (AES_ENC|EE_AES_DEC)
             const uint8_t *   p_key,  // input: key
             uint_fast32_t     keylen, // input: length of key in bytes
             const uint8_t *   p_iv,   // input: initialization vector
@@ -63,7 +63,7 @@ void ee_aes(aes_cipher_mode_t mode,   // input: cipher mode
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t th_aes_create(void **p_context,      // output: portable context
-                          aes_cipher_mode_t mode // input: AES_ENC or AES_DEC
+                          ee_aes_mode_t mode // input: AES_ENC or EE_AES_DEC
 );
 
 /**
@@ -76,8 +76,8 @@ ee_status_t th_aes_init(void *         p_context, // input: portable context
                         uint_fast32_t  keylen, // input: length of key in bytes
                         const uint8_t *iv,     // input: IV if CTR mode, or NULL
                         uint_fast32_t  rounds, // input: number of AES rounds
-                        aes_function_t func,   // input: AES_ENC or AES_DEC
-                        aes_cipher_mode_t mode // input: see aes_cipher_mode_t
+                        ee_aes_func_t func,   // input: AES_ENC or EE_AES_DEC
+                        ee_aes_mode_t mode // input: see ee_aes_mode_t
 );
 
 /**
@@ -87,7 +87,7 @@ ee_status_t th_aes_init(void *         p_context, // input: portable context
  * de-init before initializing again, without destroying the context.
  */
 void th_aes_deinit(void *            context, // input: portable context
-                   aes_cipher_mode_t mode     // input: AES_ECB or AES_CCM
+                   ee_aes_mode_t mode     // input: EE_AES_ECB or EE_AES_CCM
 );
 
 /**
@@ -212,7 +212,7 @@ ee_status_t th_aes_gcm_decrypt(
  * Indicate the mode that was used for _create()
  */
 void th_aes_destroy(void *            p_context, // input: portable context
-                    aes_cipher_mode_t mode       // input: AES_ECB or AES_CCM
+                    ee_aes_mode_t mode       // input: EE_AES_ECB or EE_AES_CCM
 );
 
 #endif // __EE_AES_H
