@@ -44,7 +44,6 @@ void ee_bench_ecdsa(ee_ecdh_group_t     g,
 
 void ee_bench_rsa(ee_rsa_id_t       id,
                ee_rsa_function_t func,
-               unsigned int      n,
                unsigned int      i,
                bool              verify);
 

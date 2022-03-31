@@ -12,10 +12,13 @@
 
 #include "ee_profile.h"
 
-// What mode we are currently in (perf or verf) [see monitor/th_api/th_lib.c]
-bool g_verify_mode = false;
+// This indicates if the DUT should print verification feedback to the Host
+// See th_api/th_lib.c
+extern bool g_mute_timestamps;
 
 #if EE_CFG_SELFHOSTED != 1
+
+static bool g_verify_mode = false;
 
 /**
  * This is the profile command parser. It is called from the function:
@@ -38,6 +41,8 @@ ee_profile_parse(char *p_command)
         if (p_next)
         {
             g_verify_mode = (th_atoi(p_next) != 0);
+            // Verify mode prints extra content, but turns off timestamps!
+            g_mute_timestamps = g_verify_mode;
         }
         th_printf("m-verify-%s\r\n", g_verify_mode ? "on" : "off");
     }
@@ -90,7 +95,7 @@ ee_profile_parse(char *p_command)
             "  rewind            : Rewind the buffer pointer to the start\r\n"
             "  print             : Print ALL buffer bytes (as hex)\r\n");
     }
-    else if (ee_bench_parse(p_command, g_verify_mode) == EE_ARG_CLAIMED)
+    else if (ee_bench_parse(p_command, g_mute_timestamps) == EE_ARG_CLAIMED)
     {
     }
     else if (ee_buffer_parse(p_command) == EE_ARG_CLAIMED)
@@ -108,7 +113,7 @@ ee_profile_initialize(void)
 {
     th_buffer_initialize();
     th_profile_initialize();
-    g_verify_mode = false;
+    g_mute_timestamps = false;
     if (th_buffer_size() < EE_MINBUF)
     {
         // The host will catch this, rather than returning a value

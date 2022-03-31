@@ -12,7 +12,10 @@
 
 #include "ee_bench.h"
 
-extern bool g_verify_mode;
+// Continuing the kludge for timestamps, sometimes we do an encrypt before
+// a decrypt, and we don't want to report timestamps.
+// TODO: always have the host send KEY, IV, and PT or CT?
+extern bool g_mute_timestamps;
 
 /**
  * @brief Helper function to copy a number of pseudo-random octets to a buffer.
@@ -53,7 +56,7 @@ ee_bench_aes(ee_aes_mode_t mode,   // input: cipher mode
     if (func == EE_AES_DEC)
     {
         // Encrypt something for the decrypt loop to decrypt
-        g_verify_mode = true;
+        g_mute_timestamps = true;
         ee_aes(mode,
                EE_AES_ENC,
                p_key,
@@ -66,7 +69,7 @@ ee_bench_aes(ee_aes_mode_t mode,   // input: cipher mode
                NULL,
                0,
                1);
-        g_verify_mode = false;
+        g_mute_timestamps = false;
         th_memcpy(p_in, p_out, n);
         uint8_t *tmp = p_in;
         p_in         = p_out;
@@ -186,10 +189,10 @@ ee_bench_chachapoly(ee_chachapoly_func_t func, int n, int i, bool verify)
     if (func == EE_CHACHAPOLY_DEC)
     {
         // Encrypt something for the decrypt loop to decrypt
-        g_verify_mode = true;
+        g_mute_timestamps = true;
         ee_chachapoly(
             EE_CHACHAPOLY_ENC, p_key, NULL, 0, p_iv, p_in, n, p_tag, p_out, 1);
-        g_verify_mode = false;
+        g_mute_timestamps = false;
         th_memcpy(p_in, p_out, n);
         uint8_t *tmp = p_in;
         p_in         = p_out;
@@ -221,7 +224,6 @@ ee_bench_chachapoly(ee_chachapoly_func_t func, int n, int i, bool verify)
 void
 ee_bench_rsa(ee_rsa_id_t       id,
           ee_rsa_function_t func,
-          unsigned int      n,
           unsigned int      i,
           bool              verify)
 {

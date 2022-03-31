@@ -70,8 +70,8 @@ typedef uint16_t wrapper_function_t(unsigned int n, unsigned int i);
  * multiple timestamps. For example, encrypting before a decrypt. Porting
  * developers do not need to worry about this.
  */
-// defined in profile/ee_profile.c
-extern bool g_verify_mode;
+// defined in th_api/th_lib.c
+extern bool g_mute_timestamps;
 /**
  * We always create pseudo-random keys and plaintext for benchmarking purposes;
  * this is not the same as entropy, this is just for reproducable (seed-able)
@@ -135,7 +135,7 @@ th_timestamp(void)
 #error "Operating system not recognized"
 #endif
     // --- END USER CODE 1
-    if (g_verify_mode)
+    if (g_mute_timestamps)
     {
         return;
     }
@@ -531,7 +531,7 @@ pre_wrap_rsa(ee_rsa_id_t       id,
             break;
     }
 
-    ee_bench_rsa(id, func, n, i, DEBUG_VERIFY);
+    ee_bench_rsa(id, func, i, DEBUG_VERIFY);
 
     for (crc = 0, x = 0; x < *p_siglen; ++x)
     {

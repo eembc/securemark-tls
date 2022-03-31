@@ -12,16 +12,20 @@
 
 #include "th_lib.h"
 
+// This is a bit of a kludge. Sometimes we need to silence the timestamps,
+// like in verification mode or during decrypt bench calls (where we encrypt
+// first). This variable short-circuits th_timestamp.
+bool g_mute_timestamps; // see th_timestamp()
+
 #if EE_CFG_ENERGY_MODE == 1
 #else
-extern bool g_verify_mode; // see th_timestamp()
 #endif
 
 #if EE_CFG_SELFHOSTED != 1
 
 /**
  * PORTME: If there's anything else that needs to be done on init, do it here,
- * othewise OK to leave it alone.
+ * otherwise OK to leave it alone.
  */
 void
 th_monitor_initialize(void)
@@ -53,24 +57,23 @@ th_timestamp_initialize(void)
 void
 th_timestamp(void)
 {
-#warning "th_timestamp() not implemented"
-#if EE_CFG_ENERGY_MODE == 1
-// 1. pull pin low
-// 2. wait at least 62.5ns
-// 3. set pin high
-#else
-    // Don't print timestamps during verification mode!
-    if (g_verify_mode != 0)
+    if (g_mute_timestamps != 0)
     {
         return;
     }
     else
     {
+#warning "th_timestamp() not implemented"
+#if EE_CFG_ENERGY_MODE == 1
+        // 1. pull pin low
+        // 2. wait at least 62.5ns
+        // 3. set pin high
+#else
         uint32_t elapsedMicroSeconds = 0;
         // Print out the timestamp in this exact format:
         th_printf(EE_MSG_TIMESTAMP, elapsedMicroSeconds);
-    }
 #endif
+    }
 }
 
 /**
