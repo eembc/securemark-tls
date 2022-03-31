@@ -27,7 +27,7 @@ th_sha256_create(void **context)
     sha256 = th_malloc(sizeof(mbedtls_sha256_context));
     if (!sha256)
     {
-        th_printf("e-sha256-?malloc\r\n");
+        th_printf("e-[th_sha256_create malloc fail]\r\n");
         return EE_STATUS_ERROR;
     }
     *context = (void *)sha256;

@@ -47,7 +47,7 @@ th_chachapoly_init(void *            p_context, // input: portable context
     ret = mbedtls_chachapoly_setkey(p_context, p_key);
     if (ret != 0)
     {
-        th_printf("e-[mbedtls failed to set ChaChaPoly key: %d\r\n", ret);
+        th_printf("e-[mbedtls failed to set ChaChaPoly key: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
     return EE_STATUS_OK;

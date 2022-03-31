@@ -31,7 +31,7 @@ th_ecdh_create(void **p_context // output: portable context
     p_ecdh = (mbedtls_ecdh_context *)th_malloc(sizeof(mbedtls_ecdh_context));
     if (p_ecdh == NULL)
     {
-        th_printf("e-[malloc() fail in th_ecdh_create\r\n");
+        th_printf("e-[malloc() fail in th_ecdh_create]\r\n");
         return EE_STATUS_ERROR;
     }
     *p_context = (void *)p_ecdh;
@@ -204,7 +204,7 @@ th_ecdh_calc_secret(
         p_ecdh, &olen, p_secret, slen, mbedtls_fake_random, NULL);
     if (ret != 0)
     {
-        th_printf("e-[mbedtls_ecdh_calc_secret: -0x%04x]\r\n", -ret);
+        th_printf("e-[mbedtls_ecdh_calc_secret: 0x%04x]\r\n", ret);
         return EE_STATUS_ERROR;
     }
     /**

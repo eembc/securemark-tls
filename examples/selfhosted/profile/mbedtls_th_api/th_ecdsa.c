@@ -34,7 +34,7 @@ th_ecdsa_create(void **p_context // output: portable context
     p_ecdsa = (mbedtls_ecdsa_context *)th_malloc(sizeof(mbedtls_ecdsa_context));
     if (p_ecdsa == NULL)
     {
-        th_printf("e-[malloc() fail in th_ecdsa_create\r\n");
+        th_printf("e-[malloc() fail in th_ecdsa_create]\r\n");
         return EE_STATUS_ERROR;
     }
     *p_context = (void *)p_ecdsa;
@@ -66,7 +66,7 @@ th_ecdsa_init(void *        p_context, // input: portable context
                                          MBEDTLS_ECP_DP_SECP256R1);
             if (ret != 0)
             {
-                th_printf("e-[Failed to ECDSA init: -0x%04x]\r\n", -ret);
+                th_printf("e-[Failed to ECDSA init: 0x%04x]\r\n", ret);
                 return EE_STATUS_ERROR;
             }
             break;
@@ -113,7 +113,7 @@ th_ecdsa_sign(void *         p_context, // input: portable context
 
     if (ret != 0)
     {
-        th_printf("e-[Failed to sign in th_ecdsa_sign: -0x%04x]\r\n", -ret);
+        th_printf("e-[Failed to sign in th_ecdsa_sign: 0x%04x]\r\n", ret);
         return EE_STATUS_ERROR;
     }
 
@@ -142,7 +142,7 @@ th_ecdsa_verify(void *        p_context, // input: portable context
 
     if (ret != 0)
     {
-        th_printf("e-[Failed to verify in th_ecdsa_verify: -0x%04x]\r\n", -ret);
+        th_printf("e-[Failed to verify in th_ecdsa_verify: 0x%04x]\r\n", ret);
         return EE_STATUS_ERROR;
     }
     return EE_STATUS_OK;

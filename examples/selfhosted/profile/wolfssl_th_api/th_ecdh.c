@@ -139,7 +139,7 @@ th_ecdh_init(void *        p_context, // input: portable context
                 group == EE_P256R1 ? ECC_SECP256R1 : ECC_SECP384R1);
             if (ret != 0)
             {
-                th_printf("e-[wc_ecc_import_private_key_ex: -%d]\r\n", -ret);
+                th_printf("e-[wc_ecc_import_private_key_ex: %d]\r\n", ret);
                 return EE_STATUS_ERROR;
             }
 #ifdef ECC_TIMING_RESISTANT
@@ -151,21 +151,21 @@ th_ecdh_init(void *        p_context, // input: portable context
                 p_private, prilen, ctx->x255_key_pri, EC25519_LITTLE_ENDIAN);
             if (ret != 0)
             {
-                th_printf("e-[wc_curve25519_import_private: -%d]\r\n", -ret);
+                th_printf("e-[wc_curve25519_import_private: %d]\r\n", ret);
                 return EE_STATUS_ERROR;
             }
             ret = wc_curve25519_check_public(
                 p_public, publen, EC25519_LITTLE_ENDIAN);
             if (ret != 0)
             {
-                th_printf("e-[wc_curve25519_check_public: -%d]\r\n", -ret);
+                th_printf("e-[wc_curve25519_check_public: %d]\r\n", ret);
                 return EE_STATUS_ERROR;
             }
             ret = wc_curve25519_import_public_ex(
                 p_public, publen, ctx->x255_key_pub, EC25519_LITTLE_ENDIAN);
             if (ret != 0)
             {
-                th_printf("e-[wc_curve25519_import_public: -%d]\r\n", -ret);
+                th_printf("e-[wc_curve25519_import_public: %d]\r\n", ret);
                 return EE_STATUS_ERROR;
             }
             break;
@@ -212,7 +212,7 @@ th_ecdh_calc_secret(
     }
     if (ret != 0)
     {
-        th_printf("e-[wc_*_shared_secret: -%d]\r\n", -ret);
+        th_printf("e-[wc_*_shared_secret: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
     return EE_STATUS_OK;

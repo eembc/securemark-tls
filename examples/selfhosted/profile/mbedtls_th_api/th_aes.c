@@ -43,13 +43,13 @@ th_aes128_create(void **           p_context, // output: portable context
     }
     else
     {
-        th_printf("e-[Unknown mode in th_aes128_create\r\n");
+        th_printf("e-[Unknown mode in th_aes128_create]\r\n");
         return EE_STATUS_ERROR;
     }
 
     if (*p_context == NULL)
     {
-        th_printf("e-[malloc() fail in th_aes128_create\r\n");
+        th_printf("e-[malloc() fail in th_aes128_create]\r\n");
         return EE_STATUS_ERROR;
     }
 
@@ -124,7 +124,7 @@ th_aes128_init(void *            p_context, // input: portable context
     }
     else
     {
-        th_printf("e-[Unknown mode in th_aes128_init\r\n");
+        th_printf("e-[Unknown mode in th_aes128_init]\r\n");
         return EE_STATUS_ERROR;
     }
 

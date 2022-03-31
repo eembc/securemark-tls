@@ -66,7 +66,6 @@ init_ecc(ecc_key *     p_key,
          ecc_curve_id  id)
 {
     int ret;
-    th_printf("LIBWOLFSSL_VERSION_STRING: %s\n", LIBWOLFSSL_VERSION_STRING);
     ret = wc_ecc_init_ex(p_key, HEAP_HINT, DEVID);
     if (ret != 0)
     {
