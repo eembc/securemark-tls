@@ -46,8 +46,8 @@ ee_variation_001(uint_fast32_t iterations)
     uint8_t *     p_buf1;                  // SHA1's buffer
     uint8_t *     p_buf2;                  // SHA2's buffer
     uint8_t       p_digest[EE_SHA256 / 8]; // SHA digest
-    uint8_t       p_pt[VAR001_AES_LEN];   // AES plaintext
-    uint8_t       p_ct[VAR001_AES_LEN];   // AES ciphertext
+    uint8_t       p_pt[VAR001_AES_LEN];    // AES plaintext
+    uint8_t       p_ct[VAR001_AES_LEN];    // AES ciphertext
     uint8_t       p_key[16];               // AES key, forcing AES128
     uint_fast32_t idx;                     // Loop index
 
@@ -116,16 +116,14 @@ ee_variation_001(uint_fast32_t iterations)
         p_buf1 += 78;
 
         CHECK(th_aes_create(&p_caes, EE_AES_ECB));
-        CHECK(
-            th_aes_init(p_caes, p_key, 16, NULL, EE_AES_ENC, EE_AES_ECB));
+        CHECK(th_aes_init(p_caes, p_key, 16, NULL, EE_AES_ENC, EE_AES_ECB));
         CHECK(th_aes_ecb_encrypt(p_caes, p_pt, p_ct));
-        th_aes_destroy(p_caes, EE_AES_ECB);
+        th_aes_destroy(p_caes);
 
         CHECK(th_aes_create(&p_caes, EE_AES_ECB));
-        CHECK(
-            th_aes_init(p_caes, p_key, 16, NULL, EE_AES_ENC, EE_AES_ECB));
+        CHECK(th_aes_init(p_caes, p_key, 16, NULL, EE_AES_ENC, EE_AES_ECB));
         CHECK(th_aes_ecb_encrypt(p_caes, p_pt, p_ct));
-        th_aes_destroy(p_caes, EE_AES_ECB);
+        th_aes_destroy(p_caes);
 
         CHECK(th_sha_process(p_csha1, EE_SHA256, p_buf1, 16));
         p_buf1 += 16;
@@ -133,10 +131,9 @@ ee_variation_001(uint_fast32_t iterations)
         p_buf1 += 16;
 
         CHECK(th_aes_create(&p_caes, EE_AES_ECB));
-        CHECK(
-            th_aes_init(p_caes, p_key, 16, NULL, EE_AES_ENC, EE_AES_ECB));
+        CHECK(th_aes_init(p_caes, p_key, 16, NULL, EE_AES_ENC, EE_AES_ECB));
         CHECK(th_aes_ecb_encrypt(p_caes, p_pt, p_ct));
-        th_aes_destroy(p_caes, EE_AES_ECB);
+        th_aes_destroy(p_caes);
 
         CHECK(th_sha_done(p_csha1, EE_SHA256, p_digest));
         th_sha_destroy(p_csha1, EE_SHA256);
@@ -150,7 +147,7 @@ error_exit:
     // TODO: Hard to be more descriptive here.
     th_printf("e-variation-001-[An error occurred]\r\n");
     // These are NULL safe
-    th_aes_destroy(p_caes, EE_AES_ECB);
+    th_aes_destroy(p_caes);
     th_sha_destroy(p_csha1, EE_SHA256);
     th_sha_destroy(p_csha2, EE_SHA256);
 

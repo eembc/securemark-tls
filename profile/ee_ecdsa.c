@@ -26,15 +26,15 @@
  * @param iter Number of iterations
  */
 void
-ee_ecdsa(ee_ecdh_group_t     group,
+ee_ecdsa(ee_ecdh_group_t group,
          ee_ecdsa_func_t func,
-         uint8_t *        p_msg,
-         uint_fast32_t    mlen,
-         uint8_t *        p_sig,
-         uint_fast32_t *  p_slen,
-         uint8_t *        p_private,
-         uint_fast32_t    plen,
-         uint_fast32_t    iter)
+         uint8_t *       p_msg,
+         uint_fast32_t   mlen,
+         uint8_t *       p_sig,
+         uint_fast32_t * p_slen,
+         uint8_t *       p_private,
+         uint_fast32_t   plen,
+         uint_fast32_t   iter)
 {
     void *p_context; // Generic context if needed by implementation
 

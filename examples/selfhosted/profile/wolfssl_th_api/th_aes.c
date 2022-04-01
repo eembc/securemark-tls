@@ -252,9 +252,7 @@ th_aes_gcm_decrypt(
 }
 
 void
-th_aes_destroy(void *            p_context, // input: portable context
-               ee_aes_mode_t mode       // input: EE_AES_ECB or EE_AES_CCM
-)
+th_aes_destroy(void *            p_context) // input: portable context
 {
     if (p_context)
     {

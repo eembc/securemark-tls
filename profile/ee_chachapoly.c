@@ -17,9 +17,9 @@
  * Perform a ChaCha20/Poly1305 operation a given number of times.
  */
 void
-ee_chachapoly(ee_chachapoly_func_t func,   // input: EE_CHACHAPOLY_(ENC|DEC)
-              uint8_t *         p_key,  // input: key
-              uint8_t *         p_iv,   // input: initialization vector
+ee_chachapoly(ee_chachapoly_func_t func,  // input: EE_CHACHAPOLY_(ENC|DEC)
+              uint8_t *            p_key, // input: key
+              uint8_t *            p_iv,  // input: initialization vector
               uint8_t *     p_in,  // input: pointer to source input (pt or ct)
               uint_fast32_t len,   // input: length of input in bytes
               uint8_t *     p_tag, // inout: output in encrypt, input on decrypt
@@ -46,7 +46,7 @@ ee_chachapoly(ee_chachapoly_func_t func,   // input: EE_CHACHAPOLY_(ENC|DEC)
         while (iterations-- > 0)
         {
             if (th_chachapoly_init(
-                    p_context, p_key, EE_CHACHAPOLY_KEYLEN, EE_CHACHAPOLY_ENC)
+                    p_context, p_key, EE_CHACHAPOLY_KEYLEN)
                 != EE_STATUS_OK)
             {
                 th_post();
@@ -67,7 +67,7 @@ ee_chachapoly(ee_chachapoly_func_t func,   // input: EE_CHACHAPOLY_(ENC|DEC)
                 th_printf("e-chachapoly-[Failed to encrypt]\r\n");
                 goto exit;
             }
-            th_chachapoly_deinit(p_context, EE_CHACHAPOLY_ENC);
+            th_chachapoly_deinit(p_context);
         }
         th_post();
         th_timestamp();
@@ -81,7 +81,7 @@ ee_chachapoly(ee_chachapoly_func_t func,   // input: EE_CHACHAPOLY_(ENC|DEC)
         while (iterations-- > 0)
         {
             if (th_chachapoly_init(
-                    p_context, p_key, EE_CHACHAPOLY_KEYLEN, EE_CHACHAPOLY_DEC)
+                    p_context, p_key, EE_CHACHAPOLY_KEYLEN)
                 != EE_STATUS_OK)
             {
                 th_post();
@@ -102,7 +102,7 @@ ee_chachapoly(ee_chachapoly_func_t func,   // input: EE_CHACHAPOLY_(ENC|DEC)
                 th_printf("e-chachapoly-[Failed to decrypt]\r\n");
                 goto exit;
             }
-            th_chachapoly_deinit(p_context, EE_CHACHAPOLY_DEC);
+            th_chachapoly_deinit(p_context);
         }
         th_post();
         th_timestamp();

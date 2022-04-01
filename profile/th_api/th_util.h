@@ -18,7 +18,7 @@
 #include <stdint.h>
 
 // Minimum buffer size
-#define EE_MINBUF 256
+#define EE_MINBUF 1024
 
 ee_status_t   th_profile_initialize(void);
 void          th_pre(void);

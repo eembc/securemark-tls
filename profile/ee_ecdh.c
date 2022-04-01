@@ -20,14 +20,15 @@
  * private key is 32-byte value used in G * m = R (the 'm' value).
  */
 void
-ee_ecdh(ee_ecdh_group_t  group, // input: input: see `ee_ecdh_group_t` for options
-        uint8_t *     p_public,  // input: peer public key, from host
-        uint_fast32_t publen,    // input: peer public key length in bytes
-        uint8_t *     p_private, // input: private key, from host
-        uint_fast32_t prilen,    // input: private key length in bytes
-        uint8_t *     p_secret,  // output: shared secret
-        uint_fast32_t seclen,    // input: size of buffer for secret, in bytes
-        uint_fast32_t iterations // input: # of test iterations
+ee_ecdh(
+    ee_ecdh_group_t group, // input: input: see `ee_ecdh_group_t` for options
+    uint8_t *       p_public,  // input: peer public key, from host
+    uint_fast32_t   publen,    // input: peer public key length in bytes
+    uint8_t *       p_private, // input: private key, from host
+    uint_fast32_t   prilen,    // input: private key length in bytes
+    uint8_t *       p_secret,  // output: shared secret
+    uint_fast32_t   seclen,    // input: size of buffer for secret, in bytes
+    uint_fast32_t   iterations // input: # of test iterations
 )
 {
     void *p_context; // Generic context if needed by implementation

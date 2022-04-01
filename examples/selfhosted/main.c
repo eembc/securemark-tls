@@ -422,24 +422,25 @@ pre_wrap_ecdsa(ee_ecdh_group_t g, ee_ecdsa_func_t func, uint32_t n, uint32_t i)
 
     if (func == EE_ECDSA_VERIFY)
     {
-        // Can't use the DUT to create the verify to check against. We are
+        /* Can't use the DUT to create the verify to check against. */
         if (g == EE_Ed25519)
         {
-            // Ed25519 signatures are raw {R|S} little endianm 64 byte
+            /* Ed25519 signatures are raw {R|S} little endian 64 byte */
             th_memcpy(p, g_dsa_signatures[g], 64);
         }
         else
         {
-            // EcDSA signatures are ASN.1, and are < 256 bytes for our case.
-            // Byte 1 of the ASN.1 signature contains the size of the sig.
+            /* EcDSA signatures are ASN.1, and are < 256 bytes for our case. */
             th_memcpy(p, g_dsa_signatures[g], g_dsa_signatures[g][1] + 2);
         }
     }
 
     ee_bench_ecdsa(g, func, n, i, DEBUG_VERIFY);
 
-    // Since ee_bench_ecdsa doesn't return slen, we CRC 512 bytes of the buffer,
-    // which we already zeroed, and 512 is definitely more than we used.
+    /**
+     * @brief Since ee_bench_ecdsa doesn't return slen, we CRC 512 bytes of the
+     * buffer, which we already zeroed, and 512 is definitely more than we used.
+     */
     for (crc = 0, x = 0, p = th_buffer_address(); x < 512; ++x)
     {
         crc = crcu16(crc, (uint8_t)p[x]);

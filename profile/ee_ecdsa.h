@@ -38,15 +38,15 @@ typedef enum ee_ecdsa_func_t
  * @param plen Length of private key
  * @param iter Number of iterations
  */
-void ee_ecdsa(ee_ecdh_group_t     group,
+void ee_ecdsa(ee_ecdh_group_t group,
               ee_ecdsa_func_t func,
-              uint8_t *        p_msg,
-              uint_fast32_t    mlen,
-              uint8_t *        p_sig,
-              uint_fast32_t *  p_slen,
-              uint8_t *        p_private,
-              uint_fast32_t    plen,
-              uint_fast32_t    iter);
+              uint8_t *       p_msg,
+              uint_fast32_t   mlen,
+              uint8_t *       p_sig,
+              uint_fast32_t * p_slen,
+              uint8_t *       p_private,
+              uint_fast32_t   plen,
+              uint_fast32_t   iter);
 
 /**
  * Create the context passed between functions.
@@ -54,7 +54,7 @@ void ee_ecdsa(ee_ecdh_group_t     group,
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t th_ecdsa_create(
-    void **      p_context, // output: portable context
+    void **         p_context, // output: portable context
     ee_ecdh_group_t group      // input: see `ee_ecdh_group_t` for options
 );
 
@@ -65,10 +65,10 @@ ee_status_t th_ecdsa_create(
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t th_ecdsa_init(
-    void *        p_context, // input: portable context
-    ee_ecdh_group_t  group,     // input: see `ee_ecdh_group_t` for options
-    uint8_t *     p_private, // input: private key from host
-    uint_fast32_t plen       // input: length of private key in bytes
+    void *          p_context, // input: portable context
+    ee_ecdh_group_t group,     // input: see `ee_ecdh_group_t` for options
+    uint8_t *       p_private, // input: private key from host
+    uint_fast32_t   plen       // input: length of private key in bytes
 );
 
 /**
@@ -77,12 +77,12 @@ ee_status_t th_ecdsa_init(
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t th_ecdsa_sign(
-    void *         p_context, // input: portable context
-    ee_ecdh_group_t   group,     // input: see `ee_ecdh_group_t` for options
-    uint8_t *      p_hash,    // input: sha256 digest
-    uint_fast32_t  hlen,      // input: length of digest in bytes
-    uint8_t *      p_sig,     // output: signature
-    uint_fast32_t *p_slen     // in/out: input=MAX slen, output=resultant
+    void *          p_context, // input: portable context
+    ee_ecdh_group_t group,     // input: see `ee_ecdh_group_t` for options
+    uint8_t *       p_hash,    // input: sha256 digest
+    uint_fast32_t   hlen,      // input: length of digest in bytes
+    uint8_t *       p_sig,     // output: signature
+    uint_fast32_t * p_slen     // in/out: input=MAX slen, output=resultant
 );
 
 /**
@@ -91,19 +91,19 @@ ee_status_t th_ecdsa_sign(
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t th_ecdsa_verify(
-    void *        p_context, // input: portable context
-    ee_ecdh_group_t  group,     // input: see `ee_ecdh_group_t` for options
-    uint8_t *     p_hash,    // input: sha256 digest
-    uint_fast32_t hlen,      // input: length of digest in bytes
-    uint8_t *     p_sig,     // output: signature
-    uint_fast32_t slen       // input: length of signature in bytes
+    void *          p_context, // input: portable context
+    ee_ecdh_group_t group,     // input: see `ee_ecdh_group_t` for options
+    uint8_t *       p_hash,    // input: sha256 digest
+    uint_fast32_t   hlen,      // input: length of digest in bytes
+    uint8_t *       p_sig,     // output: signature
+    uint_fast32_t   slen       // input: length of signature in bytes
 );
 
 /**
  * Destroy the context created earlier.
  */
 void th_ecdsa_destroy(
-    void *       p_context, // portable context
+    void *          p_context, // portable context
     ee_ecdh_group_t group      // input: see `ee_ecdh_group_t` for options
 );
 

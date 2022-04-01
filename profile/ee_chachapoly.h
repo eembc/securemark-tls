@@ -30,15 +30,14 @@ typedef enum
 
 // Fixed test API
 
-void ee_chachapoly(
-    ee_chachapoly_func_t func,      // input: CHACHAPOLY_(ENC|DEC)
-    uint8_t *         p_key,     // input: key
-    uint8_t *         p_iv,      // input: initialization vector
-    uint8_t *         p_in,      // input: pointer to source input (pt or ct)
-    uint_fast32_t     len,       // input: length of input in bytes
-    uint8_t *         p_tag,     // inout: output in encrypt, input on decrypt
-    uint8_t *         p_out,     // output: pointer to output buffer
-    uint_fast32_t     iterations // input: # of test iterations
+void ee_chachapoly(ee_chachapoly_func_t func,  // input: CHACHAPOLY_(ENC|DEC)
+                   uint8_t *            p_key, // input: key
+                   uint8_t *            p_iv,  // input: initialization vector
+                   uint8_t *p_in, // input: pointer to source input (pt or ct)
+                   uint_fast32_t len, // input: length of input in bytes
+                   uint8_t *p_tag, // inout: output in encrypt, input on decrypt
+                   uint8_t *p_out, // output: pointer to output buffer
+                   uint_fast32_t iterations // input: # of test iterations
 );
 
 // Implementation API
@@ -56,17 +55,16 @@ ee_status_t th_chachapoly_create(void **pp_context); // output: portable context
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t th_chachapoly_init(
-    void *            p_context, // input: portable context
-    const uint8_t *   p_key,     // input: key
-    uint_fast32_t     keylen,    // input: length of key in bytes
-    ee_chachapoly_func_t func       // input: CHACHAPOLY_(ENC|DEC)
+    void *               p_context, // input: portable context
+    const uint8_t *      p_key,     // input: key
+    uint_fast32_t        keylen    // input: length of key in bytes
 );
 
 /**
  * Perform any cleanup required by init, but don't destroy the context.
  */
-void th_chachapoly_deinit(void *p_context,       // input: portable context
-                          ee_chachapoly_func_t func // input: CHACHAPOLY_(ENC|DEC)
+void th_chachapoly_deinit(
+    void *               p_context // input: portable context
 );
 
 /**

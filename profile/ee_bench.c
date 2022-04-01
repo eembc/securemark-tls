@@ -12,9 +12,13 @@
 
 #include "ee_bench.h"
 
-// Continuing the kludge for timestamps, sometimes we do an encrypt before
-// a decrypt, and we don't want to report timestamps.
-// TODO: always have the host send KEY, IV, and PT or CT?
+/**
+ * @brief This is a bit of a kludge so that we can pre-encrypt data to decrypt
+ * without printing excess timestamps and confusing the host.
+ *
+ * TODO: Perhaps the host should send KEY, IV, and PT/CT, too?
+ *
+ */
 extern bool g_mute_timestamps;
 
 /**
@@ -26,61 +30,9 @@ extern bool g_mute_timestamps;
 static void
 fill_rand(uint8_t *p_buffer, size_t len)
 {
-    // We create random data here because it saves Host-to-DUT download time.
     for (size_t x = 0; x < len; ++x)
     {
         p_buffer[x] = ee_rand();
-    }
-}
-
-void
-ee_bench_aes(ee_aes_mode_t mode,   // input: cipher mode
-          ee_aes_func_t    func,   // input: func (AES_ENC|EE_AES_DEC)
-          uint_fast32_t     keylen, // input: length of key in bytes
-          uint_fast32_t     n,      // input: length of input in bytes
-          uint_fast32_t     i,      // input: # of test iterations
-          bool              verify)
-{
-    int      ivlen = mode == EE_AES_CTR ? EE_AES_CTR_IVLEN : EE_AES_AEAD_IVLEN;
-    uint8_t *p_key = th_buffer_address();
-    uint8_t *p_iv  = p_key + keylen;
-    uint8_t *p_in  = p_iv + ivlen;
-    uint8_t *p_out = p_in + n;
-    uint8_t *p_tag = p_out + n;
-
-    // We create random data here because it saves Host-to-DUT download time.
-    fill_rand(p_key, keylen);
-    fill_rand(p_iv, ivlen);
-    fill_rand(p_in, n);
-
-    if (func == EE_AES_DEC)
-    {
-        // Encrypt something for the decrypt loop to decrypt
-        g_mute_timestamps = true;
-        ee_aes(mode,
-               EE_AES_ENC,
-               p_key,
-               keylen,
-               p_iv,
-               p_in,
-               n,
-               p_out,
-               p_tag,
-               1);
-        g_mute_timestamps = false;
-        th_memcpy(p_in, p_out, n);
-        uint8_t *tmp = p_in;
-        p_in         = p_out;
-        p_out        = tmp;
-    }
-    ee_aes(mode, func, p_key, keylen, p_iv, p_in, n, p_out, p_tag,i);
-    if (verify)
-    {
-        ee_printmem_hex(p_key, keylen, "m-bench-aesXXX-key-");
-        ee_printmem_hex(p_iv, ivlen, "m-bench-aesXXX-iv-");
-        ee_printmem_hex(p_in, n, "m-bench-aesXXX-in-");
-        ee_printmem_hex(p_out, n, "m-bench-aesXXX-out-");
-        ee_printmem_hex(p_tag, EE_AES_TAGLEN, "m-bench-aesXXX-tag-");
     }
 }
 
@@ -90,7 +42,12 @@ ee_bench_sha(ee_sha_size_t size, uint_fast32_t n, uint_fast32_t i, bool verify)
     uint8_t *p_in  = th_buffer_address();
     uint8_t *p_out = p_in + n;
 
-    // We create random data here because it saves Host-to-DUT download time.
+    if (th_buffer_size() < (n + (size / 8)))
+    {
+        th_printf("e-[ee_bench_sha() buffer too small]\r\n");
+        return;
+    }
+
     for (size_t x = 0; x < n; ++x)
     {
         p_in[x] = ee_rand();
@@ -106,13 +63,99 @@ ee_bench_sha(ee_sha_size_t size, uint_fast32_t n, uint_fast32_t i, bool verify)
 }
 
 void
+ee_bench_aes(ee_aes_mode_t mode,
+             ee_aes_func_t func,
+             uint_fast32_t keylen,
+             uint_fast32_t n,
+             uint_fast32_t i,
+             bool          verify)
+{
+    int      ivlen = mode == EE_AES_CTR ? EE_AES_CTR_IVLEN : EE_AES_AEAD_IVLEN;
+    uint8_t *p_key = th_buffer_address();
+    uint8_t *p_iv  = p_key + keylen;
+    uint8_t *p_in  = p_iv + ivlen;
+    uint8_t *p_out = p_in + n;
+    uint8_t *p_tag = p_out + n;
+
+    if (th_buffer_size() < ((p_tag - p_key) + EE_AES_TAGLEN))
+    {
+        th_printf("e-[ee_bench_aes() buffer too small]\r\n");
+        return;
+    }
+
+    fill_rand(p_key, keylen);
+    fill_rand(p_iv, ivlen);
+    fill_rand(p_in, n);
+
+    if (func == EE_AES_DEC)
+    {
+        /* Encrypt something for the decrypt loop to decrypt */
+        g_mute_timestamps = true;
+        ee_aes(mode, EE_AES_ENC, p_key, keylen, p_iv, p_in, n, p_out, p_tag, 1);
+        g_mute_timestamps = false;
+        th_memcpy(p_in, p_out, n);
+        uint8_t *tmp = p_in;
+        p_in         = p_out;
+        p_out        = tmp;
+    }
+
+    ee_aes(mode, func, p_key, keylen, p_iv, p_in, n, p_out, p_tag, i);
+
+    if (verify)
+    {
+        ee_printmem_hex(p_key, keylen, "m-bench-aesXXX-key-");
+        ee_printmem_hex(p_iv, ivlen, "m-bench-aesXXX-iv-");
+        ee_printmem_hex(p_in, n, "m-bench-aesXXX-in-");
+        ee_printmem_hex(p_out, n, "m-bench-aesXXX-out-");
+        ee_printmem_hex(p_tag, EE_AES_TAGLEN, "m-bench-aesXXX-tag-");
+    }
+}
+
+void
+ee_bench_chachapoly(ee_chachapoly_func_t func, int n, int i, bool verify)
+{
+    uint8_t *p_key = th_buffer_address();
+    uint8_t *p_iv  = p_key + EE_CHACHAPOLY_KEYLEN;
+    uint8_t *p_in  = p_iv + EE_CHACHAPOLY_IVLEN;
+    uint8_t *p_out = p_in + n;
+    uint8_t *p_tag = p_out + n;
+
+    fill_rand(p_key, EE_CHACHAPOLY_KEYLEN);
+    fill_rand(p_iv, EE_CHACHAPOLY_IVLEN);
+    fill_rand(p_in, n);
+
+    if (func == EE_CHACHAPOLY_DEC)
+    {
+        /* Encrypt something for the decrypt loop to decrypt */
+        g_mute_timestamps = true;
+        ee_chachapoly(EE_CHACHAPOLY_ENC, p_key, p_iv, p_in, n, p_tag, p_out, 1);
+        g_mute_timestamps = false;
+        th_memcpy(p_in, p_out, n);
+        uint8_t *tmp = p_in;
+        p_in         = p_out;
+        p_out        = tmp;
+    }
+
+    ee_chachapoly(func, p_key, p_iv, p_in, n, p_tag, p_out, i);
+
+    if (verify)
+    {
+        ee_printmem_hex(p_key, EE_CHACHAPOLY_KEYLEN, "m-bench-chachapoly-key-");
+        ee_printmem_hex(p_iv, EE_CHACHAPOLY_IVLEN, "m-bench-chachapoly-iv-");
+        ee_printmem_hex(p_in, n, "m-bench-chachapoly-in-");
+        ee_printmem_hex(p_out, n, "m-bench-chachapoly-out-");
+        ee_printmem_hex(p_tag, EE_AES_TAGLEN, "m-bench-chachapoly-tag-");
+    }
+}
+
+void
 ee_bench_ecdh(ee_ecdh_group_t g, uint_fast32_t i, bool verify)
 {
     uint_fast32_t npub = ee_pub_sz[g];
     uint_fast32_t npri = ee_pri_sz[g];
     uint_fast32_t nsec = ee_sec_sz[g];
 
-    // The th_buffer has been pre-loaded with this data
+    /* The th_buffer has been pre-loaded with this data */
     uint8_t *p_pub = th_buffer_address();
     uint8_t *p_pri = p_pub + npub;
     uint8_t *p_sec = p_pri + npri;
@@ -128,35 +171,37 @@ ee_bench_ecdh(ee_ecdh_group_t g, uint_fast32_t i, bool verify)
 }
 
 void
-ee_bench_ecdsa(ee_ecdh_group_t     g,
-            ee_ecdsa_func_t func,
-            uint_fast32_t    n,
-            uint_fast32_t    i,
-            bool             verify)
+ee_bench_ecdsa(ee_ecdh_group_t g,
+               ee_ecdsa_func_t func,
+               uint_fast32_t   n,
+               uint_fast32_t   i,
+               bool            verify)
 {
-    // The th_buffer has been pre-loaded with this data
-    uint8_t *     p_pri = th_buffer_address();
-    uint_fast32_t npri  = ee_pri_sz[g];
-    uint8_t *     p_msg = p_pri + npri;
-    uint8_t *     p_sig = p_msg + n;
+    /* These is not in the buffer */
+    uint_fast32_t npri = ee_pri_sz[g];
     uint_fast32_t slen;
+
+    /* The th_buffer has been pre-loaded with this data */
+    uint8_t *p_pri = th_buffer_address();
+    uint8_t *p_msg = p_pri + npri;
+    uint8_t *p_sig = p_msg + n;
 
     if (func == EE_ECDSA_VERIFY)
     {
         if (g == EE_Ed25519)
         {
-            // Ed25519 signatures are raw {R|S} little endian
+            /* Ed25519 signatures are raw {R|S} little endian */
             slen = 64;
         }
         else
         {
-            // EcDSA signatures are ASN.1, and are < 256 bytes for our case.
+            /* EcDSA signatures are ASN.1, and are < 256 bytes for our case. */
             slen = p_sig[1] + 2;
         }
     }
     else
     {
-        // Provide max size as entire remaining buffer on sign
+        /* Provide max size as entire remaining buffer on sign */
         slen = th_buffer_size() - (p_sig - p_pri) - 1;
     }
 
@@ -171,59 +216,10 @@ ee_bench_ecdsa(ee_ecdh_group_t     g,
 }
 
 void
-ee_bench_chachapoly(ee_chachapoly_func_t func, int n, int i, bool verify)
-{
-    uint8_t *p_key = th_buffer_address();
-    uint8_t *p_iv  = p_key + EE_CHACHAPOLY_KEYLEN;
-    uint8_t *p_in  = p_iv + EE_CHACHAPOLY_IVLEN;
-    uint8_t *p_out = p_in + n;
-    uint8_t *p_tag = p_out + n;
-
-    // We create random data here because it saves Host-to-DUT download time.
-    fill_rand(p_key, EE_CHACHAPOLY_KEYLEN);
-    fill_rand(p_iv, EE_CHACHAPOLY_IVLEN);
-    fill_rand(p_in, n);
-
-    if (func == EE_CHACHAPOLY_DEC)
-    {
-        // Encrypt something for the decrypt loop to decrypt
-        g_mute_timestamps = true;
-        ee_chachapoly(
-            EE_CHACHAPOLY_ENC, p_key, p_iv, p_in, n, p_tag, p_out, 1);
-        g_mute_timestamps = false;
-        th_memcpy(p_in, p_out, n);
-        uint8_t *tmp = p_in;
-        p_in         = p_out;
-        p_out        = tmp;
-    }
-
-    ee_chachapoly(func, p_key, p_iv, p_in, n, p_tag, p_out, i);
-
-    if (verify)
-    {
-        ee_printmem_hex(
-            p_key, EE_CHACHAPOLY_KEYLEN, "m-bench-chachapoly-key-");
-        ee_printmem_hex(p_iv, EE_CHACHAPOLY_IVLEN, "m-bench-chachapoly-iv-");
-        ee_printmem_hex(p_in, n, "m-bench-chachapoly-in-");
-        ee_printmem_hex(p_out, n, "m-bench-chachapoly-out-");
-        ee_printmem_hex(p_tag, EE_AES_TAGLEN, "m-bench-chachapoly-tag-");
-    }
-}
-
-/*
-    private key length - 4 bytes, sizeof the pre-computed key in keys.h
-    private key        - ASN.1 quintuple
-    message length     - 4 bytes
-    message            - n bytes
-    signature length   - 4 bytes
-    signature           - signature length bytes
-*/
-
-void
 ee_bench_rsa(ee_rsa_id_t       id,
-          ee_rsa_function_t func,
-          unsigned int      i,
-          bool              verify)
+             ee_rsa_function_t func,
+             unsigned int      i,
+             bool              verify)
 {
     uint32_t *p_prilen;
     uint8_t * p_pri;
@@ -260,12 +256,12 @@ ee_bench_rsa(ee_rsa_id_t       id,
 arg_claimed_t
 ee_bench_parse(char *p_command, bool verify)
 {
-    char *        p_subcmd; // Subcommand
-    char *        p_seed;   // srand() seed.
-    char *        p_iter;   // Requested iterations
-    char *        p_size;   // Requested size of dataset in bytes
-    uint_fast32_t i;        // iterations
-    uint_fast32_t n;        // data size in bytes
+    char *        p_subcmd; 
+    char *        p_seed;   
+    char *        p_iter;   
+    char *        p_size;   
+    uint_fast32_t i;        
+    uint_fast32_t n;        
     if (th_strncmp(p_command, "bench", EE_CMD_SIZE) != 0)
     {
         return EE_ARG_UNCLAIMED;
@@ -282,13 +278,13 @@ ee_bench_parse(char *p_command, bool verify)
     p_seed   = th_strtok(NULL, EE_CMD_DELIMITER);
     p_iter   = th_strtok(NULL, EE_CMD_DELIMITER);
     p_size   = th_strtok(NULL, EE_CMD_DELIMITER);
-    // Test existence of subcommand
+    
     if (p_subcmd == NULL)
     {
         th_printf("e-[Command 'bench' takes a subcommand]\r\n");
         return EE_ARG_CLAIMED;
     }
-    // Validated the seed
+    
     if (p_seed != NULL)
     {
         ee_srand((uint8_t)th_atoi(p_seed));
@@ -298,7 +294,7 @@ ee_bench_parse(char *p_command, bool verify)
         th_printf("e-[Benchmark seed not specified]\r\n");
         return EE_ARG_CLAIMED;
     }
-    // Validate iterations
+    
     if (p_iter)
     {
         i = (uint_fast32_t)th_atoi(p_iter);
@@ -315,19 +311,19 @@ ee_bench_parse(char *p_command, bool verify)
         return EE_ARG_CLAIMED;
     }
 
-    // Validate datasize
+    
     if (p_size)
     {
         n = (uint_fast32_t)th_atoi(p_size);
     }
     else
     {
-        // TODO: Is it OK for datasize to be zero?
-        // The only function that doesn't use it is ECDH AFAIK
+        
+        
         n = 0;
     }
 
-    // Now figure out which subcommand was issued...
+    
 
     if (th_strncmp(p_subcmd, "sha256", EE_CMD_SIZE) == 0)
     {
@@ -376,4 +372,4 @@ ee_bench_parse(char *p_command, bool verify)
     return EE_ARG_CLAIMED;
 }
 
-#endif // 0
+#endif

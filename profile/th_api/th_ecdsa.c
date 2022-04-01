@@ -12,94 +12,49 @@
 
 #include "ee_ecdsa.h"
 
-/**
- * Create the context passed between functions.
- *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
- */
 ee_status_t
-th_ecdsa_create(void **      p_context, // output: portable context
-                ee_ecdh_group_t group      // input: see `ee_ecdh_group_t` for options
-)
+th_ecdsa_create(void **p_context, ee_ecdh_group_t group)
 {
 #warning "th_ecdsa_create not implemented"
     return EE_STATUS_OK;
 }
 
-/**
- * Initialize to a group (must be in the EE_ enum) with a predefined
- * private key.
- *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
- */
 ee_status_t
-th_ecdsa_init(void *        p_context, // input: portable context
-              ee_ecdh_group_t  group,     // input: see `ee_ecdh_group_t` for options
-              uint8_t *     p_private, // input: private key from host
-              uint_fast32_t plen       // input: length of private key in bytes
-)
+th_ecdsa_init(void *          p_context,
+              ee_ecdh_group_t group,
+              uint8_t *       p_private,
+              uint_fast32_t   plen)
 {
 #warning "th_ecdsa_init not implemented"
     return EE_STATUS_OK;
 }
 
-/**
- * Create a signature using the specified message.
- *
- * Ed25519 performs the digest per RFC7748, so if the input is a digest, it
- * will be digested again. For P256R1 the input will not be hashed.
- *
- * The signature shall be ASN1 or Raw R/S (32B) for P256R1, and raw LE bytes
- * for Ed25519. This is necessary to pass the runner GUI validation test.
- *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
- */
 ee_status_t
-th_ecdsa_sign(void *         p_context, // input: portable context
-              ee_ecdh_group_t   group,     // input: see `ee_ecdh_group_t` for options
-              uint8_t *      p_msg,     // input: message
-              uint_fast32_t  mlen,      // input: length of message in bytes
-              uint8_t *      p_sig,     // output: signature
-              uint_fast32_t *p_slen // in/out: input=MAX slen, output=resultant
-)
+th_ecdsa_sign(void *          p_context,
+              ee_ecdh_group_t group,
+              uint8_t *       p_msg,
+              uint_fast32_t   mlen,
+              uint8_t *       p_sig,
+              uint_fast32_t * p_slen)
 {
-// WARNING: Copy *slen into local storage if your SDK size type is not
-//          the same size as "uint_fast32_t" and recast on assignment.
 #warning "th_ecdsa_sign not implemented"
     return EE_STATUS_OK;
 }
 
-/**
- * Verify a signature and digest.
- *
- * Ed25519 performs the digest per RFC7748, so if the input is a digest, it
- * will be digested again. For P256R1 the input will not be hashed.
- *
- * The signature shall be ASN1 or Raw R/S (32B) for P256R1, and raw LE bytes
- * for Ed25519. This is necessary to pass the runner GUI validation test.
- *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
- */
 ee_status_t
-th_ecdsa_verify(void *        p_context, // input: portable context
-                ee_ecdh_group_t  group, // input: see `ee_ecdh_group_t` for options
-                uint8_t *     p_msg, // input: message
-                uint_fast32_t mlen,  // input: length of message in bytes
-                uint8_t *     p_sig, // output: signature
-                uint_fast32_t slen   // input: length of signature in bytes
-)
+th_ecdsa_verify(void *          p_context,
+                ee_ecdh_group_t group,
+                uint8_t *       p_msg,
+                uint_fast32_t   mlen,
+                uint8_t *       p_sig,
+                uint_fast32_t   slen)
 {
 #warning "th_ecdsa_verify not implemented"
     return EE_STATUS_OK;
 }
 
-/**
- * Destroy the context created earlier.
- */
 void
-th_ecdsa_destroy(void *       p_context, // portable context
-                 ee_ecdh_group_t group // input: see `ee_ecdh_group_t` for options
-)
+th_ecdsa_destroy(void *p_context, ee_ecdh_group_t group)
 {
 #warning "th_ecdsa_destroy not implemented"
 }

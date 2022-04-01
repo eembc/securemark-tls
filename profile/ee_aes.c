@@ -12,27 +12,26 @@
 
 #include "ee_aes.h"
 
-// This is an aesthetic decoder for log messages; must match ee_aes_mode_t
+/* This is an aesthetic decoder for log messages; must match ee_aes_mode_t */
 static const char *aes_cipher_mode_text[] = { "ecb", "ctr", "ccm", "gcm" };
 
-// All-purpose AES wrapper for all modes & keysizes.
 void
-ee_aes(ee_aes_mode_t mode,   // input: cipher mode
-       ee_aes_func_t    func,   // input: func (EE_AES_ENC|EE_AES_DEC)
-       const uint8_t *   p_key,  // input: key
-       uint_fast32_t     keylen, // input: length of key in bytes
-       const uint8_t *   p_iv,   // input: initialization vector
-       const uint8_t *   p_in,   // input: pointer to source input (pt or ct)
-       uint_fast32_t     len,    // input: length of input in bytes
-       uint8_t *         p_out,  // output: pointer to output buffer
-       uint8_t *         p_tag,  // inout: output in encrypt, input on decrypt
-       uint_fast32_t     iter    // input: # of test iterations
+ee_aes(ee_aes_mode_t  mode,   
+       ee_aes_func_t  func,   
+       const uint8_t *p_key,  
+       uint_fast32_t  keylen, 
+       const uint8_t *p_iv,   
+       const uint8_t *p_in,   
+       uint_fast32_t  len,    
+       uint8_t *      p_out,  
+       uint8_t *      p_tag,  
+       uint_fast32_t  iter    
 )
 {
-    void *        p_context; // Generic context if needed by implementation
-    uint_fast32_t numblocks; // This wrapper uses fixed-size blocks
-    uint_fast32_t i;         // iteration index
-    uint_fast32_t j;         // iteration index
+    void *        p_context; 
+    uint_fast32_t numblocks; 
+    uint_fast32_t i;         
+    uint_fast32_t j;         
     uint_fast16_t bits = keylen * 8;
     const char *  m    = aes_cipher_mode_text[mode];
     ee_status_t   ret;
@@ -46,7 +45,7 @@ ee_aes(ee_aes_mode_t mode,   // input: cipher mode
             return;
         }
         numblocks = len / EE_AES_BLOCKLEN;
-        if (len % EE_AES_BLOCKLEN != 0) // Note: No padding
+        if (len % EE_AES_BLOCKLEN != 0) 
         {
             th_printf("e-aes%d_%s-[Input must be modulo 16]\r\n", bits, m);
             return;
@@ -69,8 +68,7 @@ ee_aes(ee_aes_mode_t mode,   // input: cipher mode
         th_pre();
         while (iter-- > 0)
         {
-            if (th_aes_init(
-                    p_context, p_key, keylen, p_iv, func, mode)
+            if (th_aes_init(p_context, p_key, keylen, p_iv, func, mode)
                 != EE_STATUS_OK)
             {
                 th_post();
@@ -136,8 +134,7 @@ ee_aes(ee_aes_mode_t mode,   // input: cipher mode
         th_pre();
         while (iter-- > 0)
         {
-            if (th_aes_init(
-                    p_context, p_key, keylen, p_iv, func, mode)
+            if (th_aes_init(p_context, p_key, keylen, p_iv, func, mode)
                 != EE_STATUS_OK)
             {
                 th_post();
@@ -206,5 +203,5 @@ err_dec_exit:
     th_printf("e-aes%d_%s-[Failed to decrypt]\r\n", bits, m);
     goto exit;
 exit:
-    th_aes_destroy(p_context, mode);
+    th_aes_destroy(p_context);
 }

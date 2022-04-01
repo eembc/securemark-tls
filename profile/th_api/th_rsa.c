@@ -5,18 +5,11 @@
 #include "th_util.h"
 
 ee_status_t
-th_rsa_create(void **pp_context // output: portable context
-) {
+th_rsa_create(void **pp_context) {
 #warning "th_rsa_create not implemented"
 }
 
-ee_status_t th_rsa_init(
-    void *   p_context, // input: portable context
-    uint8_t *prikey,    // input: private key in ANS.1/DER PKS1v1.5 format ???
-    // should include the public key/ because if we force them to generate it
-    // during the timing loop that's a big cost. TODO
-    uint8_t *pubkey // input: public key associated with private
-) {
+ee_status_t th_rsa_init(void *p_context, uint8_t *prikey, uint8_t *pubkey) {
 #warning "ths_rsa_init not implemented"
 }
 

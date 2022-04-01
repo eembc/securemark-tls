@@ -12,7 +12,6 @@
 
 #include "th_util.h"
 
-// NOTE: Feel free to replace the static variable with any allocation scheme
 #define BUFFER_SIZE (1024 * 8)
 static uint8_t g_generic_buffer[BUFFER_SIZE];
 
