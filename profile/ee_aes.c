@@ -16,22 +16,21 @@
 static const char *aes_cipher_mode_text[] = { "ecb", "ctr", "ccm", "gcm" };
 
 void
-ee_aes(ee_aes_mode_t  mode,   
-       ee_aes_func_t  func,   
-       const uint8_t *p_key,  
-       uint_fast32_t  keylen, 
-       const uint8_t *p_iv,   
-       const uint8_t *p_in,   
-       uint_fast32_t  len,    
-       uint8_t *      p_out,  
-       uint8_t *      p_tag,  
-       uint_fast32_t  iter    
-)
+ee_aes(ee_aes_mode_t  mode,
+       ee_aes_func_t  func,
+       const uint8_t *p_key,
+       uint_fast32_t  keylen,
+       const uint8_t *p_iv,
+       const uint8_t *p_in,
+       uint_fast32_t  len,
+       uint8_t *      p_out,
+       uint8_t *      p_tag,
+       uint_fast32_t  iter)
 {
-    void *        p_context; 
-    uint_fast32_t numblocks; 
-    uint_fast32_t i;         
-    uint_fast32_t j;         
+    void *        p_context;
+    uint_fast32_t numblocks;
+    uint_fast32_t i;
+    uint_fast32_t j;
     uint_fast16_t bits = keylen * 8;
     const char *  m    = aes_cipher_mode_text[mode];
     ee_status_t   ret;
@@ -45,7 +44,7 @@ ee_aes(ee_aes_mode_t  mode,
             return;
         }
         numblocks = len / EE_AES_BLOCKLEN;
-        if (len % EE_AES_BLOCKLEN != 0) 
+        if (len % EE_AES_BLOCKLEN != 0)
         {
             th_printf("e-aes%d_%s-[Input must be modulo 16]\r\n", bits, m);
             return;

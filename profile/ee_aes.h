@@ -40,21 +40,21 @@ typedef enum ee_aes_func_t
 
 /**
  * @brief This is the lowest-level benchmark function before the API calls.
- * It performs `i` number of iterations on the requested primitive.
- * 
+ * It performs `i` number of iterations on the primitive.
+ *
  * None of the functions at this level return an error status; errors are
  * reported vi `th_printf` and intercepted by the host.
- * 
- * @param mode - AES mode
- * @param func - AES function
- * @param p_key - Key
- * @param keylen - Length of key
- * @param p_iv - Initialization vector
- * @param p_in - PT/CT buffer
+ *
+ * @param mode - The mode of this AES operation
+ * @param func - The AES function to perform
+ * @param p_key - The key buffer
+ * @param keylen - Length of key buffer
+ * @param p_iv - Initialization vector buffer
+ * @param p_in - Input PT/CT buffer
  * @param len - Length of input buffer
- * @param p_out - CT/PT buffer
+ * @param p_out - Output CT/PT buffer
  * @param p_tag - Tag buffer
- * @param i - Number of iterations to perform
+ * @param iter - Number of iterations to perform
  */
 void ee_aes(ee_aes_mode_t  mode,
             ee_aes_func_t  func,
@@ -65,11 +65,11 @@ void ee_aes(ee_aes_mode_t  mode,
             uint_fast32_t  len,
             uint8_t *      p_out,
             uint8_t *      p_tag,
-            uint_fast32_t  i);
+            uint_fast32_t  iter);
 
 /**
- * @brief Create an AES context for a given mode.
- * 
+ * @brief Create a context for a given mode.
+ *
  * @param pp_context - A pointer to a context pointer to be created
  * @param mode - AES mode; most libraries need this to create a context
  * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
@@ -79,7 +79,7 @@ ee_status_t th_aes_create(void **pp_context, ee_aes_mode_t mode);
 /**
  * @brief Initialize an AES context with a key. CTR-mode may require an IV
  * on initialization, and this function is fall all AES modes.
- * 
+ *
  * @param p_context - The context from the `create` function
  * @param p_key - The key buffer
  * @param keylen - Length of the key buffer
@@ -96,8 +96,8 @@ ee_status_t th_aes_init(void *         p_context,
                         ee_aes_mode_t  mode);
 
 /**
- * @brief De-initialize the AES context.
- * 
+ * @brief De-initialize the context (but don't destroy it).
+ *
  * @param p_context - The context from the `create` function
  * @param mode - The mode of this AES context
  */
@@ -105,7 +105,7 @@ void th_aes_deinit(void *p_context, ee_aes_mode_t mode);
 
 /**
  * @brief Perform an AES ECB encryption.
- * 
+ *
  * @param p_context - The context from the `create` function
  * @param p_pt - Plaintext buffer (16-octets)
  * @param p_ct - Ciphertext buffer (16-octets)
@@ -117,7 +117,7 @@ ee_status_t th_aes_ecb_encrypt(void *         p_context,
 
 /**
  * @brief Perform an AES ECB decryption.
- * 
+ *
  * @param p_context - The context from the `create` function
  * @param p_ct - Ciphertext buffer (16-octets)
  * @param p_pt - Plaintext buffer (16-octets)
@@ -129,7 +129,7 @@ ee_status_t th_aes_ecb_decrypt(void *         p_context,
 
 /**
  * @brief Perform an AES CTR encryption.
- * 
+ *
  * @param p_context - The context from the `create` function
  * @param p_pt - Plaintext buffer
  * @param ptlen - Length of the plaintext buffer
@@ -143,7 +143,7 @@ ee_status_t th_aes_ctr_encrypt(void *         p_context,
 
 /**
  * @brief Perform an AES CTR decryption.
- * 
+ *
  * @param p_context - The context from the `create` function
  * @param p_ct - Ciphertext buffer
  * @param ctlen - Length of the ciphertext buffer
@@ -157,15 +157,15 @@ ee_status_t th_aes_ctr_decrypt(void *         p_context,
 
 /**
  * @brief Perform an AES CCM encryption.
- * 
+ *
  * @param p_context - The context from the `create` function
  * @param p_pt - Plaintext buffer
  * @param ptlen - Length of the plaintext buffer
  * @param p_ct - Ciphertext buffer
- * @param p_tag - Tag buffer.
- * @param taglen - Tag buffer length.
- * @param p_iv - IV buffer.
- * @param ivlen - IV buffer length.
+ * @param p_tag - Tag buffer
+ * @param taglen - Tag buffer length
+ * @param p_iv - IV buffer
+ * @param ivlen - IV buffer length
  * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
 ee_status_t th_aes_ccm_encrypt(void *         p_context,
@@ -179,15 +179,15 @@ ee_status_t th_aes_ccm_encrypt(void *         p_context,
 
 /**
  * @brief Perform an AES CCM decryption.
- * 
+ *
  * @param p_context - The context from the `create` function
  * @param p_ct - Ciphertext buffer
  * @param ctlen - Length of the ciphertext buffer
  * @param p_pt - Plaintext buffer
- * @param p_tag - Tag buffer.
- * @param taglen - Tag buffer length.
- * @param p_iv - IV buffer.
- * @param ivlen - IV buffer length.
+ * @param p_tag - Tag buffer
+ * @param taglen - Tag buffer length
+ * @param p_iv - IV buffer
+ * @param ivlen - IV buffer length
  * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
 ee_status_t th_aes_ccm_decrypt(void *         p_context,
@@ -201,15 +201,15 @@ ee_status_t th_aes_ccm_decrypt(void *         p_context,
 
 /**
  * @brief Perform an AES GCM encryption.
- * 
+ *
  * @param p_context - The context from the `create` function
  * @param p_pt - Plaintext buffer
  * @param ptlen - Length of the plaintext buffer
  * @param p_ct - Ciphertext buffer
- * @param p_tag - Tag buffer.
- * @param taglen - Tag buffer length.
- * @param p_iv - IV buffer.
- * @param ivlen - IV buffer length.
+ * @param p_tag - Tag buffer
+ * @param taglen - Tag buffer length
+ * @param p_iv - IV buffer
+ * @param ivlen - IV buffer length
  * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
 ee_status_t th_aes_gcm_encrypt(void *         p_context,
@@ -223,15 +223,15 @@ ee_status_t th_aes_gcm_encrypt(void *         p_context,
 
 /**
  * @brief Perform an AES GCM decryption.
- * 
+ *
  * @param p_context - The context from the `create` function
  * @param p_ct - Ciphertext buffer
  * @param ctlen - Length of the ciphertext buffer
  * @param p_pt - Plaintext buffer
- * @param p_tag - Tag buffer.
- * @param taglen - Tag buffer length.
- * @param p_iv - IV buffer.
- * @param ivlen - IV buffer length.
+ * @param p_tag - Tag buffer
+ * @param taglen - Tag buffer length
+ * @param p_iv - IV buffer
+ * @param ivlen - IV buffer length
  * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
 ee_status_t th_aes_gcm_decrypt(void *         p_context,
@@ -245,9 +245,9 @@ ee_status_t th_aes_gcm_decrypt(void *         p_context,
 
 /**
  * @brief Deallocate/destroy the context.
- * 
+ *
  * @param p_context - The context from the `create` function
- * @param mode 
+ * @param mode
  */
 void th_aes_destroy(void *p_context);
 

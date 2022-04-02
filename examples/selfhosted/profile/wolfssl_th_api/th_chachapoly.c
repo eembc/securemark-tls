@@ -12,34 +12,23 @@
 
 #include <wolfssl/options.h>
 #include <wolfssl/wolfcrypt/chacha20_poly1305.h>
-
 #include "ee_chachapoly.h"
 
-// Set during our init call since there's no portable context for enc/dec
+/* Set during our init call since there's no portable context for enc/dec */
 uint8_t g_localKey[CHACHA20_POLY1305_AEAD_KEYSIZE];
 
-/**
- * Create a context.
- *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
- */
 ee_status_t
-th_chachapoly_create(void **pp_context // output: portable context
+th_chachapoly_create(void **pp_context 
 )
 {
-    // wolfCrypt creates uses a local context in its chachapoly functions
+    /* wolfCrypt creates uses a local context in its chachapoly functions */
     return EE_STATUS_OK;
 }
 
-/**
- * Initialize the key for an impending operation.
- *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
- */
 ee_status_t
-th_chachapoly_init(void *            p_context, // input: portable context
-                   const uint8_t *   p_key,     // input: key
-                   uint_fast32_t     keylen    // input: length of key in bytes
+th_chachapoly_init(void *            p_context, 
+                   const uint8_t *   p_key,     
+                   uint_fast32_t     keylen    
 )
 {
     if (keylen != CHACHA20_POLY1305_AEAD_KEYSIZE)
@@ -48,35 +37,27 @@ th_chachapoly_init(void *            p_context, // input: portable context
                   CHACHA20_POLY1305_AEAD_KEYSIZE);
     }
     th_memcpy(g_localKey, p_key, CHACHA20_POLY1305_AEAD_KEYSIZE);
-    // wolfCrypt creates uses a local context in its chachapoly functions
+    /* wolfCrypt creates uses a local context in its chachapoly functions */
     return EE_STATUS_OK;
 }
 
-/**
- * Perform any cleanup required by init, but don't destroy the context.
- */
 void
-th_chachapoly_deinit(void *            p_context // input: portable context
+th_chachapoly_deinit(void *            p_context 
 )
 {
-    // wolfCrypt creates uses a local context in its chachapoly functions
+    /* wolfCrypt creates uses a local context in its chachapoly functions */
 }
 
-/**
- * Perform a ChaCha-Poly encrypt.
- *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
- */
 ee_status_t
 th_chachapoly_encrypt(
-    void *         p_context, // input: portable context
-    const uint8_t *p_pt,      // input: plaintext
-    uint_fast32_t  ptlen,     // input: length of plaintext in bytes
-    uint8_t *      p_ct,      // output_ ciphertext
-    uint8_t *      p_tag,     // output: tag
-    uint_fast32_t  taglen,    // input: tag length in bytes
-    uint8_t *      p_iv,      // input: initialization vector
-    uint_fast32_t  ivlen      // input: IV length in bytes
+    void *         p_context, 
+    const uint8_t *p_pt,      
+    uint_fast32_t  ptlen,     
+    uint8_t *      p_ct,      
+    uint8_t *      p_tag,     
+    uint_fast32_t  taglen,    
+    uint8_t *      p_iv,      
+    uint_fast32_t  ivlen      
 )
 {
     return wc_ChaCha20Poly1305_Encrypt(
@@ -86,21 +67,16 @@ th_chachapoly_encrypt(
                : EE_STATUS_ERROR;
 }
 
-/**
- * Perform a ChaCha-decrypt.
- *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
- */
 ee_status_t
 th_chachapoly_decrypt(
-    void *         p_context, // input: portable context
-    const uint8_t *p_ct,      // input: ciphertext
-    uint_fast32_t  ctlen,     // input: length of ciphertext in bytes
-    uint8_t *      p_pt,      // output_ plaintext
-    uint8_t *      p_tag,     // input: tag
-    uint_fast32_t  taglen,    // input: tag length in bytes
-    uint8_t *      p_iv,      // input: initialization vector
-    uint_fast32_t  ivlen      // input: IV length in bytes
+    void *         p_context, 
+    const uint8_t *p_ct,      
+    uint_fast32_t  ctlen,     
+    uint8_t *      p_pt,      
+    uint8_t *      p_tag,     
+    uint_fast32_t  taglen,    
+    uint8_t *      p_iv,      
+    uint_fast32_t  ivlen      
 )
 {
     return wc_ChaCha20Poly1305_Decrypt(
@@ -110,12 +86,9 @@ th_chachapoly_decrypt(
                : EE_STATUS_ERROR;
 }
 
-/**
- * Clean up the context created.
- */
 void
-th_chachapoly_destroy(void *p_context // input: portable context
+th_chachapoly_destroy(void *p_context 
 )
 {
-    // wolfCrypt creates uses a local context in its chachapoly functions
+    /* wolfCrypt creates uses a local context in its chachapoly functions */
 }

@@ -166,17 +166,23 @@ void ee_bench_ecdsa(ee_ecdh_group_t g,
  * Offset       Data
  * -----------  ----------------------------------------
  * 0            Private key length (uint32)
- * " + 4        ASN.1 quintuple private key
+ * " + 4        Presented as ASN.1 private key (RFC 8017 A.1.2)
  * " + prilen   Message length (uint32)
  * " + 4        Message octets
  * " + msglen   Signature length (uint32)
  * " + 4        Signature octets
  *
- * The message is the PKCS1 encryptied value of the message. It is NOT the
- * PKCS1v1.5 encoded digest. The host will always send a 32-byte value for
- * the message.
+ * The message is the non-encoded encryption of message M according to PCKS1v15.
+ * Meaning, the hash will not be encoded, it will simply be padded and
+ * encrypted, and the expected signature for verification will follow the
+ * same convention.
  *
- * Note that this function only verifies that the RSA operations succeeded,
+ * The private key is always given, regardless of sign or verify. If the target
+ * requires a public key to do verify, then it should be constructed during
+ * the context create and init, as the specified ASN.1 format contains enough
+ * information to reconstruct the public key.
+ *
+ * Note that this function only verifies that the RSA operation succeeded,
  * in the case of verify, the decrypted bytes are NOT compared to the message.
  *
  * @param id - The RSA enum indicating the modulus

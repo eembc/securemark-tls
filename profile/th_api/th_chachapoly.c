@@ -22,8 +22,7 @@ th_chachapoly_create(void **pp_context)
 ee_status_t
 th_chachapoly_init(void *               p_context,
                    const uint8_t *      p_key,
-                   uint_fast32_t        keylen,
-                   ee_chachapoly_func_t func)
+                   uint_fast32_t        keylen)
 {
 #warning "th_chachapoly_init not implemented"
     return EE_STATUS_OK;
@@ -35,8 +34,6 @@ th_chachapoly_deinit(void *p_context) {
 }
 
 ee_status_t th_chachapoly_encrypt(void *         p_context,
-                                  const uint8_t *p_aad,
-                                  uint_fast32_t  aadlen,
                                   const uint8_t *p_pt,
                                   uint_fast32_t  ptlen,
                                   uint8_t *      p_ct,
@@ -51,8 +48,6 @@ ee_status_t th_chachapoly_encrypt(void *         p_context,
 
 ee_status_t
 th_chachapoly_decrypt(void *         p_context,
-                      const uint8_t *p_aad,
-                      uint_fast32_t  aadlen,
                       const uint8_t *p_ct,
                       uint_fast32_t  ctlen,
                       uint8_t *      p_pt,

@@ -28,15 +28,15 @@ typedef enum ee_ecdsa_func_t
 /**
  * @brief Performs an ECDSA sign or verify operation some number of iterations.
  *
- * @param group The ECC curve to use (non-Edwards)
- * @param func The operation enum to perform
- * @param p_msg Pointer to the message octet buffer to sign
- * @param mlen Length of the message buffer
- * @param p_sig Pointer to a buffer for the signature
- * @param p_slen As input, size of the buffer; as output, octets used
- * @param p_private The private key for the context (public will be generated)
- * @param plen Length of private key
- * @param iter Number of iterations
+ * @param group - See the `ee_ecdh_group_t` enum
+ * @param func - Function to perform, see `the ee_ecdsa_func_t` enum
+ * @param p_msg - The message buffer
+ * @param mlen - Length of the message buffer
+ * @param p_sig - The signature buffer
+ * @param p_slen - Pointer to length of the signature buffer (set on sign)
+ * @param p_pri - The private key buffer
+ * @param plen - Length of the private key buffer
+ * @param iter - Number of iterations to perform
  */
 void ee_ecdsa(ee_ecdh_group_t group,
               ee_ecdsa_func_t func,
@@ -44,67 +44,85 @@ void ee_ecdsa(ee_ecdh_group_t group,
               uint_fast32_t   mlen,
               uint8_t *       p_sig,
               uint_fast32_t * p_slen,
-              uint8_t *       p_private,
+              uint8_t *       p_pri,
               uint_fast32_t   plen,
               uint_fast32_t   iter);
 
 /**
- * Create the context passed between functions.
+ * @brief Creates a context.
  *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
+ * @param pp_context - A pointer to a context pointer to be created
+ * @param group - See the `ee_ecdh_group_t` enum
+ * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
-ee_status_t th_ecdsa_create(
-    void **         p_context, // output: portable context
-    ee_ecdh_group_t group      // input: see `ee_ecdh_group_t` for options
-);
+ee_status_t th_ecdsa_create(void **pp_context, ee_ecdh_group_t group);
 
 /**
- * Initialize to a group (must be in the EE_ enum) with a predefined
- * private key.
+ * @brief Initialize the context, creating the public key from the private
+ * and storing it for later.
+ * 
+ * The private key is just the raw integer value of `d`.
  *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
+ * @param p_context - The context from the `create` function
+ * @param group - See the `ee_ecdh_group_t` enum
+ * @param p_pri - The private key buffer
+ * @param plen - Length of the private key buffer
+ * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
-ee_status_t th_ecdsa_init(
-    void *          p_context, // input: portable context
-    ee_ecdh_group_t group,     // input: see `ee_ecdh_group_t` for options
-    uint8_t *       p_private, // input: private key from host
-    uint_fast32_t   plen       // input: length of private key in bytes
-);
+ee_status_t th_ecdsa_init(void *          p_context,
+                          ee_ecdh_group_t group,
+                          uint8_t *       p_pri,
+                          uint_fast32_t   plen);
 
 /**
- * Create a signature using the specified hash.
+ * @brief Sign a message (hash) with the private key.
  *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
+ * For EcDSA, the signature format is the ASN.1 DER of R and S. For Ed25519,
+ * the signature is the raw, little endian encoding of R and S, padded to 256
+ * bits.
+ *
+ * Note that even if the message is a hash, Ed25519 will perform another SHA-
+ * 512 operation on it, as this is part of RFC 8032.
+ *
+ * @param p_context - The context from the `create` function
+ * @param group - See the `ee_ecdh_group_t` enum
+ * @param p_hash - The hashed buffer to sign
+ * @param hlen - Length of the hashed buffer
+ * @param p_sig - The output signature buffer (provided)
+ * @param p_slen - The number of bytes used in the output signature buffer.
+ * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
-ee_status_t th_ecdsa_sign(
-    void *          p_context, // input: portable context
-    ee_ecdh_group_t group,     // input: see `ee_ecdh_group_t` for options
-    uint8_t *       p_hash,    // input: sha256 digest
-    uint_fast32_t   hlen,      // input: length of digest in bytes
-    uint8_t *       p_sig,     // output: signature
-    uint_fast32_t * p_slen     // in/out: input=MAX slen, output=resultant
-);
+ee_status_t th_ecdsa_sign(void *          p_context,
+                          ee_ecdh_group_t group,
+                          uint8_t *       p_hash,
+                          uint_fast32_t   hlen,
+                          uint8_t *       p_sig,
+                          uint_fast32_t * p_slen);
 
 /**
- * Create a signature using SHA256 hash.
+ * @brief Verify a message (hash) with the public key.
  *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
+ * @param p_context - The context from the `create` function
+ * @param group - See the `ee_ecdh_group_t` enum
+ * @param p_hash - The hashed buffer to verify
+ * @param hlen - Length of the hashed buffer
+ * @param p_sig - The input signature buffer
+ * @param slen - Length of the input signature buffer
+ * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
-ee_status_t th_ecdsa_verify(
-    void *          p_context, // input: portable context
-    ee_ecdh_group_t group,     // input: see `ee_ecdh_group_t` for options
-    uint8_t *       p_hash,    // input: sha256 digest
-    uint_fast32_t   hlen,      // input: length of digest in bytes
-    uint8_t *       p_sig,     // output: signature
-    uint_fast32_t   slen       // input: length of signature in bytes
-);
+ee_status_t th_ecdsa_verify(void *          p_context,
+                            ee_ecdh_group_t group,
+                            uint8_t *       p_hash,
+                            uint_fast32_t   hlen,
+                            uint8_t *       p_sig,
+                            uint_fast32_t   slen);
 
 /**
- * Destroy the context created earlier.
+ * @brief Deallocate/destroy the context
+ *
+ * @param p_context - The context from the `create` function
+ * @param group - See the `ee_ecdh_group_t` enum
  */
-void th_ecdsa_destroy(
-    void *          p_context, // portable context
-    ee_ecdh_group_t group      // input: see `ee_ecdh_group_t` for options
-);
+void th_ecdsa_destroy(void *p_context, ee_ecdh_group_t group);
 
-#endif // __EE_ECDSA_H
+#endif /* _EE_ECDSA_H */

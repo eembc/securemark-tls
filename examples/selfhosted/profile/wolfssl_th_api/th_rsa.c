@@ -36,12 +36,6 @@ typedef struct rsa_context_t
         }               \
     }
 
-/**
- * @brief Creates a portable context structure for RSA operations.
- *
- * @param pp_context Pointer to portable context pointer.
- * @return ee_status_t EE_STATUS_OK or EE_STATUS_FAIL
- */
 ee_status_t
 th_rsa_create(void **pp_context)
 {
@@ -145,12 +139,6 @@ th_rsa_verify(void *         p_context,
     return EE_STATUS_OK;
 }
 
-/**
- * @brief De-initialize and destroy and context created, and free up any
- * memory allocated during `th_rsa_create`.
- *
- * @param p_context Portable context pointer
- */
 void
 th_rsa_destroy(void *p_context)
 {

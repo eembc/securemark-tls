@@ -12,19 +12,17 @@
 
 #include "ee_profile.h"
 
-// This indicates if the DUT should print verification feedback to the Host
-// See th_api/th_lib.c
+/**
+ * @brief This indicates if the DUT should print verification feedback to the
+ * Host. See `th_api/th_lib.c`.
+ */
 extern bool g_mute_timestamps;
 
 #if EE_CFG_SELFHOSTED != 1
 
+/* Verify mode means extra output will be sent to the host. */
 static bool g_verify_mode = false;
 
-/**
- * This is the profile command parser. It is called from the function:
- * monitor/ee_main.c:ee_serial_command_parser_callback(). It claims all
- * commands related to the benchmark profile.
- */
 arg_claimed_t
 ee_profile_parse(char *p_command)
 {
@@ -41,7 +39,7 @@ ee_profile_parse(char *p_command)
         if (p_next)
         {
             g_verify_mode = (th_atoi(p_next) != 0);
-            // Verify mode prints extra content, but turns off timestamps!
+            /* Verify mode prints extra content, but turns off timestamps! */
             g_mute_timestamps = g_verify_mode;
         }
         th_printf("m-verify-%s\r\n", g_verify_mode ? "on" : "off");
@@ -116,7 +114,7 @@ ee_profile_initialize(void)
     g_mute_timestamps = false;
     if (th_buffer_size() < EE_MINBUF)
     {
-        // The host will catch this, rather than returning a value
+        /* The host will catch this, rather than returning a value. */
         th_printf("e-[Buffer must be at least %u bytes]\r\n", EE_MINBUF);
     }
 }

@@ -13,21 +13,17 @@
 #include "ee_main.h"
 #include "ee_chachapoly.h"
 
-/**
- * Perform a ChaCha20/Poly1305 operation a given number of times.
- */
 void
-ee_chachapoly(ee_chachapoly_func_t func,  // input: EE_CHACHAPOLY_(ENC|DEC)
-              uint8_t *            p_key, // input: key
-              uint8_t *            p_iv,  // input: initialization vector
-              uint8_t *     p_in,  // input: pointer to source input (pt or ct)
-              uint_fast32_t len,   // input: length of input in bytes
-              uint8_t *     p_tag, // inout: output in encrypt, input on decrypt
-              uint8_t *     p_out, // output: pointer to output buffer
-              uint_fast32_t iterations // input: # of test iterations
-)
+ee_chachapoly(ee_chachapoly_func_t func,
+              uint8_t *            p_key,
+              uint8_t *            p_iv,
+              uint8_t *            p_in,
+              uint_fast32_t        len,
+              uint8_t *            p_out,
+              uint8_t *            p_tag,
+              uint_fast32_t        iter)
 {
-    void *p_context; // Generic context if needed by implementation
+    void *p_context;
 
     if (th_chachapoly_create(&p_context) != EE_STATUS_OK)
     {
@@ -35,7 +31,7 @@ ee_chachapoly(ee_chachapoly_func_t func,  // input: EE_CHACHAPOLY_(ENC|DEC)
         return;
     }
 
-    th_printf("m-chachapoly-iterations-%d\r\n", iterations);
+    th_printf("m-chachapoly-iterations-%d\r\n", iter);
     th_printf("m-chachapoly-message-length-%d\r\n", len);
 
     if (func == EE_CHACHAPOLY_ENC)
@@ -43,10 +39,9 @@ ee_chachapoly(ee_chachapoly_func_t func,  // input: EE_CHACHAPOLY_(ENC|DEC)
         th_printf("m-chachapoly-encrypt-start\r\n");
         th_timestamp();
         th_pre();
-        while (iterations-- > 0)
+        while (iter-- > 0)
         {
-            if (th_chachapoly_init(
-                    p_context, p_key, EE_CHACHAPOLY_KEYLEN)
+            if (th_chachapoly_init(p_context, p_key, EE_CHACHAPOLY_KEYLEN)
                 != EE_STATUS_OK)
             {
                 th_post();
@@ -78,10 +73,9 @@ ee_chachapoly(ee_chachapoly_func_t func,  // input: EE_CHACHAPOLY_(ENC|DEC)
         th_printf("m-chachapoly-decrypt-start\r\n");
         th_timestamp();
         th_pre();
-        while (iterations-- > 0)
+        while (iter-- > 0)
         {
-            if (th_chachapoly_init(
-                    p_context, p_key, EE_CHACHAPOLY_KEYLEN)
+            if (th_chachapoly_init(p_context, p_key, EE_CHACHAPOLY_KEYLEN)
                 != EE_STATUS_OK)
             {
                 th_post();

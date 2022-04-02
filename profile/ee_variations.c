@@ -12,7 +12,7 @@
 
 #include "ee_variations.h"
 
-// A macro to make the code easier to read
+/* A macro to make the code easier to read */
 #define CHECK(x)               \
     {                          \
         if (x != EE_STATUS_OK) \
@@ -20,38 +20,22 @@
             goto error_exit;   \
         }                      \
     }
-// profile/ee_profile.c
-uint8_t ee_rand(void);
 
-/**
- * For tests where expliclty calling the primitive's wrapper benchmark
- * function is insufficient, these "variations" serve as more sophisticated
- * scenarios.
- */
-
-/**
- * Variation #001 interleaves two AES and two SHA contexts similar to what
- * we see in the TLS handshake. This function does not need validation since
- * the primitives are validated through the host UI.
- */
-#define VAR001_SESSION_LEN 1495u
-#define VAR001_AES_LEN     16u
 void
-ee_variation_001(uint_fast32_t iterations)
+ee_variation_001(uint_fast32_t iter)
 {
-    void *        p_csha1 = NULL;          // SHA context 1
-    void *        p_csha2 = NULL;          // SHA context 2
-    void *        p_caes  = NULL;          // AES context
-    uint8_t *     p_msg;                   // All bytes to hash
-    uint8_t *     p_buf1;                  // SHA1's buffer
-    uint8_t *     p_buf2;                  // SHA2's buffer
-    uint8_t       p_digest[EE_SHA256 / 8]; // SHA digest
-    uint8_t       p_pt[VAR001_AES_LEN];    // AES plaintext
-    uint8_t       p_ct[VAR001_AES_LEN];    // AES ciphertext
-    uint8_t       p_key[16];               // AES key, forcing AES128
-    uint_fast32_t idx;                     // Loop index
+    void *        p_csha1 = NULL;
+    void *        p_csha2 = NULL;
+    void *        p_caes  = NULL;
+    uint8_t *     p_msg;
+    uint8_t *     p_buf1;
+    uint8_t *     p_buf2;
+    uint8_t       p_digest[EE_SHA256 / 8];
+    uint8_t       p_pt[VAR001_AES_LEN];
+    uint8_t       p_ct[VAR001_AES_LEN];
+    uint8_t       p_key[16];
+    uint_fast32_t idx;
 
-    // Total number of bytes in the TLS handshake session-hash
     p_msg = (uint8_t *)th_malloc(VAR001_SESSION_LEN);
     if (p_msg == NULL)
     {
@@ -79,15 +63,15 @@ ee_variation_001(uint_fast32_t iterations)
     th_printf("m-variation-001-start\r\n");
     th_timestamp();
     th_pre();
-    while (iterations-- > 0)
+    while (iter-- > 0)
     {
-        p_buf1 = p_msg; // p_buf1 creeps through the p_msg data
-        p_buf2 = p_msg; // p_buf2 never moves, but use a diff name for clarity
+        p_buf1 = p_msg; /* p_buf1 creeps through the p_msg data */
+        p_buf2 = p_msg; /* p_buf2 never moves, using a diff name for clarity */
 
         CHECK(th_sha_create(&p_csha1, EE_SHA256));
         CHECK(th_sha_init(p_csha1, EE_SHA256));
 
-        // NOTE: All of these "magic numbers" are based on handshake analysis
+        /* NOTE: These "magic numbers" are based on v1.2 handshake analysis */
 
         CHECK(th_sha_process(p_csha1, EE_SHA256, p_buf1, 115));
         p_buf1 += 115;
@@ -144,9 +128,8 @@ ee_variation_001(uint_fast32_t iterations)
 
 error_exit:
     th_post();
-    // TODO: Hard to be more descriptive here.
+    /* TODO: Hard to be more descriptive here. */
     th_printf("e-variation-001-[An error occurred]\r\n");
-    // These are NULL safe
     th_aes_destroy(p_caes);
     th_sha_destroy(p_csha1, EE_SHA256);
     th_sha_destroy(p_csha2, EE_SHA256);

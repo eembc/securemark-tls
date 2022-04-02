@@ -12,19 +12,8 @@
 
 #include "ee_buffer.h"
 
-// This var is used for the generic buffer ee_buffer_* routines
 static uint_fast32_t g_buffer_pos = 0;
 
-/**
- * Some VERY basic buffer manipulation functions for the generic buffer.
- * Adding one byte at a time increments the position pointer, which wraps.
- * Rewinding sets the position pointer to the start. Fill allows you to
- * copy the same byte in the memory.
- */
-
-/**
- * Add a byte to the current index and increment, wrapping if necessary
- */
 void
 ee_buffer_add(uint8_t byte)
 {
@@ -36,18 +25,12 @@ ee_buffer_add(uint8_t byte)
     }
 }
 
-/**
- * Set the index pointer to position 0
- */
 void
 ee_buffer_rewind(void)
 {
     g_buffer_pos = 0;
 }
 
-/**
- * Fill the buffer with a byte
- */
 void
 ee_buffer_fill(uint8_t byte)
 {
@@ -60,9 +43,6 @@ ee_buffer_fill(uint8_t byte)
     }
 }
 
-/**
- * This is a debug function because it could print multiple KB of data
- */
 void
 ee_buffer_print(void)
 {
@@ -96,15 +76,12 @@ ee_buffer_print(void)
     }
 }
 
-/**
- * Route the 'buffer' commands (see the help text in the main parser).
- */
 arg_claimed_t
 ee_buffer_parse(char *p_command)
 {
-    char *p_subcmd; // Subcommand
-    char *p_next;   // Next token in subcommand parse
-    long  hex;      // String-to-hex byte (see ee_hexdec)
+    char *p_subcmd;
+    char *p_next;
+    long  hex;
 
     if (th_strncmp(p_command, "buffer", EE_CMD_SIZE) != 0)
     {

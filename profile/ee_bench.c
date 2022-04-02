@@ -42,23 +42,14 @@ ee_bench_sha(ee_sha_size_t size, uint_fast32_t n, uint_fast32_t i, bool verify)
     uint8_t *p_in  = th_buffer_address();
     uint8_t *p_out = p_in + n;
 
-    if (th_buffer_size() < (n + (size / 8)))
-    {
-        th_printf("e-[ee_bench_sha() buffer too small]\r\n");
-        return;
-    }
-
-    for (size_t x = 0; x < n; ++x)
-    {
-        p_in[x] = ee_rand();
-    }
+    fill_rand(p_in, n);
 
     ee_sha(size, p_in, n, p_out, i);
 
     if (verify)
     {
-        ee_printmem_hex(p_in, n, "m-bench-sha-in");
-        ee_printmem_hex(p_out, size / 8, "m-bench-sha-out");
+        ee_printmemline(p_in, n, "m-bench-sha-in");
+        ee_printmemline(p_out, size / 8, "m-bench-sha-out");
     }
 }
 
@@ -76,12 +67,6 @@ ee_bench_aes(ee_aes_mode_t mode,
     uint8_t *p_in  = p_iv + ivlen;
     uint8_t *p_out = p_in + n;
     uint8_t *p_tag = p_out + n;
-
-    if (th_buffer_size() < ((p_tag - p_key) + EE_AES_TAGLEN))
-    {
-        th_printf("e-[ee_bench_aes() buffer too small]\r\n");
-        return;
-    }
 
     fill_rand(p_key, keylen);
     fill_rand(p_iv, ivlen);
@@ -103,11 +88,12 @@ ee_bench_aes(ee_aes_mode_t mode,
 
     if (verify)
     {
-        ee_printmem_hex(p_key, keylen, "m-bench-aesXXX-key-");
-        ee_printmem_hex(p_iv, ivlen, "m-bench-aesXXX-iv-");
-        ee_printmem_hex(p_in, n, "m-bench-aesXXX-in-");
-        ee_printmem_hex(p_out, n, "m-bench-aesXXX-out-");
-        ee_printmem_hex(p_tag, EE_AES_TAGLEN, "m-bench-aesXXX-tag-");
+        /* Not all of these are used (ECB, CCM), but print them anyway. */
+        ee_printmemline(p_key, keylen, "m-bench-aes-key-");
+        ee_printmemline(p_iv, ivlen, "m-bench-aes-iv-");
+        ee_printmemline(p_in, n, "m-bench-aes-in-");
+        ee_printmemline(p_out, n, "m-bench-aes-out-");
+        ee_printmemline(p_tag, EE_AES_TAGLEN, "m-bench-aes-tag-");
     }
 }
 
@@ -128,7 +114,7 @@ ee_bench_chachapoly(ee_chachapoly_func_t func, int n, int i, bool verify)
     {
         /* Encrypt something for the decrypt loop to decrypt */
         g_mute_timestamps = true;
-        ee_chachapoly(EE_CHACHAPOLY_ENC, p_key, p_iv, p_in, n, p_tag, p_out, 1);
+        ee_chachapoly(EE_CHACHAPOLY_ENC, p_key, p_iv, p_in, n, p_out, p_tag, 1);
         g_mute_timestamps = false;
         th_memcpy(p_in, p_out, n);
         uint8_t *tmp = p_in;
@@ -136,15 +122,15 @@ ee_bench_chachapoly(ee_chachapoly_func_t func, int n, int i, bool verify)
         p_out        = tmp;
     }
 
-    ee_chachapoly(func, p_key, p_iv, p_in, n, p_tag, p_out, i);
+    ee_chachapoly(func, p_key, p_iv, p_in, n, p_out, p_tag, i);
 
     if (verify)
     {
-        ee_printmem_hex(p_key, EE_CHACHAPOLY_KEYLEN, "m-bench-chachapoly-key-");
-        ee_printmem_hex(p_iv, EE_CHACHAPOLY_IVLEN, "m-bench-chachapoly-iv-");
-        ee_printmem_hex(p_in, n, "m-bench-chachapoly-in-");
-        ee_printmem_hex(p_out, n, "m-bench-chachapoly-out-");
-        ee_printmem_hex(p_tag, EE_AES_TAGLEN, "m-bench-chachapoly-tag-");
+        ee_printmemline(p_key, EE_CHACHAPOLY_KEYLEN, "m-bench-chachapoly-key-");
+        ee_printmemline(p_iv, EE_CHACHAPOLY_IVLEN, "m-bench-chachapoly-iv-");
+        ee_printmemline(p_in, n, "m-bench-chachapoly-in-");
+        ee_printmemline(p_out, n, "m-bench-chachapoly-out-");
+        ee_printmemline(p_tag, EE_AES_TAGLEN, "m-bench-chachapoly-tag-");
     }
 }
 
@@ -156,17 +142,17 @@ ee_bench_ecdh(ee_ecdh_group_t g, uint_fast32_t i, bool verify)
     uint_fast32_t nsec = ee_sec_sz[g];
 
     /* The th_buffer has been pre-loaded with this data */
-    uint8_t *p_pub = th_buffer_address();
-    uint8_t *p_pri = p_pub + npub;
-    uint8_t *p_sec = p_pri + npri;
+    uint8_t *p_pri = th_buffer_address();
+    uint8_t *p_pub = p_pri + npri;
+    uint8_t *p_sec = p_pub + npub;
 
-    ee_ecdh(g, p_pub, npub, p_pri, npri, p_sec, nsec, i);
+    ee_ecdh(g, p_pri, npri, p_pub, npub, p_sec, nsec, i);
 
     if (verify)
     {
-        ee_printmem_hex(p_pub, npub, "m-bench-ecdhXXX-peer-public-");
-        ee_printmem_hex(p_pri, npri, "m-bench-ecdhXXX-own-private-");
-        ee_printmem_hex(p_sec, nsec, "m-bench-ecdhXXX-shared-");
+        ee_printmemline(p_pub, npub, "m-bench-ecdh-peer-public-");
+        ee_printmemline(p_pri, npri, "m-bench-ecdh-own-private-");
+        ee_printmemline(p_sec, nsec, "m-bench-ecdh-shared-");
     }
 }
 
@@ -177,7 +163,7 @@ ee_bench_ecdsa(ee_ecdh_group_t g,
                uint_fast32_t   i,
                bool            verify)
 {
-    /* These is not in the buffer */
+    /* These are not in the buffer */
     uint_fast32_t npri = ee_pri_sz[g];
     uint_fast32_t slen;
 
@@ -209,9 +195,9 @@ ee_bench_ecdsa(ee_ecdh_group_t g,
 
     if (verify)
     {
-        ee_printmem_hex(p_pri, npri, "m-bench-ecdsaXXX-private-");
-        ee_printmem_hex(p_msg, n, "m-bench-ecdsaXXX-msg-");
-        ee_printmem_hex(p_sig, slen, "m-bench-ecdsaXXX-sig-");
+        ee_printmemline(p_pri, npri, "m-bench-ecdsa-private-");
+        ee_printmemline(p_msg, n, "m-bench-ecdsa-msg-");
+        ee_printmemline(p_sig, slen, "m-bench-ecdsa-sig-");
     }
 }
 
@@ -239,9 +225,9 @@ ee_bench_rsa(ee_rsa_id_t       id,
 
     if (verify)
     {
-        ee_printmem_hex(p_pri, *p_prilen, "m-bench-rsa-pri-");
-        ee_printmem_hex(p_msg, *p_msglen, "m-bench-rsa-msg-");
-        ee_printmem_hex(p_sig, *p_siglen, "m-bench-rsa-sig-");
+        ee_printmemline(p_pri, *p_prilen, "m-bench-rsa-pri-");
+        ee_printmemline(p_msg, *p_msglen, "m-bench-rsa-msg-");
+        ee_printmemline(p_sig, *p_siglen, "m-bench-rsa-sig-");
     }
 }
 

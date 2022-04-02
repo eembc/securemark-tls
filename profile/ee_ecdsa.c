@@ -12,19 +12,6 @@
 
 #include "ee_ecdsa.h"
 
-/**
- * @brief Performs an ECDSA sign or verify operation some number of iterations.
- *
- * @param group The ECC curve to use (non-Edwards)
- * @param func The operation enum to perform
- * @param p_msg Pointer to the message octet buffer to sign
- * @param mlen Length of the message buffer
- * @param p_sig Pointer to a buffer for the signature
- * @param p_slen As input, size of the buffer; as output, octets used
- * @param p_private The private key for the context (public will be generated)
- * @param plen Length of private key
- * @param iter Number of iterations
- */
 void
 ee_ecdsa(ee_ecdh_group_t group,
          ee_ecdsa_func_t func,
@@ -32,11 +19,11 @@ ee_ecdsa(ee_ecdh_group_t group,
          uint_fast32_t   mlen,
          uint8_t *       p_sig,
          uint_fast32_t * p_slen,
-         uint8_t *       p_private,
+         uint8_t *       p_pri,
          uint_fast32_t   plen,
          uint_fast32_t   iter)
 {
-    void *p_context; // Generic context if needed by implementation
+    void *p_context;
 
     if (th_ecdsa_create(&p_context, group) != EE_STATUS_OK)
     {
@@ -44,7 +31,7 @@ ee_ecdsa(ee_ecdh_group_t group,
         return;
     }
 
-    if (th_ecdsa_init(p_context, group, p_private, plen) != EE_STATUS_OK)
+    if (th_ecdsa_init(p_context, group, p_pri, plen) != EE_STATUS_OK)
     {
         th_printf("e-ecdsa-[Failed to initialize]\r\n");
         return;

@@ -12,18 +12,9 @@
 
 #include <wolfssl/options.h>
 #include <wolfssl/wolfcrypt/wc_port.h>
-
 #include "th_util.h"
 
-// NOTE: Feel free to replace the static variable with any allocation scheme
-#define BUFFER_SIZE (1024 * 8)
 static unsigned char g_generic_buffer[BUFFER_SIZE];
-
-/**
- * The pre/post hooks are called immediately before the th_timestamp() and
- * immediately after. These hooks give the developer a chance to turn off
- * certain features (like UART) to save power during the loop.
- */
 
 void
 th_pre(void)
@@ -37,29 +28,18 @@ th_post(void)
     wolfCrypt_Cleanup();
 }
 
-/**
- * PORTME: If you opt to not use the heap, set up the buffer here.
- */
 void
 th_buffer_initialize(void)
 {
 }
 
-/**
- * PORTME: Return the address of a region of memory that the the framework
- * can use as a generic place to store data. Should be 1K at least, but profiles
- * will always check to make sure it is suitably sized.
- */
 unsigned char *
 th_buffer_address(void)
 {
     return g_generic_buffer;
 }
 
-/**
- * PORTME: If you opt to do a malloc, be sure to return the size here
- */
-size_t
+uint_fast32_t
 th_buffer_size(void)
 {
     return BUFFER_SIZE;

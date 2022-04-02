@@ -11,7 +11,6 @@
  */
 
 #include "ee_rsa.h"
-#include "ee_util.h"
 
 void
 ee_rsa(ee_rsa_id_t       id,

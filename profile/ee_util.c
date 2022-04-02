@@ -12,23 +12,10 @@
 
 #include "ee_util.h"
 
-// These are used for our PRNG ee_rand()
+/* These are used for our PRNG `ee_rand()` */
 static uint8_t g_prn       = 0x7f;
 static uint8_t g_prn_coeff = 0;
 
-/**
- * @brief convert a hexidecimal string to a signed long
- * will not produce or process negative numbers except
- * to signal error.
- *
- * @param hex without decoration, case insensitive.
- *
- * @return -1 on error; but if the result is > size(long)
- * the number is invalid (there is no character counting)
- * and no error generated.
- *
- * Provided by Steve Allen at Dialog Semiconductor
- */
 long
 ee_hexdec(char *hex)
 {
@@ -62,12 +49,6 @@ ee_hexdec(char *hex)
     return ret;
 }
 
-/**
- * We need a pseudo-rand number generator with an host-provided seed. We don't
- * care about strength of randomness, we just need a repeatable sequence based
- * on a single byte from the host.
- */
-
 void
 ee_srand(uint8_t seed)
 {
@@ -75,7 +56,6 @@ ee_srand(uint8_t seed)
     g_prn_coeff = 0;
 }
 
-// return a byte using xorshift
 uint8_t
 ee_rand(void)
 {
@@ -85,35 +65,29 @@ ee_rand(void)
     return g_prn;
 }
 
-/**
- * Printing utility #1
- *
- * Prints out a number of hex bytes from an address, max 16 per line, in 02x
- * lowercase hexadecimal. User can specify their own line header for debugging.
- */
 void
-ee_printmem(uint8_t *addr, uint_fast32_t len, char *user_header)
+ee_printmem(uint8_t *p_addr, uint_fast32_t len, char *p_user_header)
 {
     uint_fast32_t i;
     char *        header;
     char          b;
 
-    if (user_header == NULL)
+    if (p_user_header == NULL)
     {
         header = EE_PRINTMEM_DEFAULT_HEADER;
     }
     else
     {
-        header = user_header;
+        header = p_user_header;
     }
 
     th_printf(header);
 
     for (i = 0; i < len; ++i)
     {
-        // Some libc printf's don't provide padding, e.g., %02x, and force 1
-        // nibble on libcs that default to two.
-        b = addr[i];
+        /* Some libc printf's don't provide padding, e.g., %02x, and force 1
+           nibble on libcs that default to two. */
+        b = p_addr[i];
         th_printf("%1x%1x", (b & 0xF0) >> 4, b & 0xf);
 
         if ((i + 1) % 16 == 0)
@@ -136,13 +110,8 @@ ee_printmem(uint8_t *addr, uint_fast32_t len, char *user_header)
     }
 }
 
-/**
- * Printing utility #2
- *
- * Prints out hex bytes [0..len] starting with 0x
- */
 void
-ee_printmem_hex(uint8_t *p_addr, uint_fast32_t len, char *p_user_header)
+ee_printmemline(uint8_t *p_addr, uint_fast32_t len, char *p_user_header)
 {
     uint_fast32_t i;
     char *        p_header;
@@ -161,8 +130,8 @@ ee_printmem_hex(uint8_t *p_addr, uint_fast32_t len, char *p_user_header)
     th_printf("0x");
     for (i = 0; i < len; ++i)
     {
-        // Some libc printf's don't provide padding, e.g., %02x, and force 1
-        // nibble on libcs that default to two.
+        /* Some libc printf's don't provide padding, e.g., %02x, and force 1
+           nibble on libcs that default to two. */
         b = p_addr[i];
         th_printf("%1x%1x", (b & 0xF0) >> 4, b & 0xf);
     }

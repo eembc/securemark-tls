@@ -37,9 +37,8 @@
 #include "ee_util.h"
 #include "ee_bench.h"
 #include "ee_buffer.h"
-// Pre-made keys just for this self-hosted main.c
+/* Pre-made keys just for this self-hosted main.c */
 #include "keys.h"
-#include <stdint.h>
 #include <assert.h>
 
 // There are several POSIX assumptions in this implementation.
@@ -51,17 +50,17 @@
 #error "Operating system not recognized"
 #endif
 
-// Longest time to run each primitive during self-tuning
+/* Longest time to run each primitive during self-tuning */
 #define MIN_RUNTIME_SEC  10u
 #define MIN_RUNTIME_USEC (MIN_RUNTIME_SEC * 1000u * 1000u)
-// Minimum number of iterations allowed per primitive
+/* Minimum number of iterations allowed per primitive */
 #define MIN_ITER 10u
-// Stored timestamps (a single primitive may generate multiple stamps)
+/* Stored timestamps (a single primitive may generate multiple stamps) */
 #define MAX_TIMESTAMPS 64u
-// `true` to turn on debugging messages
+/* `true` to turn on debugging messages */
 #define DEBUG_VERIFY false
-// Only run a single iteration of each task (for debug)
-#define DO_SINGLE
+/* Only run a single iteration of each task (for debug) */
+//#define DO_SINGLE
 // All wrapper functions fit this prototype (n=dataset octets, i=iterations)
 typedef uint16_t wrapper_function_t(unsigned int n, unsigned int i);
 /**
@@ -70,15 +69,8 @@ typedef uint16_t wrapper_function_t(unsigned int n, unsigned int i);
  * multiple timestamps. For example, encrypting before a decrypt. Porting
  * developers do not need to worry about this.
  */
-// defined in th_api/th_lib.c
+/* defined in th_api/th_lib.c */
 extern bool g_mute_timestamps;
-/**
- * We always create pseudo-random keys and plaintext for benchmarking purposes;
- * this is not the same as entropy, this is just for reproducable (seed-able)
- * testing.
- */
-// defined in profile/ee_profile.c
-void ee_srand(unsigned char);
 
 /** TIMESTAMP IMPLEMENTATION **************************************************/
 
@@ -293,10 +285,10 @@ MAKE_WRAP_SHA(384)
 
 uint16_t
 pre_wrap_aes(ee_aes_mode_t mode,   // input: cipher mode
-             ee_aes_func_t    func,   // input: func (EE_AES_ENC|EE_AES_DEC)
-             uint32_t          keylen, // input: length of key in bytes
-             uint32_t          n,      // input: length of input in bytes
-             uint32_t          i       // input: # of test iterations
+             ee_aes_func_t func,   // input: func (EE_AES_ENC|EE_AES_DEC)
+             uint32_t      keylen, // input: length of key in bytes
+             uint32_t      n,      // input: length of input in bytes
+             uint32_t      i       // input: # of test iterations
 )
 {
     uint8_t *p_out;
@@ -320,11 +312,11 @@ pre_wrap_aes(ee_aes_mode_t mode,   // input: cipher mode
 #define MAKE_WRAP_AES(bits, MODE, nick)                                        \
     uint16_t wrap_aes##bits##_##nick##_encrypt(unsigned int n, unsigned int i) \
     {                                                                          \
-        return pre_wrap_aes(EE_AES_##MODE, EE_AES_ENC, bits / 8, n, i);              \
+        return pre_wrap_aes(EE_AES_##MODE, EE_AES_ENC, bits / 8, n, i);        \
     }                                                                          \
     uint16_t wrap_aes##bits##_##nick##_decrypt(unsigned int n, unsigned int i) \
     {                                                                          \
-        return pre_wrap_aes(EE_AES_##MODE, EE_AES_DEC, bits / 8, n, i);              \
+        return pre_wrap_aes(EE_AES_##MODE, EE_AES_DEC, bits / 8, n, i);        \
     }
 
 MAKE_WRAP_AES(128, ECB, ecb)
@@ -345,8 +337,8 @@ pre_wrap_chachapoly(ee_chachapoly_func_t func, unsigned int n, unsigned int i)
     // Emulate host by using the buffer
     assert(th_buffer_size() > (EE_CHACHAPOLY_KEYLEN + EE_CHACHAPOLY_IVLEN
                                + EE_CHACHAPOLY_TAGLEN + +n));
-    p_out = th_buffer_address() + EE_CHACHAPOLY_KEYLEN + EE_CHACHAPOLY_IVLEN
-            + n;
+    p_out
+        = th_buffer_address() + EE_CHACHAPOLY_KEYLEN + EE_CHACHAPOLY_IVLEN + n;
 
     ee_bench_chachapoly(func, n, i, DEBUG_VERIFY);
 
@@ -377,10 +369,10 @@ pre_wrap_ecdh(ee_ecdh_group_t g, unsigned int n, unsigned int i)
 
     // Emulate host download by copying our local keys into the buffer
     assert(th_buffer_size() > (ee_pub_sz[g] + ee_pri_sz[g] + ee_sec_sz[g]));
-    th_memcpy(p, g_ecc_peer_public_keys[g], ee_pub_sz[g]);
-    p += ee_pub_sz[g];
     th_memcpy(p, g_ecc_private_keys[g], ee_pri_sz[g]);
     p += ee_pri_sz[g];
+    th_memcpy(p, g_ecc_peer_public_keys[g], ee_pub_sz[g]);
+    p += ee_pub_sz[g];
 
     ee_bench_ecdh(g, i, DEBUG_VERIFY);
 
@@ -749,7 +741,7 @@ main(void)
            MIN_RUNTIME_SEC,
            MIN_ITER);
 
-    printf("Heap buffer is %ld bytes\n", th_buffer_size());
+    printf("Heap buffer is %u bytes\n", th_buffer_size());
     score = 0.0f;
     printf(" # Component                  data   w    iterations/s\n");
     printf("-- ------------------------- ----- --- ---------------\n");

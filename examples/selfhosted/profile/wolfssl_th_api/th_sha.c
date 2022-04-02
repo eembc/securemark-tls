@@ -64,11 +64,10 @@ th_sha_init(void *p_context, ee_sha_size_t size)
 }
 
 ee_status_t
-th_sha_process(void *         p_context, // input: portable context
-               ee_sha_size_t     size,      // input: SHA algorithm size
-               const uint8_t *p_in,      // input: data to hash
-               uint_fast32_t  len        // input: length of data in bytes
-)
+th_sha_process(void *         p_context,
+               ee_sha_size_t  size,
+               const uint8_t *p_in,
+               uint_fast32_t  len)
 {
     int ret;
     switch (size)
@@ -92,10 +91,7 @@ th_sha_process(void *         p_context, // input: portable context
 }
 
 ee_status_t
-th_sha_done(void *     p_context, // input: portable context
-            ee_sha_size_t size,      // input: SHA algorithm size
-            uint8_t *  p_result   // output: digest, SHA_SIZE bytes
-)
+th_sha_done(void *p_context, ee_sha_size_t size, uint8_t *p_result)
 {
     int ret;
     switch (size)
@@ -119,9 +115,7 @@ th_sha_done(void *     p_context, // input: portable context
 }
 
 void
-th_sha_destroy(void *     p_context, // input: portable context
-               ee_sha_size_t size       // input: SHA algorithm size
-)
+th_sha_destroy(void *p_context, ee_sha_size_t size)
 {
     if (NULL == p_context)
     {

@@ -18,70 +18,78 @@
 #include "th_libc.h"
 #include "th_util.h"
 
+/* Dual purpose enum: is also the number of bits in the SHA */
 typedef enum ee_sha_size_t
 {
     EE_SHA256 = 256,
     EE_SHA384 = 384,
-    // SHA_512 = 512 // future expansion
+    /* SHA_512 = 512 ... future expansion */
 } ee_sha_size_t;
 
-// Fixed test API
-
-void ee_sha(ee_sha_size_t  size,      // input: SHA algorithm size
-            const uint8_t *p_in,      // input: bytes to hash
-            uint_fast32_t  len,       // input: length of input in bytes
-            uint8_t *      p_result,  // output: resulting digest
-            uint_fast32_t  iterations // input: # of test iterations
-);
-
-// Implementation API
+/**
+ * @brief Perform a number of SHA operations on an input buffer.
+ *
+ * @param size - See the `ee_sha_size_t` enum.
+ * @param p_in - The input buffer
+ * @param len - Length of the input buffer
+ * @param p_out - Output buffer (must be large enough to hold the digest)
+ * @param iter - Number of iterations to perform
+ */
+void ee_sha(ee_sha_size_t  size,
+            const uint8_t *p_in,
+            uint_fast32_t  len,
+            uint8_t *      p_out,
+            uint_fast32_t  iter);
 
 /**
- * Create the context passed between functions.
+ * @brief Creates a context.
  *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
+ * @param pp_context - A pointer to a context pointer to be created
+ * @param size - See the `ee_sha_size_t` enum
+ * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
-ee_status_t th_sha_create(void **       p_context, // output: portable context
-                          ee_sha_size_t size       // input: SHA algorithm size
-);
+ee_status_t th_sha_create(void **pp_context, ee_sha_size_t size);
 
 /**
- * Initialize the context prior to a hash operation.
+ * @brief Initialize the context.
  *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
+ * @param p_context - The context from the `create` function
+ * @param size - See the `ee_sha_size_t` enum
+ * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
-ee_status_t th_sha_init(void *        p_context, // input: portable context
-                        ee_sha_size_t size       // input: SHA algorithm size
-);
+ee_status_t th_sha_init(void *p_context, ee_sha_size_t size);
 
 /**
- * Process the hash
+ * @brief Add more data to the running digest (also called update).
  *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
+ * @param p_context - The context from the `create` function
+ * @param size - See the `ee_sha_size_t` enum
+ * @param p_in - The input buffer
+ * @param len - Length of the input buffer
+ * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
-ee_status_t th_sha_process(void *         p_context, // input: portable context
-                           ee_sha_size_t  size, // input: SHA algorithm size
-                           const uint8_t *p_in, // input: data to hash
-                           uint_fast32_t  len // input: length of data in bytes
-);
+ee_status_t th_sha_process(void *         p_context,
+                           ee_sha_size_t  size,
+                           const uint8_t *p_in,
+                           uint_fast32_t  len);
 
 /**
- * Compute the digest.
+ * @brief Complete the digest and populate the result. The result buffer must
+ * be large enough to hold the digest.
  *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
+ * @param p_context - The context from the `create` function
+ * @param size - See the `ee_sha_size_t` enum
+ * @param p_out - The output digest buffer
+ * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
-ee_status_t th_sha_done(void *        p_context, // input: portable context
-                        ee_sha_size_t size,      // input: SHA algorithm size
-                        uint8_t *     p_result // output: digest, SHA_SIZE bytes
-);
+ee_status_t th_sha_done(void *p_context, ee_sha_size_t size, uint8_t *p_out);
 
 /**
- * Destroy the context created earlier.
+ * @brief Deallocate/destroy the context
  *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
+ * @param p_context - The context from the `create` function
+ * @param size - See the `ee_sha_size_t` enum
  */
-void th_sha_destroy(void *        p_context, // input: portable context
-                    ee_sha_size_t size       // input: SHA algorithm size
-);
+void th_sha_destroy(void *p_context, ee_sha_size_t size);
 
-#endif // __EE_SHA_H
+#endif /* __EE_SHA_H */

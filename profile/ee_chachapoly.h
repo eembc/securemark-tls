@@ -28,80 +28,107 @@ typedef enum
 #define EE_CHACHAPOLY_IVLEN  12u
 #define EE_CHACHAPOLY_TAGLEN 16u
 
-// Fixed test API
-
-void ee_chachapoly(ee_chachapoly_func_t func,  // input: CHACHAPOLY_(ENC|DEC)
-                   uint8_t *            p_key, // input: key
-                   uint8_t *            p_iv,  // input: initialization vector
-                   uint8_t *p_in, // input: pointer to source input (pt or ct)
-                   uint_fast32_t len, // input: length of input in bytes
-                   uint8_t *p_tag, // inout: output in encrypt, input on decrypt
-                   uint8_t *p_out, // output: pointer to output buffer
-                   uint_fast32_t iterations // input: # of test iterations
-);
-
-// Implementation API
-
 /**
- * Create a context.
+ * @brief This is the lowest-level benchmark function before the API calls.
+ * It performs `i` number of iterations on the primitive.
  *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
- */
-ee_status_t th_chachapoly_create(void **pp_context); // output: portable context
-
-/**
- * Initialize the key for an impending operation.
+ * None of the functions at this level return an error status; errors are
+ * reported vi `th_printf` and intercepted by the host.
  *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
+ * @param func - ChaChaPoly function
+ * @param p_key - The key buffer
+ * @param p_iv - Initialization vector buffer
+ * @param p_in - Input PT/CT buffer
+ * @param len - Length of input buffer
+ * @param p_out - Output CT/PT buffer
+ * @param p_tag - Tag buffer
+ * @param i - Number of iterations to perform
  */
-ee_status_t th_chachapoly_init(
-    void *               p_context, // input: portable context
-    const uint8_t *      p_key,     // input: key
-    uint_fast32_t        keylen    // input: length of key in bytes
-);
+void ee_chachapoly(ee_chachapoly_func_t func,
+                   uint8_t *            p_key,
+                   uint8_t *            p_iv,
+                   uint8_t *            p_in,
+                   uint_fast32_t        len,
+                   uint8_t *            p_out,
+                   uint8_t *            p_tag,
+                   uint_fast32_t        i);
 
 /**
- * Perform any cleanup required by init, but don't destroy the context.
+ * @brief Creates a context.
+ *
+ * @param pp_context - A pointer to a context pointer to be created
+ * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
-void th_chachapoly_deinit(
-    void *               p_context // input: portable context
-);
+ee_status_t th_chachapoly_create(void **pp_context);
 
 /**
- * Perform a ChaCha-Poly encrypt.
- *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
- */
-ee_status_t th_chachapoly_encrypt(
-    void *         p_context, // input: portable context
-    const uint8_t *p_pt,      // input: plaintext
-    uint_fast32_t  ptlen,     // input: length of plaintext in bytes
-    uint8_t *      p_ct,      // output_ ciphertext
-    uint8_t *      p_tag,     // output: tag
-    uint_fast32_t  taglen,    // input: tag length in bytes
-    uint8_t *      p_iv,      // input: initialization vector
-    uint_fast32_t  ivlen      // input: IV length in bytes
-);
-
-/**
- * Perform a ChaCha-decrypt.
- *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
- */
-ee_status_t th_chachapoly_decrypt(
-    void *         p_context, // input: portable context
-    const uint8_t *p_ct,      // input: ciphertext
-    uint_fast32_t  ctlen,     // input: length of ciphertext in bytes
-    uint8_t *      p_pt,      // output_ plaintext
-    uint8_t *      p_tag,     // input: tag
-    uint_fast32_t  taglen,    // input: tag length in bytes
-    uint8_t *      p_iv,      // input: initialization vector
-    uint_fast32_t  ivlen      // input: IV length in bytes
-);
-
-/**
- * Clean up the context created.
+ * @brief Initialize the key for an impending operation.
+ *
+ * @param p_context - The context from the `create` function
+ * @param p_key - The key buffer
+ * @param keylen - Length of the key buffer
+ * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
-void th_chachapoly_destroy(void *p_context); // input: portable context
+ee_status_t th_chachapoly_init(void *         p_context,
+                               const uint8_t *p_key,
+                               uint_fast32_t  keylen);
 
-#endif // __EE_CHACHAPOLY_H
+/**
+ * @brief De-initialize the context (but don't destroy it).
+ *
+ * @param p_context - The context from the `create` function
+ */
+void th_chachapoly_deinit(void *p_context);
+
+/**
+ * @brief Perform a ChaCha-Poly encrypt.
+ *
+ * @param p_context - The context from the `create` function
+ * @param p_pt - Plaintext buffer
+ * @param ptlen - Length of the plaintext buffer
+ * @param p_ct - Ciphertext buffer
+ * @param p_tag - Tag buffer
+ * @param taglen - Tag buffer length
+ * @param p_iv - IV buffer
+ * @param ivlen - IV buffer length
+ * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
+ */
+ee_status_t th_chachapoly_encrypt(void *         p_context,
+                                  const uint8_t *p_pt,
+                                  uint_fast32_t  ptlen,
+                                  uint8_t *      p_ct,
+                                  uint8_t *      p_tag,
+                                  uint_fast32_t  taglen,
+                                  uint8_t *      p_iv,
+                                  uint_fast32_t  ivlen);
+
+/**
+ * @brief Perform a ChaCha-Poly decrypt.
+ *
+ * @param p_context - The context from the `create` function
+ * @param p_ct - Ciphertext buffer
+ * @param ctlen - Length of the ciphertext buffer
+ * @param p_pt - Plaintext buffer
+ * @param p_tag - Tag buffer
+ * @param taglen - Tag buffer length
+ * @param p_iv - IV buffer
+ * @param ivlen - IV buffer length
+ * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
+ */
+ee_status_t th_chachapoly_decrypt(void *         p_context,
+                                  const uint8_t *p_ct,
+                                  uint_fast32_t  ctlen,
+                                  uint8_t *      p_pt,
+                                  uint8_t *      p_tag,
+                                  uint_fast32_t  taglen,
+                                  uint8_t *      p_iv,
+                                  uint_fast32_t  ivlen);
+
+/**
+ * @brief Deallocate/destroy the context.
+ *
+ * @param p_context - The context from the `create` function
+ */
+void th_chachapoly_destroy(void *p_context);
+
+#endif /* _EE_CHACHAPOLY_H */

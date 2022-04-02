@@ -24,15 +24,8 @@
 #include "ee_ecdh.h"
 #include "ee_ecdsa.h"
 
-/**
- * Create the context passed between functions.
- *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
- */
 ee_status_t
-th_ecdsa_create(void **      p_context, // output: portable context
-                ee_ecdh_group_t group      // input: see `ee_ecdh_group_t` for options
-)
+th_ecdsa_create(void **p_context, ee_ecdh_group_t group)
 {
     void *ptr = NULL;
 
@@ -132,18 +125,11 @@ init_ed25519(ed25519_key *p_key, uint8_t *p_private, uint_fast32_t plen)
     return EE_STATUS_OK;
 }
 
-/**
- * Initialize to a group (must be in the EE_ enum) with a predefined
- * private key.
- *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
- */
 ee_status_t
-th_ecdsa_init(void *        p_context, // input: portable context
-              ee_ecdh_group_t  group,     // input: see `ee_ecdh_group_t` for options
-              uint8_t *     p_private, // input: private key from host
-              uint_fast32_t plen       // input: length of private key in bytes
-)
+th_ecdsa_init(void *          p_context,
+              ee_ecdh_group_t group,
+              uint8_t *       p_private,
+              uint_fast32_t   plen)
 {
     switch (group)
     {
@@ -162,16 +148,15 @@ th_ecdsa_init(void *        p_context, // input: portable context
 }
 
 static ee_status_t
-sign_ecc(ecc_key *      p_context, // input: portable context
-         uint8_t *      p_hash,    // input: digest
-         uint_fast32_t  hlen,      // input: length of digest in bytes
-         uint8_t *      p_sig,     // output: signature
-         uint_fast32_t *p_slen     // in/out: input=MAX slen, output=resultant
-)
+sign_ecc(ecc_key *      p_context,
+         uint8_t *      p_hash,
+         uint_fast32_t  hlen,
+         uint8_t *      p_sig,
+         uint_fast32_t *p_slen)
 {
     int     ret;
     WC_RNG  rng;
-    word32 *p_slen2 = (word32 *)p_slen; // compiler warning
+    word32 *p_slen2 = (word32 *)p_slen;
 
     ret = wc_InitRng_ex(&rng, HEAP_HINT, DEVID);
     if (ret != 0)
@@ -190,15 +175,14 @@ sign_ecc(ecc_key *      p_context, // input: portable context
 }
 
 static ee_status_t
-sign_ed25519(ed25519_key *  p_context, // input: portable context
-             uint8_t *      p_msg,     // input: message
-             uint_fast32_t  mlen,      // input: length of message in bytes
-             uint8_t *      p_sig,     // output: signature
-             uint_fast32_t *p_slen     // output: signature length in bytes
-)
+sign_ed25519(ed25519_key *  p_context,
+             uint8_t *      p_msg,
+             uint_fast32_t  mlen,
+             uint8_t *      p_sig,
+             uint_fast32_t *p_slen)
 {
     int     ret;
-    word32 *p_slen2 = (word32 *)p_slen; // compiler warning
+    word32 *p_slen2 = (word32 *)p_slen;
 
     ret = wc_ed25519_sign_msg(p_msg, mlen, p_sig, p_slen2, p_context);
     if (ret != 0)
@@ -210,13 +194,12 @@ sign_ed25519(ed25519_key *  p_context, // input: portable context
 }
 
 ee_status_t
-th_ecdsa_sign(void *         p_context, // input: portable context
-              ee_ecdh_group_t   group,     // input: see `ee_ecdh_group_t` for options
-              uint8_t *      p_msg,     // input: message
-              uint_fast32_t  mlen,      // input: length of message in bytes
-              uint8_t *      p_sig,     // output: signature
-              uint_fast32_t *p_slen // in/out: input=MAX slen, output=resultant
-)
+th_ecdsa_sign(void *          p_context,
+              ee_ecdh_group_t group,
+              uint8_t *       p_msg,
+              uint_fast32_t   mlen,
+              uint8_t *       p_sig,
+              uint_fast32_t * p_slen)
 {
     switch (group)
     {
@@ -234,11 +217,10 @@ th_ecdsa_sign(void *         p_context, // input: portable context
 
 static ee_status_t
 verify_ecc(ecc_key *     p_context,
-           uint8_t *     p_hash, // input: sha256 digest
-           uint_fast32_t hlen,   // input: length of digest in bytes
-           uint8_t *     p_sig,  // output: signature
-           uint_fast32_t slen    // input: length of signature in bytes
-)
+           uint8_t *     p_hash,
+           uint_fast32_t hlen,
+           uint8_t *     p_sig,
+           uint_fast32_t slen)
 {
     int ret;
     int verify;
@@ -255,11 +237,10 @@ verify_ecc(ecc_key *     p_context,
 
 static ee_status_t
 verify_ed25519(ed25519_key * p_context,
-               uint8_t *     p_msg, // input: message
-               uint_fast32_t mlen,  // input: length of message in bytes
-               uint8_t *     p_sig, // output: signature
-               uint_fast32_t slen   // input: length of signature in bytes
-)
+               uint8_t *     p_msg,
+               uint_fast32_t mlen,
+               uint8_t *     p_sig,
+               uint_fast32_t slen)
 {
     int ret;
     int verify;
@@ -275,13 +256,12 @@ verify_ed25519(ed25519_key * p_context,
 }
 
 ee_status_t
-th_ecdsa_verify(void *        p_context, // input: portable context
-                ee_ecdh_group_t  group, // input: see `ee_ecdh_group_t` for options
-                uint8_t *     p_msg, // input: message
-                uint_fast32_t mlen,  // input: length of message in bytes
-                uint8_t *     p_sig, // output: signature
-                uint_fast32_t slen   // input: length of signature in bytes
-)
+th_ecdsa_verify(void *          p_context,
+                ee_ecdh_group_t group,
+                uint8_t *       p_msg,
+                uint_fast32_t   mlen,
+                uint8_t *       p_sig,
+                uint_fast32_t   slen)
 {
     switch (group)
     {
@@ -297,13 +277,8 @@ th_ecdsa_verify(void *        p_context, // input: portable context
     }
 }
 
-/**
- * Destroy the context created earlier.
- */
 void
-th_ecdsa_destroy(void *       p_context, // portable context
-                 ee_ecdh_group_t group // input: see `ee_ecdh_group_t` for options
-)
+th_ecdsa_destroy(void *p_context, ee_ecdh_group_t group)
 {
     switch (group)
     {

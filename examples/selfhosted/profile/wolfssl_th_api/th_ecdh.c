@@ -35,20 +35,16 @@ typedef struct ecc_context
     WC_RNG *        rng;
 } ecc_context;
 
-/**
- * Create the context passed between functions.
- *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
- */
 ee_status_t
-th_ecdh_create(void **      p_context, // output: portable context
-               ee_ecdh_group_t group      // input: curve group
-)
+th_ecdh_create(void **p_context, ee_ecdh_group_t group)
 {
     ecc_context *ctx = NULL;
-    ctx              = (ecc_context *)th_malloc(sizeof(ecc_context));
+
+    ctx = (ecc_context *)th_malloc(sizeof(ecc_context));
     if (NULL == ctx)
+    {
         goto error;
+    }
 
     th_memset(ctx, 0, sizeof(ecc_context));
 
@@ -86,7 +82,9 @@ th_ecdh_create(void **      p_context, // output: portable context
 
     ctx->rng = (WC_RNG *)th_malloc(sizeof(WC_RNG));
     if (NULL == ctx->rng)
+    {
         goto error;
+    }
     wc_InitRng_ex(ctx->rng, HEAP_HINT, DEVID);
 
     *p_context = (void *)ctx;
@@ -103,22 +101,16 @@ error:
     return EE_STATUS_ERROR;
 }
 
-/**
- * Initialize to a group (must be in the EE_ enum)
- *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
- */
 ee_status_t
-th_ecdh_init(void *        p_context, // input: portable context
-             ee_ecdh_group_t  group,     // input: see `ee_ecdh_group_t` for options
-             uint8_t *     p_private, // input: private key, from host
-             uint_fast32_t prilen,    // input: private key length in bytes
-             uint8_t *     p_public,  // input: peer public key, from host
-             uint_fast32_t publen     // input: peer public key length in bytes
-)
+th_ecdh_init(void *          p_context,
+             ee_ecdh_group_t group,
+             uint8_t *       p_private,
+             uint_fast32_t   prilen,
+             uint8_t *       p_public,
+             uint_fast32_t   publen)
 {
     int           ret;
-    unsigned char uncompressed[256]; // avoid a malloc, just go big
+    unsigned char uncompressed[256];
     ecc_context * ctx = (ecc_context *)p_context;
 
 #ifdef WOLFSSL_VALIDATE_ECC_IMPORT
@@ -176,18 +168,11 @@ th_ecdh_init(void *        p_context, // input: portable context
     return EE_STATUS_OK;
 }
 
-/**
- * Perform ECDH mixing.
- *
- * Return EE_STATUS_OK or EE_STATUS_ERROR.
- */
 ee_status_t
-th_ecdh_calc_secret(
-    void *        p_context, // input: portable context
-    ee_ecdh_group_t  group,     // input: curve group
-    uint8_t *     p_secret,  // output: shared secret
-    uint_fast32_t slen       // input: length of shared buffer in bytes
-)
+th_ecdh_calc_secret(void *          p_context,
+                    ee_ecdh_group_t group,
+                    uint8_t *       p_secret,
+                    uint_fast32_t   slen)
 {
     int          ret;
     word32       olen = slen;
@@ -218,12 +203,8 @@ th_ecdh_calc_secret(
     return EE_STATUS_OK;
 }
 
-/**
- * Destroy the context created earlier.
- */
 void
-th_ecdh_destroy(void *p_context // input: portable context
-)
+th_ecdh_destroy(void *p_context)
 {
     if (p_context != NULL)
     {
