@@ -35,4 +35,4 @@ void *th_calloc(size_t count, size_t size);
 void  th_free(void *ptr);
 int   th_vprintf(const char *format, va_list ap);
 
-#endif // __TH_LIBC_H
+#endif /* __TH_LIBC_H */

@@ -51,8 +51,8 @@ void ee_serial_callback(char);
 void ee_serial_command_parser_callback(char *);
 void ee_main(void);
 
-// From ../profile/ee_profile.c
+/* From ../profile/ee_profile.c */
 arg_claimed_t ee_profile_parse(char *);
 void          ee_profile_initialize(void);
 
-#endif // __EE_MAIN_H
+#endif /* __EE_MAIN_H */

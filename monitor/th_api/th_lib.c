@@ -12,14 +12,13 @@
 
 #include "th_lib.h"
 
-// This is a bit of a kludge. Sometimes we need to silence the timestamps,
-// like in verification mode or during decrypt bench calls (where we encrypt
-// first). This variable short-circuits th_timestamp.
-bool g_mute_timestamps; // see th_timestamp()
-
-#if EE_CFG_ENERGY_MODE == 1
-#else
-#endif
+/**
+ * @brief This variable indicates that timestamps should be ignored. It is used
+ * when performing composite operations with multiple primitives that generate
+ * multiple timestamps. For example, encrypting before a decrypt. Porting
+ * developers do not need to worry about this. See `th_timestamp()`, below.
+ */
+bool g_mute_timestamps;
 
 #if EE_CFG_SELFHOSTED != 1
 
@@ -39,9 +38,9 @@ th_monitor_initialize(void)
 void
 th_timestamp_initialize(void)
 {
-    // USER CODE 1 BEGIN
-    // USER CODE 1 END
-    // Always print this message
+    /* USER CODE 1 BEGIN */
+    /* USER CODE 1 END */
+    /* Always print this message, the host needs it. */
     th_printf(EE_MSG_TIMESTAMP_MODE);
     /* Always call the timestamp on initialize so that the open-drain output
        is set to "1" (so that we catch a falling edge) */
@@ -57,7 +56,7 @@ th_timestamp_initialize(void)
 void
 th_timestamp(void)
 {
-    if (g_mute_timestamps != 0)
+    if (g_mute_timestamps)
     {
         return;
     }
@@ -65,12 +64,16 @@ th_timestamp(void)
     {
 #warning "th_timestamp() not implemented"
 #if EE_CFG_ENERGY_MODE == 1
-        // 1. pull pin low
-        // 2. wait at least 62.5ns
-        // 3. set pin high
+        /**
+         * 1. pull pin low
+         * 2. wait at least 62.5ns
+         * 3. set pin high
+         */
 #else
         uint32_t elapsedMicroSeconds = 0;
-        // Print out the timestamp in this exact format:
+        /* USER CODE 1 BEGIN */
+        /* USER CODE 1 END */
+        /* This message must be printed, the host needs it. */
         th_printf(EE_MSG_TIMESTAMP, elapsedMicroSeconds);
 #endif
     }
@@ -88,11 +91,9 @@ void
 th_serialport_initialize(void)
 {
 #if EE_CFG_ENERGY_MODE == 1
-// For energy mode, we talk to the DUT through the IO Manager at 9600
-// baud = 9600
+/* In energy mode, talk to the DUT through the IO Manager at baud = 9600 */
 #else
-// For performance mode, we talk directly to the DUT at 115200
-// baud == 115200
+/* In energy mode, talk to directly to the host at baud = 115200 */
 #endif
 }
 
@@ -108,7 +109,7 @@ th_printf(const char *p_fmt, ...)
 {
     va_list args;
     va_start(args, p_fmt);
-    (void)th_vprintf(p_fmt, args); // ignore return
+    (void)th_vprintf(p_fmt, args);
     va_end(args);
 }
 
@@ -136,4 +137,4 @@ th_command_ready(volatile char *p_command)
 #warning "th_command_ready() not implemented"
 }
 
-#endif // EE_CFG_SELFHOSTED
+#endif /* EE_CFG_SELFHOSTED */

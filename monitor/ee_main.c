@@ -14,7 +14,7 @@
 
 #if EE_CFG_SELFHOSTED != 1
 
-// Command buffer (incoming commands from host)
+/* Command buffer (incoming commands from host) */
 static char volatile g_cmd_buf[EE_CMD_SIZE + 1];
 static uint_fast32_t volatile g_cmd_pos = 0;
 /**
@@ -99,10 +99,10 @@ ee_main(void)
     th_monitor_initialize();
     ee_profile_initialize();
     th_printf(EE_MSG_INIT_DONE);
-    // Enable the command parser here (the callback is connected)
+    /* Enable the command parser after the callback is connected */
     g_parser_enabled = true;
-    // At this point, the serial monitor should be up and running,
+    /* At this point, the serial monitor should be up and running */
     th_printf(EE_MSG_READY);
 }
 
-#endif // EE_CFG_SELFHOSTED
+#endif /* EE_CFG_SELFHOSTED */

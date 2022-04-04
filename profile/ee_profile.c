@@ -12,13 +12,10 @@
 
 #include "ee_profile.h"
 
-/**
- * @brief This indicates if the DUT should print verification feedback to the
- * Host. See `th_api/th_lib.c`.
- */
-extern bool g_mute_timestamps;
-
 #if EE_CFG_SELFHOSTED != 1
+
+/* See `th_api/th_lib.c` for explanation */
+extern bool g_mute_timestamps;
 
 /* Verify mode means extra output will be sent to the host. */
 static bool g_verify_mode = false;
@@ -31,7 +28,7 @@ ee_profile_parse(char *p_command)
 
     if (th_strncmp(p_command, "profile", EE_CMD_SIZE) == 0)
     {
-        th_printf("m-profile-[%s]\r\n", EE_FW_VERSION);
+        th_printf("m-profile[%s]\r\n", EE_FW_VERSION);
     }
     else if (th_strncmp(p_command, "verify", EE_CMD_SIZE) == 0)
     {
@@ -42,7 +39,7 @@ ee_profile_parse(char *p_command)
             /* Verify mode prints extra content, but turns off timestamps! */
             g_mute_timestamps = g_verify_mode;
         }
-        th_printf("m-verify-%s\r\n", g_verify_mode ? "on" : "off");
+        th_printf("m-verify[%s]\r\n", g_verify_mode ? "on" : "off");
     }
     else if (th_strncmp(p_command, "srand", EE_CMD_SIZE) == 0)
     {

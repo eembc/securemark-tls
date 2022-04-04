@@ -32,19 +32,19 @@ th_sha_process(void *         p_context,
                const uint8_t *p_in,
                uint_fast32_t  len)
 {
-#warning "th_sha256_process not implemented"
+#warning "th_sha_process not implemented"
     return EE_STATUS_OK;
 }
 
 ee_status_t
 th_sha_done(void *p_context, ee_sha_size_t size, uint8_t *p_result)
 {
-#warning "th_sha256_done not implemented"
+#warning "th_sha_done not implemented"
     return EE_STATUS_OK;
 }
 
 void
 th_sha_destroy(void *p_context, ee_sha_size_t size)
 {
-#warning "th_sha256_destroy not implemented"
+#warning "th_sha_destroy not implemented"
 }

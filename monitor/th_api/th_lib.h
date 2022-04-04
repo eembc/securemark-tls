@@ -19,7 +19,7 @@
 #include "th_libc.h"
 #include "ee_main.h"
 
-// It is crucial to follow EEMBC message syntax for key messages
+/* It is crucial to follow EEMBC message syntax for key messages */
 #define EE_MSG_TIMESTAMP "m-lap-us-%lu\r\n"
 
 #ifndef EE_CFG_ENERGY_MODE
@@ -47,4 +47,4 @@ void th_serialport_initialize(void);
 void th_printf(const char *fmt, ...);
 void th_command_ready(volatile char *);
 
-#endif // __TH_LIB_H
+#endif /* __TH_LIB_H */
