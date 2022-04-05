@@ -308,59 +308,59 @@ ee_bench_parse(char *p_command, bool verify)
     }
     else if (th_strncmp(p_subcmd, "aes128-ecb-enc", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_ECB, 128, EE_AES_ENC, n, i, verify);
+        ee_bench_aes(EE_AES_ECB, EE_AES_ENC, 128, n, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes128-ecb-dec", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_ECB, 128, EE_AES_DEC, n, i, verify);
+        ee_bench_aes(EE_AES_ECB, EE_AES_DEC, 128, n, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes128-ctr-enc", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_CTR, 128, EE_AES_ENC, n, i, verify);
+        ee_bench_aes(EE_AES_CTR, EE_AES_ENC, 128, n, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes128-ctr-dec", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_CTR, 128, EE_AES_DEC, n, i, verify);
+        ee_bench_aes(EE_AES_CTR, EE_AES_DEC, 128, n, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes128-ccm-enc", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_CCM, 128, EE_AES_ENC, n, i, verify);
+        ee_bench_aes(EE_AES_CCM, EE_AES_ENC, 128, n, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes128-ccm-dec", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_CCM, 128, EE_AES_DEC, n, i, verify);
+        ee_bench_aes(EE_AES_CCM, EE_AES_DEC, 128, n, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes128-gcm-enc", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_GCM, 128, EE_AES_ENC, n, i, verify);
+        ee_bench_aes(EE_AES_GCM, EE_AES_ENC, 128, n, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes128-gcm-dec", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_GCM, 128, EE_AES_DEC, n, i, verify);
+        ee_bench_aes(EE_AES_GCM, EE_AES_DEC, 128, n, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes256-ecb-enc", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_ECB, 256, EE_AES_ENC, n, i, verify);
+        ee_bench_aes(EE_AES_ECB, EE_AES_ENC, 256, n, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes256-ecb-dec", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_ECB, 256, EE_AES_DEC, n, i, verify);
+        ee_bench_aes(EE_AES_ECB, EE_AES_DEC, 256, n, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes256-ctr-enc", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_CTR, 256, EE_AES_ENC, n, i, verify);
+        ee_bench_aes(EE_AES_CTR, EE_AES_ENC, 256, n, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes256-ctr-dec", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_CTR, 256, EE_AES_DEC, n, i, verify);
+        ee_bench_aes(EE_AES_CTR, EE_AES_DEC, 256, n, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes256-ccm-enc", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_CCM, 256, EE_AES_ENC, n, i, verify);
+        ee_bench_aes(EE_AES_CCM, EE_AES_ENC, 256, n, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes256-ccm-dec", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_CCM, 256, EE_AES_DEC, n, i, verify);
+        ee_bench_aes(EE_AES_CCM, EE_AES_DEC, 256, n, i, verify);
     }
     else if (th_strncmp(p_subcmd, "chachapoly-enc", EE_CMD_SIZE) == 0)
     {
