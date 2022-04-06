@@ -46,3 +46,8 @@ th_buffer_size(void)
 {
     return BUFFER_SIZE;
 }
+
+ee_status_t th_profile_initialize(void)
+{
+  return EE_STATUS_OK;
+}
