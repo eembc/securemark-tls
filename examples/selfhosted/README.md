@@ -49,7 +49,7 @@ default - Compiles and builds a library with the un-implemented functions
 ```
 % mkdir build
 % cd build
-% cmake -DSELFHOSTED=1 -DWOLFSSL=1
+% cmake .. -DSELFHOSTED=1 -DWOLFSSL=1
 % make
 % ./sec-tls
 Running each primitive for at least 10s or 10 iterations.
