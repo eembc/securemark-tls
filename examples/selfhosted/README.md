@@ -86,15 +86,9 @@ building wolfSSL is:
 
 ```Bash
 % ./autogen.sh
-% ./configure CFLAGS="-DWOLFSSL_AES_DIRECT -DHAVE_AES_ECB -DWOLFSSL_ECDSA_DETERMINISTIC_K" \
-              --enable-ecc --enable-keygen --enable-aesccm --enable-sp --enable-sp-asm \
-              --enable-eccencrypt --enable-curve25519 --enable-ed25519
-
-
-% ./configure CFLAGS='-DWOLFSSL_AES_DIRECT -DECC_TIMING_RESISTANT -DHAVE_AES_ECB -DWOLFSSL_ECDSA_DETERMINISTIC_K' \
-              --enable-ecc --enable-keygen --enable-aesccm --enable-sp --enable-sp-asm \
-              --enable-eccencrypt --enable-curve25519 --enable-ed25519 \
-              --enable-aesctr --disable-harden
+% ./configure 'CFLAGS=-DWOLFSSL_AES_DIRECT -DHAVE_AES_ECB -DWOLFSSL_ECDSA_DETERMINISTIC_K' \
+    --enable-ecc --enable-keygen --enable-aesccm --enable-sp --enable-sp-asm \
+    --enable-eccencrypt --enable-curve25519 --enable-ed25519 --enable-aesctr
 % make
 % sudo make install
 ```
