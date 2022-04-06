@@ -37,6 +37,8 @@ typedef enum ee_aes_func_t
 #define EE_AES_CTR_IVLEN  16u
 #define EE_AES_AEAD_IVLEN 12u
 #define EE_AES_TAGLEN     16u
+#define EE_AES_128KEYLEN  16u
+#define EE_AES_256KEYLEN  32u
 
 /**
  * @brief This is the lowest-level benchmark function before the API calls.
