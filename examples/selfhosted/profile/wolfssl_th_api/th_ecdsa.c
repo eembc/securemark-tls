@@ -46,9 +46,15 @@ typedef struct
 ee_status_t
 th_ecdsa_create(void **pp_context, ee_ecdh_group_t group)
 {
-    ctx_t *ctx = (ctx_t *)th_malloc(sizeof(ctx_t));
     int    ret;
+    ctx_t *ctx = (ctx_t *)th_malloc(sizeof(ctx_t));
 
+    if (ctx == NULL)
+    {
+        th_printf("e-[th_ecdsa_create: malloc fail]\r\n");
+        return EE_STATUS_ERROR;
+    }
+    th_memset(ctx, 0, sizeof(ctx_t));
     wc_InitRng_ex(&(ctx->rng), HEAP_HINT, DEVID);
     /* Switch from EEMBC group enums to SDK enums for consistency, make key. */
     switch (group)
@@ -77,6 +83,8 @@ th_ecdsa_create(void **pp_context, ee_ecdh_group_t group)
     *pp_context = ctx;
     return EE_STATUS_OK;
 error:
+    *pp_context = NULL;
+    th_free(ctx);
     th_printf("e-[th_ecdsa_create: error %d]\r\n", ret);
     return EE_STATUS_ERROR;
 }
@@ -173,7 +181,7 @@ error:
 }
 
 ee_status_t
-th_ecdsa_set_public(void *p_context, uint8_t *p_pub, uint_fast32_t publen)
+th_ecdsa_set_public_key(void *p_context, uint8_t *p_pub, uint_fast32_t publen)
 {
     ctx_t *c = (ctx_t *)p_context;
     int    ret;
@@ -188,24 +196,24 @@ th_ecdsa_set_public(void *p_context, uint8_t *p_pub, uint_fast32_t publen)
             CHK1(wc_ed25519_import_public(p_pub, publen, &(c->key.ed25519)));
             break;
         default:
-            th_printf("e-[th_ecdsa_set_public: invalid curve %d]\r\n",
+            th_printf("e-[th_ecdsa_set_public_key: invalid curve %d]\r\n",
                       c->curve);
             return EE_STATUS_ERROR;
     }
     return EE_STATUS_OK;
 error:
-    th_printf("e-[th_ecdsa_set_public: error %d]\r\n", ret);
+    th_printf("e-[th_ecdsa_set_public_key: error %d]\r\n", ret);
     return EE_STATUS_ERROR;
 }
 
-ee_status_t
+void
 th_ecdsa_destroy(void *p_context)
 {
     ctx_t *c = (ctx_t *)p_context;
 
     if (NULL == c)
     {
-        return EE_STATUS_OK;
+        return;
     }
     switch (c->curve)
     {
@@ -225,6 +233,4 @@ th_ecdsa_destroy(void *p_context)
     th_free(c);
 
     c = NULL;
-
-    return EE_STATUS_OK;
 }

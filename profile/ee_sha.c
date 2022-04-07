@@ -45,7 +45,7 @@ ee_sha(ee_sha_size_t  size,
             th_printf("e-sha%d-[Failed to process bytes]\r\n", size);
             goto exit;
         }
-
+        /* Version 2.x moved this into the timing loop. */
         if (th_sha_done(p_context, size, p_out) != EE_STATUS_OK)
         {
             th_post();

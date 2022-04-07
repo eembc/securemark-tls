@@ -16,7 +16,6 @@
 
 /* can be set for static memory use */
 #define HEAP_HINT NULL
-
 /* used with crypto callbacks and async */
 #define DEVID -1
 
@@ -26,204 +25,163 @@
     if (NULL != x) \
     th_free(x)
 
-typedef struct ecc_context
-{
-    ecc_key *       ecc_key_pri;
-    ecc_key *       ecc_key_pub;
-    curve25519_key *x255_key_pri;
-    curve25519_key *x255_key_pub;
-    WC_RNG *        rng;
-} ecc_context;
-
-ee_status_t
-th_ecdh_create(void **p_context, ee_ecdh_group_t group)
-{
-    ecc_context *ctx = NULL;
-
-    ctx = (ecc_context *)th_malloc(sizeof(ecc_context));
-    if (NULL == ctx)
-    {
-        goto error;
+#define CHK1(x)         \
+    {                   \
+        ret = x;        \
+        if (ret < 0)    \
+        {               \
+            goto error; \
+        }               \
     }
 
-    th_memset(ctx, 0, sizeof(ecc_context));
+typedef struct
+{
+    union
+    {
+        ecc_key        ecc;
+        curve25519_key c25519;
+    } key;
+    union
+    {
+        ecc_key        ecc;
+        curve25519_key c25519;
+    } peer;
+    WC_RNG       rng;
+    ecc_curve_id curve;
+} ctx_t;
 
+ee_status_t
+th_ecdh_create(void **pp_context, ee_ecdh_group_t group)
+{
+    int    ret;
+    ctx_t *ctx = (ctx_t *)th_malloc(sizeof(ctx_t));
+
+    if (ctx == NULL)
+    {
+        th_printf("e-[th_ecdsa_create: malloc fail]\r\n");
+        return EE_STATUS_ERROR;
+    }
+    th_memset(ctx, 0, sizeof(ctx_t));
+    wc_InitRng_ex(&(ctx->rng), HEAP_HINT, DEVID);
+    /* Switch from EEMBC group enums to SDK enums for consistency, make key. */
     switch (group)
     {
         case EE_P256R1:
+            ctx->curve = ECC_SECP256R1;
+            CHK1(wc_ecc_init_ex(&(ctx->key.ecc), HEAP_HINT, DEVID));
+            CHK1(wc_ecc_make_key(&(ctx->rng), 32, &(ctx->key.ecc)));
+            break;
         case EE_P384:
-            ctx->ecc_key_pri = (ecc_key *)th_malloc(sizeof(ecc_key));
-            if (NULL == ctx->ecc_key_pri)
-            {
-                goto error;
-            }
-            wc_ecc_init_ex(ctx->ecc_key_pri, HEAP_HINT, DEVID);
+            ctx->curve = ECC_SECP384R1;
+            CHK1(wc_ecc_init_ex(&(ctx->key.ecc), HEAP_HINT, DEVID));
+            CHK1(wc_ecc_make_key(&(ctx->rng), 48, &(ctx->key.ecc)));
             break;
         case EE_C25519:
-            ctx->x255_key_pri
-                = (curve25519_key *)th_malloc(sizeof(curve25519_key));
-            if (NULL == ctx->x255_key_pri)
-            {
-                goto error;
-            }
-            wc_curve25519_init(ctx->x255_key_pri);
-            ctx->x255_key_pub
-                = (curve25519_key *)th_malloc(sizeof(curve25519_key));
-            if (NULL == ctx->x255_key_pub)
-            {
-                goto error;
-            }
-            wc_curve25519_init(ctx->x255_key_pub);
+            ctx->curve = ECC_X25519; /* [sic], should be C25519? */
+            CHK1(wc_curve25519_init(&(ctx->key.c25519)));
+            CHK1(wc_curve25519_make_key(&(ctx->rng), 32, &(ctx->key.c25519)));
             break;
         default:
-            th_printf("e-[Invalid curve in th_ecdh_init]\r\n");
+            th_printf("e-[th_ecdsa_create: invalid group %d]\r\n", group);
             return EE_STATUS_ERROR;
     }
-
-    ctx->rng = (WC_RNG *)th_malloc(sizeof(WC_RNG));
-    if (NULL == ctx->rng)
-    {
-        goto error;
-    }
-    wc_InitRng_ex(ctx->rng, HEAP_HINT, DEVID);
-
-    *p_context = (void *)ctx;
+    *pp_context = ctx;
     return EE_STATUS_OK;
-
 error:
-    FREE(ctx->ecc_key_pri);
-    FREE(ctx->ecc_key_pub);
-    FREE(ctx->x255_key_pri);
-    FREE(ctx->x255_key_pub);
-    FREE(ctx->rng);
-    FREE(ctx);
-    th_printf("e-[Malloc error in th_ecdh_init]\r\n");
+    *pp_context = NULL;
+    th_free(ctx);
+    th_printf("e-[th_ecdh_create: error %d]\r\n", ret);
     return EE_STATUS_ERROR;
 }
 
 ee_status_t
-th_ecdh_init(void *          p_context,
-             ee_ecdh_group_t group,
-             uint8_t *       p_private,
-             uint_fast32_t   prilen,
-             uint8_t *       p_public,
-             uint_fast32_t   publen)
+th_ecdh_set_peer_public_key(void *        p_context,
+                            uint8_t *     p_pub,
+                            uint_fast32_t publen)
 {
-    int           ret;
-    unsigned char uncompressed[256];
-    ecc_context * ctx = (ecc_context *)p_context;
+    int    ret;
+    ctx_t *ctx = (ctx_t *)p_context;
 
-#ifdef WOLFSSL_VALIDATE_ECC_IMPORT
-#error undifne WOLFSSL_VALIDATE_ECC_IMPORT to set up missmatch private ours public peers
-#endif
-    switch (group)
+    switch (ctx->curve)
     {
-        case EE_P384:
-        case EE_P256R1:
-            uncompressed[0] = 0x04;
-            th_memcpy(&(uncompressed[1]), p_public, publen);
-            ret = wc_ecc_import_private_key_ex(
-                p_private,
-                prilen,
-                uncompressed,
-                publen + 1,
-                ctx->ecc_key_pri,
-                group == EE_P256R1 ? ECC_SECP256R1 : ECC_SECP384R1);
-            if (ret != 0)
-            {
-                th_printf("e-[wc_ecc_import_private_key_ex: %d]\r\n", ret);
-                return EE_STATUS_ERROR;
-            }
-#ifdef ECC_TIMING_RESISTANT
-            wc_ecc_set_rng(ctx->ecc_key_pri, ctx->rng);
-#endif
+        case ECC_SECP256R1:
+        case ECC_SECP384R1:
+            CHK1(wc_ecc_init_ex(&(ctx->peer.ecc), HEAP_HINT, DEVID));
+            CHK1(wc_ecc_import_x963(p_pub, publen, &(ctx->peer.ecc)));
             break;
-        case EE_C25519:
-            ret = wc_curve25519_import_private_ex(
-                p_private, prilen, ctx->x255_key_pri, EC25519_LITTLE_ENDIAN);
-            if (ret != 0)
-            {
-                th_printf("e-[wc_curve25519_import_private: %d]\r\n", ret);
-                return EE_STATUS_ERROR;
-            }
-            ret = wc_curve25519_check_public(
-                p_public, publen, EC25519_LITTLE_ENDIAN);
-            if (ret != 0)
-            {
-                th_printf("e-[wc_curve25519_check_public: %d]\r\n", ret);
-                return EE_STATUS_ERROR;
-            }
-            ret = wc_curve25519_import_public_ex(
-                p_public, publen, ctx->x255_key_pub, EC25519_LITTLE_ENDIAN);
-            if (ret != 0)
-            {
-                th_printf("e-[wc_curve25519_import_public: %d]\r\n", ret);
-                return EE_STATUS_ERROR;
-            }
+        case ECC_X25519:
+            CHK1(wc_curve25519_init(&(ctx->peer.c25519)));
+            CHK1(wc_curve25519_import_public_ex(
+                p_pub, publen, &(ctx->peer.c25519), EC25519_LITTLE_ENDIAN));
             break;
         default:
-            th_printf("e-[Invalid curve in th_ecdh_init]\r\n");
+            th_printf("e-[th_ecdh_set_peer_public_key: invalid curve %d]\r\n",
+                      ctx->curve);
             return EE_STATUS_ERROR;
     }
     return EE_STATUS_OK;
+error:
+    th_printf("e-[th_ecdh_set_peer_public_key: error %d]\r\n", ret);
+    return EE_STATUS_ERROR;
 }
 
 ee_status_t
-th_ecdh_calc_secret(void *          p_context,
-                    ee_ecdh_group_t group,
-                    uint8_t *       p_secret,
-                    uint_fast32_t   slen)
+th_ecdh_calc_secret(void *p_context, uint8_t *p_sec, uint_fast32_t *p_seclen)
 {
-    int          ret;
-    word32       olen = slen;
-    ecc_context *ctx  = (ecc_context *)p_context;
-    switch (group)
+    int    ret;
+    ctx_t *ctx = (ctx_t *)p_context;
+
+    switch (ctx->curve)
     {
-        case EE_P384:
-        case EE_P256R1:
-            ret = wc_ecc_shared_secret(
-                ctx->ecc_key_pri, ctx->ecc_key_pri, p_secret, &olen);
+        case ECC_SECP256R1:
+        case ECC_SECP384R1:
+            CHK1(wc_ecc_shared_secret(
+                &(ctx->key.ecc), &(ctx->peer.ecc), p_sec, p_seclen));
             break;
-        case EE_C25519:
-            ret = wc_curve25519_shared_secret_ex(ctx->x255_key_pri,
-                                                 ctx->x255_key_pub,
-                                                 p_secret,
-                                                 &olen,
-                                                 EC25519_LITTLE_ENDIAN);
+        case ECC_X25519:
+            CHK1(wc_curve25519_shared_secret_ex(&(ctx->key.c25519),
+                                                &(ctx->peer.c25519),
+                                                p_sec,
+                                                p_seclen,
+                                                EC25519_LITTLE_ENDIAN));
             break;
         default:
             th_printf("e-[Invalid curve in th_ecdh_calc_secret]\r\n");
             return EE_STATUS_ERROR;
     }
-    if (ret != 0)
-    {
-        th_printf("e-[wc_*_shared_secret: %d]\r\n", ret);
-        return EE_STATUS_ERROR;
-    }
     return EE_STATUS_OK;
+error:
+    th_printf("e-[th_ecdh_calc_secret: error: %d]\r\n", ret);
+    return EE_STATUS_ERROR;
 }
 
 void
 th_ecdh_destroy(void *p_context)
 {
-    if (p_context != NULL)
+    ctx_t *ctx = (ctx_t *)p_context;
+
+    if (NULL == ctx)
     {
-        ecc_context *ctx = (ecc_context *)p_context;
-        if (ctx->rng)
-            wc_FreeRng(ctx->rng);
-        if (ctx->ecc_key_pri)
-            wc_ecc_free(ctx->ecc_key_pri);
-        if (ctx->ecc_key_pub)
-            wc_ecc_free(ctx->ecc_key_pub);
-        if (ctx->x255_key_pri)
-            wc_curve25519_free(ctx->x255_key_pri);
-        if (ctx->x255_key_pub)
-            wc_curve25519_free(ctx->x255_key_pub);
-        FREE(ctx->ecc_key_pri);
-        FREE(ctx->ecc_key_pub);
-        FREE(ctx->x255_key_pri);
-        FREE(ctx->x255_key_pub);
-        FREE(ctx->rng);
-        FREE(ctx);
+        return;
     }
+    switch (ctx->curve)
+    {
+        case ECC_SECP256R1:
+        case ECC_SECP384R1:
+            wc_ecc_free(&(ctx->key.ecc));
+            wc_ecc_free(&(ctx->peer.ecc));
+            break;
+        case ECC_X25519:
+            wc_curve25519_free(&(ctx->key.c25519));
+            wc_curve25519_free(&(ctx->peer.c25519));
+            break;
+        default:
+            th_printf("e-[th_ecdh_destroy: invalid curve %d]\r\n", ctx->curve);
+            /* still need to free ctx! ... return EE_STATUS_ERROR; */
+            break;
+    }
+    wc_FreeRng(&(ctx->rng));
+    th_free(ctx);
+
+    ctx = NULL;
 }

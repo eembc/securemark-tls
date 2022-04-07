@@ -97,15 +97,15 @@ ee_status_t th_ecdsa_get_public_key(void *         p_context,
  * @param publen - Length of the public key buffer
  * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
-ee_status_t th_ecdsa_set_public(void *        p_context,
-                                uint8_t *     p_pub,
-                                uint_fast32_t publen);
+ee_status_t th_ecdsa_set_public_key(void *        p_context,
+                                    uint8_t *     p_pub,
+                                    uint_fast32_t publen);
 
 /**
  * @brief Deallocate/destroy the context
  *
  * @param p_context - The context from the `create` function
  */
-ee_status_t th_ecdsa_destroy(void *p_context);
+void th_ecdsa_destroy(void *p_context);
 
 #endif /* _EE_ECDSA_H */

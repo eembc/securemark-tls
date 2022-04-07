@@ -262,11 +262,7 @@ pre_wrap_sha(ee_sha_size_t size, unsigned int n, unsigned int i)
     size_t   x;
     uint16_t crc;
 
-    // Emulate host by using the buffer
-    assert(th_buffer_size() > (n + (size / 8)));
-
     ee_bench_sha(size, n, i, DEBUG_VERIFY);
-
     for (crc = 0, x = 0; x < (size / 8); ++x)
     {
         crc = crcu16(crc, (uint8_t)(p + n)[x]);
@@ -296,12 +292,8 @@ pre_wrap_aes(ee_aes_mode_t mode,   // input: cipher mode
     uint16_t crc;
     size_t   x;
 
-    // Emulate host by using the buffer
-    assert(th_buffer_size() > (keylen + ivlen + keylen /*tag*/ + n + n));
     p_out = th_buffer_address() + keylen + ivlen + n;
-
     ee_bench_aes(mode, func, keylen, n, i, DEBUG_VERIFY);
-
     for (crc = 0, x = 0; x < n; ++x)
     {
         crc = crcu16(crc, (uint8_t)p_out[x]);
@@ -334,7 +326,6 @@ pre_wrap_chachapoly(ee_chachapoly_func_t func, unsigned int n, unsigned int i)
     uint16_t crc;
     size_t   x;
 
-    // Emulate host by using the buffer
     assert(th_buffer_size() > (EE_CHACHAPOLY_KEYLEN + EE_CHACHAPOLY_IVLEN
                                + EE_CHACHAPOLY_TAGLEN + +n));
     p_out
@@ -354,6 +345,7 @@ wrap_chachapoly_encrypt(unsigned int n, unsigned int i)
 {
     return pre_wrap_chachapoly(EE_CHACHAPOLY_ENC, n, i);
 }
+
 uint16_t
 wrap_chachapoly_decrypt(unsigned int n, unsigned int i)
 {
@@ -361,32 +353,27 @@ wrap_chachapoly_decrypt(unsigned int n, unsigned int i)
 }
 
 uint16_t
-pre_wrap_ecdh(ee_ecdh_group_t g, unsigned int n, unsigned int i)
+pre_wrap_ecdh(ee_ecdh_group_t g, unsigned int i)
 {
-    uint8_t *p = th_buffer_address();
-    size_t   x;
-    uint16_t crc;
+    uint32_t *p_publen = (uint32_t *)th_buffer_address();
+    uint8_t * p_pub;
+    uint32_t *p_seclen;
+    uint8_t * p_sec;
 
-    // Emulate host download by copying our local keys into the buffer
-    assert(th_buffer_size() > (ee_pub_sz[g] + ee_pri_sz[g] + ee_sec_sz[g]));
-    th_memcpy(p, g_ecc_private_keys[g], ee_pri_sz[g]);
-    p += ee_pri_sz[g];
-    th_memcpy(p, g_ecc_peer_public_keys[g], ee_pub_sz[g]);
-    p += ee_pub_sz[g];
-
+    *p_publen = g_ecc_public_key_sizes[g];
+    p_pub     = (uint8_t *)p_publen + sizeof(uint32_t);
+    p_seclen  = (uint32_t *)p_pub + *p_publen;
+    p_sec     = (uint8_t *)p_seclen + sizeof(uint32_t);
+    th_memcpy(p_pub, g_ecc_public_keys[g], *p_publen);
     ee_bench_ecdh(g, i, DEBUG_VERIFY);
-
-    for (crc = 0, x = 0; x < ee_sec_sz[g]; ++x)
-    {
-        crc = crcu16(crc, (uint8_t)p[x]);
-    }
-    return crc;
+    /* TODO: We don't have access to the private key so we cannot verify. */
+    return 0;
 }
 
 #define MAKE_WRAP_ECDH(nick, group)                           \
     uint16_t wrap_ecdh_##nick(unsigned int n, unsigned int i) \
     {                                                         \
-        return pre_wrap_ecdh(group, n, i);                    \
+        return pre_wrap_ecdh(group, i);                       \
     }
 
 MAKE_WRAP_ECDH(p256r1, EE_P256R1)
@@ -394,7 +381,7 @@ MAKE_WRAP_ECDH(p384, EE_P384)
 MAKE_WRAP_ECDH(x25519, EE_C25519)
 
 uint16_t
-wrap_ecdsa_sign(ee_ecdh_group_t g, uint32_t i)
+pre_wrap_ecdsa_sign(ee_ecdh_group_t g, uint32_t i)
 {
     uint8_t  msglen = sizeof(g_dsa_message);
     uint8_t *msg    = th_buffer_address();
@@ -406,7 +393,7 @@ wrap_ecdsa_sign(ee_ecdh_group_t g, uint32_t i)
 }
 
 uint16_t
-wrap_ecdsa_verify(ee_ecdh_group_t g, uint32_t i)
+pre_wrap_ecdsa_verify(ee_ecdh_group_t g, uint32_t i)
 {
     uint8_t   msglen = sizeof(g_dsa_message);
     uint8_t * msg    = th_buffer_address();
@@ -431,7 +418,7 @@ wrap_ecdsa_verify(ee_ecdh_group_t g, uint32_t i)
     sig = (uint8_t *)siglen + sizeof(uint32_t);
     th_memcpy(sig, g_ecc_signatures[g], *siglen);
     /* Results of verification */
-    passfail = sig + *siglen;
+    passfail  = sig + *siglen;
     *passfail = 0;
     /* This function calls the primitives and manages the buffer. */
     ee_bench_ecdsa_verify(g, msglen, i, false);
@@ -442,20 +429,19 @@ wrap_ecdsa_verify(ee_ecdh_group_t g, uint32_t i)
 #define MAKE_WRAP_ECDSA(nick, group)                                  \
     uint16_t wrap_ecdsa_sign_##nick(unsigned int n, unsigned int i)   \
     {                                                                 \
-        return wrap_ecdsa_sign(group, i);                             \
+        return pre_wrap_ecdsa_sign(group, i);                         \
     }                                                                 \
     uint16_t wrap_ecdsa_verify_##nick(unsigned int n, unsigned int i) \
     {                                                                 \
-        return wrap_ecdsa_verify(group, i);                           \
+        return pre_wrap_ecdsa_verify(group, i);                       \
     }
 
 MAKE_WRAP_ECDSA(p256r1, EE_P256R1)
 MAKE_WRAP_ECDSA(p384, EE_P384)
 MAKE_WRAP_ECDSA(ed25519, EE_Ed25519)
 
-
 uint16_t
-wrap_rsa_verify(ee_rsa_id_t id, unsigned int i)
+pre_wrap_rsa_verify(ee_rsa_id_t id, unsigned int i)
 {
     uint8_t   msglen = sizeof(g_dsa_message);
     uint8_t * msg    = th_buffer_address();
@@ -480,7 +466,7 @@ wrap_rsa_verify(ee_rsa_id_t id, unsigned int i)
     sig = (uint8_t *)siglen + sizeof(uint32_t);
     th_memcpy(sig, g_rsa_signatures[id], *siglen);
     /* Results of verification */
-    passfail = sig + *siglen;
+    passfail  = sig + *siglen;
     *passfail = 0;
     /* This function calls the primitives and manages the buffer. */
     ee_bench_rsa_verify(id, msglen, i, false);
@@ -491,7 +477,7 @@ wrap_rsa_verify(ee_rsa_id_t id, unsigned int i)
 #define MAKE_WRAP_RSA(nick, id)                                     \
     uint16_t wrap_rsa_verify_##nick(unsigned int n, unsigned int i) \
     {                                                               \
-        return wrap_rsa_verify(id, i);               \
+        return pre_wrap_rsa_verify(id, i);                          \
     }
 
 MAKE_WRAP_RSA(2048, EE_RSA_2048)
@@ -589,17 +575,6 @@ typedef struct
 // clang-format off
 static task_entry_t g_task[] =
 {
-    TASK(ecdsa_sign_p256r1    ,   32,  1.0f, 0)
-    TASK(ecdsa_verify_p256r1  ,   32,  1.0f, 1)
-    TASK(ecdsa_sign_p384      ,   32,  1.0f, 0)
-    TASK(ecdsa_verify_p384    ,   32,  1.0f, 1)
-    TASK(ecdsa_sign_ed25519   ,   32,  1.0f, 0)
-    TASK(ecdsa_verify_ed25519 ,   32,  1.0f, 1)
-    TASK(rsa_verify_2048      ,   32,  1.0f, 1)
-    TASK(rsa_verify_3072      ,   32,  1.0f, 1)
-    TASK(rsa_verify_4096      ,   32,  1.0f, 1)
-
-#if 0
     /*
      *   Macro nickname       ,Bytes, weight, crc
      */
@@ -608,9 +583,9 @@ static task_entry_t g_task[] =
     TASK(aes128_ecb_encrypt   ,  320,  1.0f, 0x0b7a)
     TASK(aes128_ccm_encrypt   ,   52,  1.0f, 0xd82d)
     TASK(aes128_ccm_decrypt   ,  168,  1.0f, 0x005b)
-    TASK(ecdh_p256r1          ,    0,  1.0f, 0x32af)
-    TASK(ecdsa_sign_p256r1    ,   32,  1.0f, 0xae0a)
-    TASK(ecdsa_verify_p256r1  ,   32,  2.0f, 0xae0a)
+    TASK(ecdh_p256r1          ,    0,  1.0f, 0)
+    TASK(ecdsa_sign_p256r1    ,   32,  1.0f, 0)
+    TASK(ecdsa_verify_p256r1  ,   32,  1.0f, 1)
     TASK(sha256               ,   23,  3.0f, 0x2151)
     TASK(sha256               ,   57,  1.0f, 0x3b3c)
     TASK(sha256               ,  384,  1.0f, 0x1d3f)
@@ -626,28 +601,25 @@ static task_entry_t g_task[] =
     TASK(aes256_ccm_encrypt   ,   52,  1.0f, 0xd195)
     TASK(aes256_ccm_decrypt   ,  168,  1.0f, 0xd7ff)
     // NOTE: WolfCrypt has a problem here, compute CRC with mbedTLS
-    TASK(ecdsa_sign_p384      ,   32,  1.0f, 0xac10)
-    TASK(ecdsa_verify_p384    ,   32,  2.0f, 0xfe20)
+    TASK(ecdsa_sign_p384      ,   32,  1.0f, 0)
+    TASK(ecdsa_verify_p384    ,   32,  1.0f, 1)
     TASK(sha384               ,   23,  3.0f, 0x9f68)
     TASK(sha384               ,   57,  1.0f, 0x8a5c)
     TASK(sha384               ,  384,  1.0f, 0xb5e8)
     TASK(sha384               , 4224,  4.0f, 0xb146)
     TASK(aes256_ecb_encrypt   , 2048, 10.0f, 0x2364)
     // V2 - TLS 1.3 & Secure Boot Components
-    // Key Exchange
-    TASK(ecdh_p256r1          ,    0,  1.0f, 0x32af)
-    TASK(ecdh_p384            ,    0,  1.0f, 0xcd83)
-    TASK(ecdh_x25519          ,    0,  1.0f, 0xa94c)
-    // DSA Sign
-    // TASK(ecdsa_sign_p256r1    ,   32,  1.0f, 0x4cc0)
+    // Additional Key Exchange
+    TASK(ecdh_p384            ,    0,  1.0f, 0)
+    TASK(ecdh_x25519          ,    0,  1.0f, 0)
+    // Additional ECDSA Sign & Hashes
     TASK(sha256               , 1539,  1.0f, 0xb48c)
-    // TASK(ecdsa_sign_p384      ,   32,  1.0f, 0x709d)
     TASK(sha384               , 1539,  1.0f, 0x7cbc)
-    TASK(ecdsa_sign_ed25519   ,   32,  1.0f, 0x7dbb)
-    // DSA Verify
+    TASK(ecdsa_sign_ed25519   ,   32,  1.0f, 0)
+    // Additional ECDSA Verify & Hashes
     TASK(sha256               , 4104,  2.0f, 0x39c9)
     TASK(sha384               , 4104,  2.0f, 0xa424)
-    TASK(ecdsa_verify_ed25519 ,   32,  2.0f, 0x7dbb)
+    TASK(ecdsa_verify_ed25519 ,   32,  1.0f, 1)
     // AEAD
     TASK(aes128_ccm_encrypt   ,  416,  1.0f, 0x286a)
     TASK(aes128_ccm_decrypt   ,  444,  1.0f, 0x4256)
@@ -684,10 +656,9 @@ static task_entry_t g_task[] =
     TASK(sha384               ,  176, 14.0f, 0x660b)
     TASK(sha384               ,  130,  2.0f, 0x445b)
     // Secure boot verify only
-    TASK(rsa_verify_2048      ,   32,  1.0f, 0x8a62)
-    TASK(rsa_verify_3072      ,   32,  1.0f, 0x1ed4)
-    TASK(rsa_verify_4096      ,   32,  1.0f, 0x7147)
-#endif
+    TASK(rsa_verify_2048      ,   32,  1.0f, 1)
+    TASK(rsa_verify_3072      ,   32,  1.0f, 1)
+    TASK(rsa_verify_4096      ,   32,  1.0f, 1)
 };
 // clang-format on
 static const size_t g_numtasks = sizeof(g_task) / sizeof(task_entry_t);

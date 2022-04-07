@@ -39,7 +39,7 @@ ee_status_t
 th_rsa_create(void **pp_context)
 {
     rsa_context_t *ctx;
-    int ret;
+    int            ret;
 
     ctx = (rsa_context_t *)th_malloc(sizeof(rsa_context_t));
     if (!ctx)
@@ -69,7 +69,6 @@ th_rsa_create(void **pp_context)
         return EE_STATUS_ERROR;
     }
 
-
     *pp_context = ctx;
 
     return EE_STATUS_OK;
@@ -77,14 +76,14 @@ th_rsa_create(void **pp_context)
 
 ee_status_t
 th_rsa_set_public_key(void *         p_context,
-            const uint8_t *p_pubkey,
-            uint_fast32_t  publen)
+                      const uint8_t *p_pub,
+                      uint_fast32_t  publen)
 {
     rsa_context_t *ctx      = (rsa_context_t *)p_context;
     word32         inOutIdx = 0;
     int            ret;
 
-    ret = wc_RsaPublicKeyDecode(p_pubkey, &inOutIdx, ctx->pubkey, publen);
+    ret = wc_RsaPublicKeyDecode(p_pub, &inOutIdx, ctx->pubkey, publen);
     if (ret)
     {
         th_printf("e-[wc_RsaPublicKeyDecode: %d]\r\n", ret);
@@ -95,16 +94,16 @@ th_rsa_set_public_key(void *         p_context,
 }
 
 ee_status_t
-th_rsa_verify(void *         p_context,
-              uint8_t *p_msg,
-              uint_fast32_t  msglen,
-              uint8_t *      p_sig,
-              uint_fast32_t  slen)
+th_rsa_verify(void *        p_context,
+              uint8_t *     p_msg,
+              uint_fast32_t msglen,
+              uint8_t *     p_sig,
+              uint_fast32_t siglen)
 {
     rsa_context_t *ctx = (rsa_context_t *)p_context;
     int            ret;
 
-    ret = wc_RsaSSL_Verify(p_sig, slen, p_msg, msglen, ctx->pubkey);
+    ret = wc_RsaSSL_Verify(p_sig, siglen, p_msg, msglen, ctx->pubkey);
     if (ret < 0)
     {
         th_printf("e-[wc_RsaSSL_Verify: %d]\r\n", ret);

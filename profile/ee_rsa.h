@@ -25,12 +25,6 @@ typedef enum ee_rsa_id_t
     EE_RSA_4096
 } ee_rsa_id_t;
 
-typedef enum ee_rsa_function_t
-{
-    EE_RSA_SIGN = 0,
-    EE_RSA_VERIFY
-} ee_rsa_function_t;
-
 /**
  * @brief Creates a context.
  *
@@ -40,24 +34,32 @@ typedef enum ee_rsa_function_t
 ee_status_t th_rsa_create(void **pp_context);
 
 /**
- * @brief Verify a message (hash) with the public key.
- *
- * Note this doesn't actually compare the bytes of the decrypted message, just
- * that the decryption succeeded.
+ * @brief Set the public key to use for verification.
  *
  * @param p_context - The context from the `create` function
- * @param p_sig - The input signature buffer
- * @param slen - Length of the signature buffer
- * @param p_out - The output buffer
- * @param olen - Length of the output buffer
+ * @param p_pub - The public key buffer
+ * @param publen - Length of the public key buffer
  * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
-ee_status_t th_rsa_verify(void *         p_context,
-                          uint8_t *      p_msg,
-                          uint_fast32_t  msglen,
-                           uint8_t *p_sig,
-                          uint_fast32_t  slen
-                          );
+ee_status_t th_rsa_set_public_key(void *         p_context,
+                                  const uint8_t *p_pub,
+                                  uint_fast32_t  publen);
+
+/**
+ * @brief Verify a message (hash) with the public key.
+ *
+ * @param p_context - The context from the `create` function
+ * @param p_sig - The input message buffer
+ * @param msglen - Length of the input message buffer
+ * @param p_sig - The output signature buffer
+ * @param siglen - Length of the output signature buffer
+ * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
+ */
+ee_status_t th_rsa_verify(void *        p_context,
+                          uint8_t *     p_msg,
+                          uint_fast32_t msglen,
+                          uint8_t *     p_sig,
+                          uint_fast32_t siglen);
 
 /**
  * @brief Deallocate/destroy the context
@@ -66,9 +68,4 @@ ee_status_t th_rsa_verify(void *         p_context,
  */
 void th_rsa_destroy(void *p_context);
 
-
-ee_status_t
-th_rsa_set_public_key(void *         p_context,
-            const uint8_t *p_pubkey,
-            uint_fast32_t  publen);
 #endif /* _EE_RSA_H */
