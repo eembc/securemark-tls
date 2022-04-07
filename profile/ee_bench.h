@@ -151,12 +151,17 @@ void ee_bench_ecdh(ee_ecdh_group_t g, uint_fast32_t i, bool verify);
  * @param i - The number of iterations to perform
  * @param verify - Print verification messages for the host
  */
-void ee_bench_ecdsa(ee_ecdh_group_t g,
-                    ee_ecdsa_func_t func,
+
+
+void ee_bench_ecdsa_sign(ee_ecdh_group_t g,
                     uint_fast32_t   n,
                     uint_fast32_t   i,
                     bool            verify);
 
+void ee_bench_ecdsa_verify(ee_ecdh_group_t g,
+                    uint_fast32_t   n,
+                    uint_fast32_t   i,
+                    bool            verify);
 /**
  * @brief The top-level RSA benchmark wrapper.
  *

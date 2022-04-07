@@ -57,10 +57,10 @@
 #define MIN_ITER 10u
 /* Stored timestamps (a single primitive may generate multiple stamps) */
 #define MAX_TIMESTAMPS 64u
-/* `true` to turn on debugging messages */
-#define DEBUG_VERIFY true
+/* `1` to turn on debugging messages */
+#define DEBUG_VERIFY 0
 /* Only run a single iteration of each task (for debug) */
-#define DO_SINGLE
+#define DO_SINGLE 1
 // All wrapper functions fit this prototype (n=dataset octets, i=iterations)
 typedef uint16_t wrapper_function_t(unsigned int n, unsigned int i);
 /**
@@ -394,76 +394,11 @@ MAKE_WRAP_ECDH(p384, EE_P384)
 MAKE_WRAP_ECDH(x25519, EE_C25519)
 
 uint16_t
-pre_wrap_ecdsa(ee_ecdh_group_t g, ee_ecdsa_func_t func, uint32_t n, uint32_t i)
-{
-    uint8_t *p = th_buffer_address();
-    size_t   x;
-    uint16_t crc;
-
-    // We ALWAYS sign a SHA256 hash, regardless of the algorithm.
-    assert(n == 32);
-    // Emulate host download by copying our local keys into the buffer
-    // ASN.1 adds 3 encode bytes, 3 size bytes, and up to two pad bytes
-    assert(th_buffer_size() > (ee_pri_sz[g] + n + (ee_sig_sz[g] + 8)));
-
-    ee_buffer_fill(0);
-    th_memcpy(p, g_ecc_private_keys[g], ee_pri_sz[g]);
-    p += ee_pri_sz[g];
-    th_memcpy(p, g_dsa_message, 32);
-    p += 32;
-
-    if (func == EE_ECDSA_VERIFY)
-    {
-        /* Can't use the DUT to create the verify to check against. */
-        if (g == EE_Ed25519)
-        {
-            /* Ed25519 signatures are raw {R|S} little endian 64 byte */
-            th_memcpy(p, g_dsa_signatures[g], 64);
-        }
-        else
-        {
-            /* EcDSA signatures are ASN.1, and are < 256 bytes for our case. */
-            th_memcpy(p, g_dsa_signatures[g], g_dsa_signatures[g][1] + 2);
-        }
-    }
-
-    ee_bench_ecdsa(g, func, n, i, DEBUG_VERIFY);
-
-    /**
-     * @brief Since ee_bench_ecdsa doesn't return slen, we CRC 512 bytes of the
-     * buffer, which we already zeroed, and 512 is definitely more than we used.
-     */
-    for (crc = 0, x = 0, p = th_buffer_address(); x < 512; ++x)
-    {
-        crc = crcu16(crc, (uint8_t)p[x]);
-    }
-    return crc;
-}
-
-#define MAKE_WRAP_ECDSA(nick, group)                                  \
-    uint16_t wrap_ecdsa_sign_##nick(unsigned int n, unsigned int i)   \
-    {                                                                 \
-        return pre_wrap_ecdsa(group, EE_ECDSA_SIGN, n, i);            \
-    }                                                                 \
-    uint16_t wrap_ecdsa_verify_##nick(unsigned int n, unsigned int i) \
-    {                                                                 \
-        return pre_wrap_ecdsa(group, EE_ECDSA_VERIFY, n, i);          \
-    }
-
-MAKE_WRAP_ECDSA(p256r1, EE_P256R1)
-MAKE_WRAP_ECDSA(p384, EE_P384)
-MAKE_WRAP_ECDSA(ed25519, EE_Ed25519)
-
-void ee_xbench_ecdsa_sign(ee_ecdh_group_t, uint32_t, uint32_t, bool);
-
-uint16_t
-xwrap_ecdsa_sign(ee_ecdh_group_t g, uint32_t i)
+wrap_ecdsa_sign(ee_ecdh_group_t g, uint32_t i)
 {
     uint8_t *msg = th_buffer_address();
     uint8_t *pub;
     uint8_t *sig;
-    uint16_t crc;
-    size_t x;
 
     /* Self-hosted always uses the same message so that the CRC matches. */
     th_memcpy(msg, g_dsa_message, 32);
@@ -471,20 +406,13 @@ xwrap_ecdsa_sign(ee_ecdh_group_t g, uint32_t i)
     pub = msg + 32;
     sig = pub + ee_pub_sz[g];
     /* This function calls the primitives and manages the buffer. */
-    ee_xbench_ecdsa_sign(g, 32, i, false);
-    /* Normally, the host GUI verifies the signature, but in self-hoste mode
-       we just check the CRC of signature because it is deterministic. */
-    for (crc = 0, x = 0; x < ee_sig_sz[g]; ++x)
-    {
-        crc = crcu16(crc, (uint8_t)sig[x]);
-    }
-    return crc; 
+    ee_bench_ecdsa_sign(g, 32, i, false);
+    /* Since the DUT generates a new keypair every run, we can't CRC */
+    return 0; 
 }
 
-void ee_xbench_ecdsa_verify(ee_ecdh_group_t, uint32_t, uint32_t, bool);
-
 uint16_t
-xwrap_ecdsa_verify(ee_ecdh_group_t g, uint32_t i)
+wrap_ecdsa_verify(ee_ecdh_group_t g, uint32_t i)
 {
     uint8_t *msg;
     uint32_t *publen;
@@ -498,10 +426,10 @@ xwrap_ecdsa_verify(ee_ecdh_group_t g, uint32_t i)
     th_memcpy(msg, g_dsa_message, 32);
     /* Length of public key TODO: Raw for now ... */
     publen = (uint32_t *)(msg + 32);
-    *publen = ee_pub_sz[g] + 1;
+    *publen = ee_pub_sz[g] + (g == EE_Ed25519 ? 0 : 1);
     /* Public key */
     pub = (uint8_t *)publen + sizeof(uint32_t);
-    th_memcpy(pub, g_ecc_public_keys[g], ee_pub_sz[g] + 1);
+    th_memcpy(pub, g_ecc_public_keys[g], ee_pub_sz[g] + (g == EE_Ed25519 ? 0 : 1));
     /* Length of signature */
     siglen = (uint32_t *)(pub + *publen);
     *siglen = g_dsa_signatures_sizes[g];
@@ -511,24 +439,24 @@ xwrap_ecdsa_verify(ee_ecdh_group_t g, uint32_t i)
     /* Results of verification */
     passfail = sig + *siglen;
     /* This function calls the primitives and manages the buffer. */
-    ee_xbench_ecdsa_verify(g, 32, i, false);
+    ee_bench_ecdsa_verify(g, 32, i, false);
     /* No CRC here, just pass/fail, e.g. 1/0 */
     return *passfail; 
 }
 
-#define XMAKE_WRAP_ECDSA(nick, group)                                  \
-    uint16_t xwrap_ecdsa_sign_##nick(unsigned int n, unsigned int i)   \
+#define MAKE_WRAP_ECDSA(nick, group)                                  \
+    uint16_t wrap_ecdsa_sign_##nick(unsigned int n, unsigned int i)   \
     {                                                                 \
-        return xwrap_ecdsa_sign(group, i);            \
+        return wrap_ecdsa_sign(group, i);            \
     } \
-    uint16_t xwrap_ecdsa_verify_##nick(unsigned int n, unsigned int i)   \
+    uint16_t wrap_ecdsa_verify_##nick(unsigned int n, unsigned int i)   \
     {                                                                 \
-        return xwrap_ecdsa_verify(group, i);            \
+        return wrap_ecdsa_verify(group, i);            \
     }
 
-XMAKE_WRAP_ECDSA(p256r1, EE_P256R1)
-XMAKE_WRAP_ECDSA(p384, EE_P384)
-XMAKE_WRAP_ECDSA(ed25519, EE_Ed25519)
+MAKE_WRAP_ECDSA(p256r1, EE_P256R1)
+MAKE_WRAP_ECDSA(p384, EE_P384)
+MAKE_WRAP_ECDSA(ed25519, EE_Ed25519)
 
 
 #define MAX_MODULUS 512
@@ -718,8 +646,12 @@ typedef struct
 // clang-format off
 static task_entry_t g_task[] =
 {
-    XTASK(ecdsa_sign_p256r1    ,   32,  1.0f, 0xae0a)
-    XTASK(ecdsa_verify_p256r1    ,   32,  1.0f, 0xae0a)
+    TASK(ecdsa_sign_p256r1     ,   32,  1.0f, 0)
+    TASK(ecdsa_verify_p256r1   ,   32,  1.0f, 1)
+    TASK(ecdsa_sign_p384       ,   32,  1.0f, 0)
+    TASK(ecdsa_verify_p384     ,   32,  1.0f, 1)
+    TASK(ecdsa_sign_ed25519    ,   32,  1.0f, 0)
+    TASK(ecdsa_verify_ed25519  ,   32,  1.0f, 1)
 #if 0
     /*
      *   Macro nickname       ,Bytes, weight, crc
@@ -831,7 +763,7 @@ main(void)
     printf("-- ------------------------- ----- --- ---------------\n");
     for (i = 0; i < g_numtasks; ++i)
     {
-#ifdef DO_SINGLE
+#if DO_SINGLE == 1
         iterations = 1;
         ee_srand(0); // CRCs are computed with seed 0
         g_task[i].actual_crc = (*g_task[i].func)(g_task[i].n, iterations);
