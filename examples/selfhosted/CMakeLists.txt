@@ -36,8 +36,6 @@ if (SELFHOSTED)
 			../../profile/ee_bench.c
 			../../profile/ee_buffer.c
 			../../profile/ee_chachapoly.c
-			../../profile/ee_ecdh.c
-			../../profile/ee_ecdsa.c
 			../../profile/ee_profile.c
 			../../profile/ee_sha.c
 			../../profile/ee_util.c
@@ -139,10 +137,7 @@ if (SELFHOSTED)
 			../../profile/ee_bench.c
 			../../profile/ee_buffer.c
 			../../profile/ee_chachapoly.c
-			../../profile/ee_ecdh.c
-			../../profile/ee_ecdsa.c
 			../../profile/ee_profile.c
-			../../profile/ee_rsa.c
 			../../profile/ee_sha.c
 			../../profile/ee_util.c
 			../../profile/ee_variations.c
@@ -181,8 +176,6 @@ else()
         ../../profile/ee_bench.c
         ../../profile/ee_buffer.c
         ../../profile/ee_chachapoly.c
-        ../../profile/ee_ecdh.c
-        ../../profile/ee_ecdsa.c
         ../../profile/ee_profile.c
         ../../profile/ee_sha.c
         ../../profile/ee_util.c

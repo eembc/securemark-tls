@@ -18,18 +18,14 @@
 uint8_t g_localKey[CHACHA20_POLY1305_AEAD_KEYSIZE];
 
 ee_status_t
-th_chachapoly_create(void **pp_context 
-)
+th_chachapoly_create(void **pp_context)
 {
     /* wolfCrypt creates uses a local context in its chachapoly functions */
     return EE_STATUS_OK;
 }
 
 ee_status_t
-th_chachapoly_init(void *            p_context, 
-                   const uint8_t *   p_key,     
-                   uint_fast32_t     keylen    
-)
+th_chachapoly_init(void *p_context, const uint8_t *p_key, uint_fast32_t keylen)
 {
     if (keylen != CHACHA20_POLY1305_AEAD_KEYSIZE)
     {
@@ -42,23 +38,20 @@ th_chachapoly_init(void *            p_context,
 }
 
 void
-th_chachapoly_deinit(void *            p_context 
-)
+th_chachapoly_deinit(void *p_context)
 {
     /* wolfCrypt creates uses a local context in its chachapoly functions */
 }
 
 ee_status_t
-th_chachapoly_encrypt(
-    void *         p_context, 
-    const uint8_t *p_pt,      
-    uint_fast32_t  ptlen,     
-    uint8_t *      p_ct,      
-    uint8_t *      p_tag,     
-    uint_fast32_t  taglen,    
-    uint8_t *      p_iv,      
-    uint_fast32_t  ivlen      
-)
+th_chachapoly_encrypt(void *         p_context,
+                      const uint8_t *p_pt,
+                      uint_fast32_t  ptlen,
+                      uint8_t *      p_ct,
+                      uint8_t *      p_tag,
+                      uint_fast32_t  taglen,
+                      uint8_t *      p_iv,
+                      uint_fast32_t  ivlen)
 {
     return wc_ChaCha20Poly1305_Encrypt(
                g_localKey, p_iv, NULL, 0, p_pt, ptlen, p_ct, p_tag)
@@ -68,16 +61,14 @@ th_chachapoly_encrypt(
 }
 
 ee_status_t
-th_chachapoly_decrypt(
-    void *         p_context, 
-    const uint8_t *p_ct,      
-    uint_fast32_t  ctlen,     
-    uint8_t *      p_pt,      
-    uint8_t *      p_tag,     
-    uint_fast32_t  taglen,    
-    uint8_t *      p_iv,      
-    uint_fast32_t  ivlen      
-)
+th_chachapoly_decrypt(void *         p_context,
+                      const uint8_t *p_ct,
+                      uint_fast32_t  ctlen,
+                      uint8_t *      p_pt,
+                      uint8_t *      p_tag,
+                      uint_fast32_t  taglen,
+                      uint8_t *      p_iv,
+                      uint_fast32_t  ivlen)
 {
     return wc_ChaCha20Poly1305_Decrypt(
                g_localKey, p_iv, NULL, 0, p_ct, ctlen, p_tag, p_pt)
@@ -87,8 +78,7 @@ th_chachapoly_decrypt(
 }
 
 void
-th_chachapoly_destroy(void *p_context 
-)
+th_chachapoly_destroy(void *p_context)
 {
     /* wolfCrypt creates uses a local context in its chachapoly functions */
 }

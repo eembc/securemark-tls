@@ -33,7 +33,7 @@ typedef enum
 
 #define EE_DEVICE_NAME "dut"
 
-#define EE_CMD_SIZE       80u
+#define EE_CMD_SIZE 80u
 /* V2.x. moved to space delimeter. */
 #define EE_CMD_DELIMITER  " "
 #define EE_CMD_TERMINATOR '%'

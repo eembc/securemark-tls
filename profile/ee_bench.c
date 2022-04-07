@@ -137,96 +137,146 @@ ee_bench_chachapoly(ee_chachapoly_func_t func, int n, int i, bool verify)
 void
 ee_bench_ecdh(ee_ecdh_group_t g, uint_fast32_t i, bool verify)
 {
-    uint_fast32_t npub = ee_pub_sz[g];
-    uint_fast32_t npri = ee_pri_sz[g];
-    uint_fast32_t nsec = ee_sec_sz[g];
+    uint32_t *p_publen = (uint32_t *)th_buffer_address();
+    uint8_t * p_pub    = (uint8_t *)p_publen + sizeof(uint32_t);
+    uint32_t *p_seclen = (uint32_t *)p_pub + *p_publen;
+    uint8_t * p_sec    = (uint8_t *)p_seclen + sizeof(uint32_t);
 
-    /* The th_buffer has been pre-loaded with this data */
-    uint8_t *p_pri = th_buffer_address();
-    uint8_t *p_pub = p_pri + npri;
-    uint8_t *p_sec = p_pub + npub;
+    void *      p_context = NULL;
+    ee_status_t ret       = EE_STATUS_OK;
 
-    ee_ecdh(g, p_pri, npri, p_pub, npub, p_sec, nsec, i);
+    th_ecdh_create(&p_context, g);
+    th_ecdh_set_peer_public_key(p_context, p_pub, *p_publen);
+    do
+    {
+        ret = th_ecdh_calc_secret(p_context, p_sec, p_seclen);
+    } while (--i > 0 && ret == EE_STATUS_OK);
+    th_ecdh_destroy(p_context);
+
+    if (ret != EE_STATUS_OK)
+    {
+        th_printf("e-[Failed on ECDH secret]\r\n");
+    }
 
     if (verify)
     {
-        ee_printmemline(p_pub, npub, "m-bench-ecdh-peer-public-");
-        ee_printmemline(p_pri, npri, "m-bench-ecdh-own-private-");
-        ee_printmemline(p_sec, nsec, "m-bench-ecdh-shared-");
+        ee_printmemline(p_pub, *p_publen, "m-bench-ecdh-host-public-");
+        ee_printmemline(p_sec, *p_seclen, "m-bench-ecdh-secret-");
     }
 }
 
 void
-ee_bench_ecdsa(ee_ecdh_group_t g,
-               ee_ecdsa_func_t func,
-               uint_fast32_t   n,
-               uint_fast32_t   i,
-               bool            verify)
+ee_bench_ecdsa_sign(ee_ecdh_group_t g,
+                    uint_fast32_t   n,
+                    uint_fast32_t   i,
+                    bool            verify)
 {
-    /* These are not in the buffer */
-    uint_fast32_t npri = ee_pri_sz[g];
-    uint_fast32_t slen;
+    /* Sig will be ASN.1 so may vary, just put some reasonable values. */
+    uint_fast32_t publen = 256;
+    uint_fast32_t siglen = 256;
 
-    /* The th_buffer has been pre-loaded with this data */
-    uint8_t *p_pri = th_buffer_address();
-    uint8_t *p_msg = p_pri + npri;
-    uint8_t *p_sig = p_msg + n;
+    uint8_t *p_msg = th_buffer_address();
+    uint8_t *p_pub = p_msg + n;
+    uint8_t *p_sig = p_pub + publen;
 
-    if (func == EE_ECDSA_VERIFY)
+    void *      p_context = NULL;
+    ee_status_t ret       = EE_STATUS_OK;
+
+    fill_rand(p_msg, n);
+
+    th_ecdsa_create(&p_context, g);
+    th_timestamp();
+    th_pre();
+    do
     {
-        if (g == EE_Ed25519)
-        {
-            /* Ed25519 signatures are raw {R|S} little endian */
-            slen = 64;
-        }
-        else
-        {
-            /* EcDSA signatures are ASN.1, and are < 256 bytes for our case. */
-            slen = p_sig[1] + 2;
-        }
-    }
-    else
-    {
-        /* Provide max size as entire remaining buffer on sign */
-        slen = th_buffer_size() - (p_sig - p_pri) - 1;
-    }
+        ret = th_ecdsa_sign(p_context, p_msg, n, p_sig, &siglen);
+    } while (--i > 0 && ret == EE_STATUS_OK);
+    th_post();
+    th_timestamp();
+    th_ecdsa_get_public_key(p_context, p_pub, &publen);
+    th_ecdsa_destroy(p_context);
 
-    ee_ecdsa(g, func, p_msg, n, p_sig, &slen, p_pri, npri, i);
+    if (ret != EE_STATUS_OK)
+    {
+        th_printf("e-[Failed on ECDSA sign]\r\n");
+    }
 
     if (verify)
     {
-        ee_printmemline(p_pri, npri, "m-bench-ecdsa-private-");
-        ee_printmemline(p_msg, n, "m-bench-ecdsa-msg-");
-        ee_printmemline(p_sig, slen, "m-bench-ecdsa-sig-");
+        ee_printmemline(p_msg, n, "m-ecdsa-sign-msg-");
+        ee_printmemline(p_sig, siglen, "m-ecdsa-sign-signature-");
+        ee_printmemline(p_pub, publen, "m-ecdsa-sign-pubkey-");
     }
 }
 
 void
-ee_bench_rsa(ee_rsa_id_t       id,
-             ee_rsa_function_t func,
-             unsigned int      i,
-             bool              verify)
+ee_bench_ecdsa_verify(ee_ecdh_group_t g,
+                      uint_fast32_t   n,
+                      uint_fast32_t   i,
+                      bool            verify)
 {
-    uint32_t *p_prilen;
-    uint8_t * p_pri;
-    uint32_t *p_msglen;
-    uint8_t * p_msg;
-    uint32_t *p_siglen;
-    uint8_t * p_sig;
+    uint8_t *   p_msg      = th_buffer_address();
+    uint32_t *  p_publen   = (uint32_t *)(p_msg + n);
+    uint8_t *   p_pub      = (uint8_t *)p_publen + sizeof(uint32_t);
+    uint32_t *  p_siglen   = (uint32_t *)(p_pub + *p_publen);
+    uint8_t *   p_sig      = (uint8_t *)p_siglen + sizeof(uint32_t);
+    uint8_t *   p_passfail = p_sig + *p_siglen;
+    void *      p_ctx      = NULL;
+    ee_status_t ret        = EE_STATUS_OK;
 
-    p_prilen = (uint32_t *)th_buffer_address();
-    p_pri    = (uint8_t *)p_prilen + sizeof(uint32_t);
-    p_msglen = (uint32_t *)(p_pri + *p_prilen);
-    p_msg    = (uint8_t *)p_msglen + sizeof(uint32_t);
-    p_siglen = (uint32_t *)(p_msg + *p_msglen);
-    p_sig    = (uint8_t *)p_siglen + sizeof(uint32_t);
+    th_ecdsa_create(&p_ctx, g);
+    th_ecdsa_set_public_key(p_ctx, p_pub, *p_publen);
+    th_timestamp();
+    th_pre();
+    do
+    {
+        ret = th_ecdsa_verify(p_ctx, p_msg, n, p_sig, *p_siglen);
+    } while (--i > 0 && ret == EE_STATUS_OK);
+    th_post();
+    th_timestamp();
+    th_ecdsa_destroy(p_ctx);
 
-    ee_rsa(id, func, p_pri, *p_prilen, p_msg, *p_msglen, p_sig, p_siglen, i);
+    *p_passfail = ret == EE_STATUS_OK ? 1 : 0;
 
     if (verify)
     {
-        ee_printmemline(p_pri, *p_prilen, "m-bench-rsa-pri-");
-        ee_printmemline(p_msg, *p_msglen, "m-bench-rsa-msg-");
+        ee_printmemline(p_msg, n, "m-ecdsa-sign-msg-");
+        ee_printmemline(p_sig, *p_siglen, "m-ecdsa-sign-signature-");
+        ee_printmemline(p_pub, *p_publen, "m-ecdsa-sign-pubkey-");
+        th_printf("m-ecdsa-sign-passfail-%d\n", *p_passfail);
+    }
+}
+
+void
+ee_bench_rsa_verify(ee_rsa_id_t id, unsigned int n, unsigned int i, bool verify)
+{
+    uint8_t *   p_msg      = th_buffer_address();
+    uint32_t *  p_publen   = (uint32_t *)(p_msg + n);
+    uint8_t *   p_pub      = (uint8_t *)p_publen + sizeof(uint32_t);
+    uint32_t *  p_siglen   = (uint32_t *)(p_pub + *p_publen);
+    uint8_t *   p_sig      = (uint8_t *)p_siglen + sizeof(uint32_t);
+    uint8_t *   p_passfail = p_sig + *p_siglen;
+    void *      p_context  = NULL;
+    ee_status_t ret        = EE_STATUS_OK;
+
+    th_rsa_create(&p_context);
+    th_rsa_set_public_key(p_context, p_pub, *p_publen);
+    th_timestamp();
+    th_pre();
+    do
+    {
+        ret = th_rsa_verify(p_context, p_msg, n, p_sig, *p_siglen);
+    } while (--i > 0 && ret == EE_STATUS_OK);
+    th_post();
+    th_timestamp();
+    th_rsa_destroy(p_context);
+
+    *p_passfail = ret == EE_STATUS_OK ? 1 : 0;
+
+    if (verify)
+    {
+        ee_printmemline(p_pub, *p_publen, "m-bench-rsa-pri-");
+        ee_printmemline(p_msg, n, "m-bench-rsa-msg-");
         ee_printmemline(p_sig, *p_siglen, "m-bench-rsa-sig-");
     }
 }
@@ -234,12 +284,12 @@ ee_bench_rsa(ee_rsa_id_t       id,
 arg_claimed_t
 ee_bench_parse(char *p_command, bool verify)
 {
-    char *        p_subcmd; 
-    char *        p_seed;   
-    char *        p_iter;   
-    char *        p_size;   
-    uint_fast32_t i;        
-    uint_fast32_t n;        
+    char *        p_subcmd;
+    char *        p_seed;
+    char *        p_iter;
+    char *        p_size;
+    uint_fast32_t i;
+    uint_fast32_t n;
     if (th_strncmp(p_command, "bench", EE_CMD_SIZE) != 0)
     {
         return EE_ARG_UNCLAIMED;
@@ -256,13 +306,13 @@ ee_bench_parse(char *p_command, bool verify)
     p_seed   = th_strtok(NULL, EE_CMD_DELIMITER);
     p_size   = th_strtok(NULL, EE_CMD_DELIMITER);
     p_iter   = th_strtok(NULL, EE_CMD_DELIMITER);
-    
+
     if (p_subcmd == NULL)
     {
         th_printf("e-[Command 'bench' takes a subcommand]\r\n");
         return EE_ARG_CLAIMED;
     }
-    
+
     if (p_seed != NULL)
     {
         ee_srand((uint8_t)th_atoi(p_seed));
@@ -380,27 +430,39 @@ ee_bench_parse(char *p_command, bool verify)
     }
     else if (th_strncmp(p_subcmd, "ecdsa-p256-sign", EE_CMD_SIZE) == 0)
     {
-        ee_bench_ecdsa(EE_P256R1, EE_ECDSA_SIGN, n, i, verify);
+        ee_bench_ecdsa_sign(EE_P256R1, n, i, verify);
     }
     else if (th_strncmp(p_subcmd, "ecdsa-p256-verify", EE_CMD_SIZE) == 0)
     {
-        ee_bench_ecdsa(EE_P256R1, EE_ECDSA_VERIFY, n, i, verify);
+        ee_bench_ecdsa_verify(EE_P256R1, n, i, verify);
     }
     else if (th_strncmp(p_subcmd, "ecdsa-p384-sign", EE_CMD_SIZE) == 0)
     {
-        ee_bench_ecdsa(EE_P384, EE_ECDSA_SIGN, n, i, verify);
+        ee_bench_ecdsa_sign(EE_P384, n, i, verify);
     }
     else if (th_strncmp(p_subcmd, "ecdsa-p384-verify", EE_CMD_SIZE) == 0)
     {
-        ee_bench_ecdsa(EE_P384, EE_ECDSA_VERIFY, n, i, verify);
+        ee_bench_ecdsa_verify(EE_P384, n, i, verify);
     }
     else if (th_strncmp(p_subcmd, "ecdsa-ed25519-sign", EE_CMD_SIZE) == 0)
     {
-        ee_bench_ecdsa(EE_Ed25519, EE_ECDSA_SIGN, n, i, verify);
+        ee_bench_ecdsa_sign(EE_Ed25519, n, i, verify);
     }
     else if (th_strncmp(p_subcmd, "ecdsa-ed25519-verify", EE_CMD_SIZE) == 0)
     {
-        ee_bench_ecdsa(EE_Ed25519, EE_ECDSA_VERIFY, n, i, verify);
+        ee_bench_ecdsa_verify(EE_Ed25519, n, i, verify);
+    }
+    else if (th_strncmp(p_subcmd, "rsa2048-verify", EE_CMD_SIZE) == 0)
+    {
+        ee_bench_rsa_verify(EE_RSA_2048, n, i, verify);
+    }
+    else if (th_strncmp(p_subcmd, "rsa3072-verify", EE_CMD_SIZE) == 0)
+    {
+        ee_bench_rsa_verify(EE_RSA_3072, n, i, verify);
+    }
+    else if (th_strncmp(p_subcmd, "rsa4096-verify", EE_CMD_SIZE) == 0)
+    {
+        ee_bench_rsa_verify(EE_RSA_4096, n, i, verify);
     }
     else if (th_strncmp(p_subcmd, "var01", EE_CMD_SIZE) == 0)
     {

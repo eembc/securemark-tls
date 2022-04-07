@@ -20,41 +20,45 @@ th_ecdsa_create(void **p_context, ee_ecdh_group_t group)
 }
 
 ee_status_t
-th_ecdsa_init(void *          p_context,
-              ee_ecdh_group_t group,
-              uint8_t *       p_private,
-              uint_fast32_t   plen)
-{
-#warning "th_ecdsa_init not implemented"
-    return EE_STATUS_OK;
-}
-
-ee_status_t
-th_ecdsa_sign(void *          p_context,
-              ee_ecdh_group_t group,
-              uint8_t *       p_msg,
-              uint_fast32_t   mlen,
-              uint8_t *       p_sig,
-              uint_fast32_t * p_slen)
+th_ecdsa_sign(void *         p_context,
+              uint8_t *      p_msg,
+              uint_fast32_t  msglen,
+              uint8_t *      p_sig,
+              uint_fast32_t *p_siglen)
 {
 #warning "th_ecdsa_sign not implemented"
     return EE_STATUS_OK;
 }
 
 ee_status_t
-th_ecdsa_verify(void *          p_context,
-                ee_ecdh_group_t group,
-                uint8_t *       p_msg,
-                uint_fast32_t   mlen,
-                uint8_t *       p_sig,
-                uint_fast32_t   slen)
+th_ecdsa_verify(void *        p_context,
+                uint8_t *     p_msg,
+                uint_fast32_t msglen,
+                uint8_t *     p_sig,
+                uint_fast32_t siglen)
 {
 #warning "th_ecdsa_verify not implemented"
     return EE_STATUS_OK;
 }
 
+ee_status_t
+th_ecdsa_get_public_key(void *         p_context,
+                        uint8_t *      p_out,
+                        uint_fast32_t *p_outlen)
+{
+#warning "th_ecdsa_get_public_key not implemented"
+    return EE_STATUS_OK;
+}
+
+ee_status_t
+th_ecdsa_set_public_key(void *p_context, uint8_t *p_pub, uint_fast32_t publen)
+{
+#warning "th_ecdsa_set_public_key not implemented"
+    return EE_STATUS_OK;
+}
+
 void
-th_ecdsa_destroy(void *p_context, ee_ecdh_group_t group)
+th_ecdsa_destroy(void *p_context)
 {
 #warning "th_ecdsa_destroy not implemented"
 }
