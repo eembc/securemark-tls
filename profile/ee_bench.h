@@ -152,16 +152,15 @@ void ee_bench_ecdh(ee_ecdh_group_t g, uint_fast32_t i, bool verify);
  * @param verify - Print verification messages for the host
  */
 
-
 void ee_bench_ecdsa_sign(ee_ecdh_group_t g,
-                    uint_fast32_t   n,
-                    uint_fast32_t   i,
-                    bool            verify);
+                         uint_fast32_t   n,
+                         uint_fast32_t   i,
+                         bool            verify);
 
 void ee_bench_ecdsa_verify(ee_ecdh_group_t g,
-                    uint_fast32_t   n,
-                    uint_fast32_t   i,
-                    bool            verify);
+                           uint_fast32_t   n,
+                           uint_fast32_t   i,
+                           bool            verify);
 /**
  * @brief The top-level RSA benchmark wrapper.
  *
@@ -202,4 +201,33 @@ void ee_bench_rsa(ee_rsa_id_t       id,
 
 arg_claimed_t ee_bench_parse(char *p_command, bool verify);
 
+/**
+ * @brief Performs an RSA sign or verify operation some number of iterations.
+ *
+ * The message is the non-encoded encryption of message M according to PCKS1v15.
+ * Meaning, the hash will not be encoded, it will simply be padded and
+ * encrypted, and the expected signature for verification will follow the
+ * same convention.
+ *
+ * The private key is always given, regardless of sign or verify. If the target
+ * requires a public key to do verify, then it should be constructed during
+ * the context create and init, as the specified ASN.1 format contains enough
+ * information to reconstruct the public key.
+ *
+ * Note that this function only verifies that the RSA operation succeeded,
+ * in the case of verify, the decrypted bytes are NOT compared to the message.
+ *
+ * @param id - See the `ee_rsa_id_t` enum
+ * @param func - See the `ee_rsa_function_t` enum
+ * @param p_pri - The private key buffer
+ * @param prilen - Length of the private key buffer
+ * @param p_in - The input buffer
+ * @param ilen - Length of the input buffer
+ * @param p_out - The output buffer
+ * @param olen - Length of the output buffer
+ * @param iter - Number of iterations to perform
+ */
+void e
+void
+ee_bench_rsa_verify(ee_rsa_id_t id, unsigned int n, unsigned int i, bool verify);
 #endif /* __EE_BENCH_H */

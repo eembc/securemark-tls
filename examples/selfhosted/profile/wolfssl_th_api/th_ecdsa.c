@@ -34,8 +34,6 @@ typedef struct
     ecc_curve_id curve;
 } ctx_t;
 
-void ee_printmemline(uint8_t *p_addr, uint_fast32_t len, char *p_user_header);
-
 #define CHK1(x)         \
     {                   \
         ret = x;        \

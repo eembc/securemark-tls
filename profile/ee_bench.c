@@ -157,7 +157,10 @@ ee_bench_ecdh(ee_ecdh_group_t g, uint_fast32_t i, bool verify)
 }
 
 void
-ee_bench_ecdsa_sign(ee_ecdh_group_t g, uint_fast32_t n, uint_fast32_t i, bool verify)
+ee_bench_ecdsa_sign(ee_ecdh_group_t g,
+                    uint_fast32_t   n,
+                    uint_fast32_t   i,
+                    bool            verify)
 {
     /* Sig will be ASN.1 so may vary, just put some reasonable values. */
     uint_fast32_t publen = 256;
@@ -192,16 +195,18 @@ ee_bench_ecdsa_sign(ee_ecdh_group_t g, uint_fast32_t n, uint_fast32_t i, bool ve
 }
 
 void
-ee_bench_ecdsa_verify(ee_ecdh_group_t g, uint_fast32_t n, uint_fast32_t i, bool verify)
+ee_bench_ecdsa_verify(ee_ecdh_group_t g,
+                      uint_fast32_t   n,
+                      uint_fast32_t   i,
+                      bool            verify)
 {
-    uint8_t *p_msg = th_buffer_address();
-    uint32_t *p_publen = (uint32_t *)(p_msg + n);
-    uint8_t *p_pub = (uint8_t *)p_publen + sizeof(uint32_t);
-    uint32_t *p_siglen = (uint32_t *)(p_pub + *p_publen);
-    uint8_t *p_sig = (uint8_t *)p_siglen + sizeof(uint32_t);
-    uint8_t *p_passfail = p_sig + *p_siglen;
-
-    void *p_ctx = NULL;
+    uint8_t *   p_msg      = th_buffer_address();
+    uint32_t *  p_publen   = (uint32_t *)(p_msg + n);
+    uint8_t *   p_pub      = (uint8_t *)p_publen + sizeof(uint32_t);
+    uint32_t *  p_siglen   = (uint32_t *)(p_pub + *p_publen);
+    uint8_t *   p_sig      = (uint8_t *)p_siglen + sizeof(uint32_t);
+    uint8_t *   p_passfail = p_sig + *p_siglen;
+    void *      p_ctx      = NULL;
     ee_status_t status;
 
     th_ecdsa_create(&p_ctx, g);
@@ -228,31 +233,35 @@ ee_bench_ecdsa_verify(ee_ecdh_group_t g, uint_fast32_t n, uint_fast32_t i, bool 
 }
 
 void
-ee_bench_rsa(ee_rsa_id_t       id,
-             ee_rsa_function_t func,
-             unsigned int      i,
-             bool              verify)
+ee_bench_rsa_verify(ee_rsa_id_t id, unsigned int n, unsigned int i, bool verify)
 {
-    uint32_t *p_prilen;
-    uint8_t * p_pri;
-    uint32_t *p_msglen;
-    uint8_t * p_msg;
-    uint32_t *p_siglen;
-    uint8_t * p_sig;
+    uint8_t *   p_msg      = th_buffer_address();
+    uint32_t *  p_publen   = (uint32_t *)(p_msg + n);
+    uint8_t *   p_pub      = (uint8_t *)p_publen + sizeof(uint32_t);
+    uint32_t *  p_siglen   = (uint32_t *)(p_pub + *p_publen);
+    uint8_t *   p_sig      = (uint8_t *)p_siglen + sizeof(uint32_t);
+    uint8_t *   p_passfail = p_sig + *p_siglen;
+    void *      p_context  = NULL;
+    ee_status_t status;
 
-    p_prilen = (uint32_t *)th_buffer_address();
-    p_pri    = (uint8_t *)p_prilen + sizeof(uint32_t);
-    p_msglen = (uint32_t *)(p_pri + *p_prilen);
-    p_msg    = (uint8_t *)p_msglen + sizeof(uint32_t);
-    p_siglen = (uint32_t *)(p_msg + *p_msglen);
-    p_sig    = (uint8_t *)p_siglen + sizeof(uint32_t);
+    th_rsa_create(&p_context);
+    th_rsa_set_public_key(p_context, p_pub, *p_publen);
+    th_timestamp();
+    th_pre();
+    while (i-- > 0)
+    {
+        status = th_rsa_verify(p_context, p_msg, n, p_sig, *p_siglen);
+    }
+    th_post();
+    th_timestamp();
+    th_rsa_destroy(p_context);
 
-    ee_rsa(id, func, p_pri, *p_prilen, p_msg, *p_msglen, p_sig, p_siglen, i);
+    *p_passfail = status == EE_STATUS_OK ? 1 : 0;
 
     if (verify)
     {
-        ee_printmemline(p_pri, *p_prilen, "m-bench-rsa-pri-");
-        ee_printmemline(p_msg, *p_msglen, "m-bench-rsa-msg-");
+        ee_printmemline(p_pub, *p_publen, "m-bench-rsa-pri-");
+        ee_printmemline(p_msg, n, "m-bench-rsa-msg-");
         ee_printmemline(p_sig, *p_siglen, "m-bench-rsa-sig-");
     }
 }
@@ -260,12 +269,12 @@ ee_bench_rsa(ee_rsa_id_t       id,
 arg_claimed_t
 ee_bench_parse(char *p_command, bool verify)
 {
-    char *        p_subcmd; 
-    char *        p_seed;   
-    char *        p_iter;   
-    char *        p_size;   
-    uint_fast32_t i;        
-    uint_fast32_t n;        
+    char *        p_subcmd;
+    char *        p_seed;
+    char *        p_iter;
+    char *        p_size;
+    uint_fast32_t i;
+    uint_fast32_t n;
     if (th_strncmp(p_command, "bench", EE_CMD_SIZE) != 0)
     {
         return EE_ARG_UNCLAIMED;
@@ -282,13 +291,13 @@ ee_bench_parse(char *p_command, bool verify)
     p_seed   = th_strtok(NULL, EE_CMD_DELIMITER);
     p_size   = th_strtok(NULL, EE_CMD_DELIMITER);
     p_iter   = th_strtok(NULL, EE_CMD_DELIMITER);
-    
+
     if (p_subcmd == NULL)
     {
         th_printf("e-[Command 'bench' takes a subcommand]\r\n");
         return EE_ARG_CLAIMED;
     }
-    
+
     if (p_seed != NULL)
     {
         ee_srand((uint8_t)th_atoi(p_seed));

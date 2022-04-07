@@ -17,13 +17,12 @@
 
 /* can be set for static memory use */
 #define HEAP_HINT NULL
-
 /* used with crypto callbacks and async */
 #define DEVID -1
 
 typedef struct rsa_context_t
 {
-    RsaKey *prikey;
+    RsaKey *pubkey;
     WC_RNG *rng;
 } rsa_context_t;
 
@@ -40,6 +39,7 @@ ee_status_t
 th_rsa_create(void **pp_context)
 {
     rsa_context_t *ctx;
+    int ret;
 
     ctx = (rsa_context_t *)th_malloc(sizeof(rsa_context_t));
     if (!ctx)
@@ -50,17 +50,25 @@ th_rsa_create(void **pp_context)
 
     th_memset(ctx, 0, sizeof(rsa_context_t));
 
-    ctx->prikey = (RsaKey *)th_malloc(sizeof(RsaKey));
+    ctx->pubkey = (RsaKey *)th_malloc(sizeof(RsaKey));
     ctx->rng    = (WC_RNG *)th_malloc(sizeof(WC_RNG));
 
-    if (!ctx->prikey || !ctx->rng)
+    if (!ctx->pubkey || !ctx->rng)
     {
         th_printf("e-[th_rsa_create failed to malloc]\r\n");
-        FREE(ctx->prikey);
+        FREE(ctx->pubkey);
         FREE(ctx->rng);
         FREE(ctx);
         return EE_STATUS_ERROR;
     }
+
+    ret = wc_InitRsaKey_ex(ctx->pubkey, HEAP_HINT, DEVID);
+    if (ret)
+    {
+        th_printf("e-[wc_InitRsaKey_ex on private: %d]\r\n", ret);
+        return EE_STATUS_ERROR;
+    }
+
 
     *pp_context = ctx;
 
@@ -68,68 +76,35 @@ th_rsa_create(void **pp_context)
 }
 
 ee_status_t
-th_rsa_init(void *         p_context,
-            ee_rsa_id_t    id,
-            const uint8_t *p_prikey,
-            uint_fast32_t  prilen)
+th_rsa_set_public_key(void *         p_context,
+            const uint8_t *p_pubkey,
+            uint_fast32_t  publen)
 {
-    int            ret;
-    word32         inOutIdx = 0;
     rsa_context_t *ctx      = (rsa_context_t *)p_context;
-
-    ret = wc_InitRsaKey_ex(ctx->prikey, HEAP_HINT, DEVID);
-    if (ret)
-    {
-        th_printf("e-[wc_InitRsaKey_ex on private: %d]\r\n", ret);
-        return EE_STATUS_ERROR;
-    }
-
-    ret = wc_RsaPrivateKeyDecode(p_prikey, &inOutIdx, ctx->prikey, prilen);
-
-    if (ret)
-    {
-        th_printf("e-[wc_RsaPrivateKeyDecode: %d]\r\n", ret);
-        return EE_STATUS_ERROR;
-    }
-
-    wc_InitRng_ex(ctx->rng, HEAP_HINT, DEVID);
-
-    return EE_STATUS_OK;
-}
-
-ee_status_t
-th_rsa_sign(void *         p_context,
-            const uint8_t *p_hash,
-            uint_fast32_t  hlen,
-            uint8_t *      p_sig,
-            uint_fast32_t *p_slen)
-{
-    rsa_context_t *ctx = (rsa_context_t *)p_context;
+    word32         inOutIdx = 0;
     int            ret;
 
-    ret = wc_RsaSSL_Sign(p_hash, hlen, p_sig, *p_slen, ctx->prikey, ctx->rng);
-    if (ret < 0)
+    ret = wc_RsaPublicKeyDecode(p_pubkey, &inOutIdx, ctx->pubkey, publen);
+    if (ret)
     {
-        th_printf("e-[wc_RsaSSL_Sign: %d]\r\n", ret);
+        th_printf("e-[wc_RsaPublicKeyDecode: %d]\r\n", ret);
         return EE_STATUS_ERROR;
     }
-
-    *p_slen = ret;
 
     return EE_STATUS_OK;
 }
 
 ee_status_t
 th_rsa_verify(void *         p_context,
-              const uint8_t *p_sig,
-              uint_fast32_t  slen,
-              uint8_t *      p_outbuf,
-              uint_fast32_t  olen)
+              uint8_t *p_msg,
+              uint_fast32_t  msglen,
+              uint8_t *      p_sig,
+              uint_fast32_t  slen)
 {
     rsa_context_t *ctx = (rsa_context_t *)p_context;
     int            ret;
 
-    ret = wc_RsaSSL_Verify(p_sig, slen, p_outbuf, olen, ctx->prikey);
+    ret = wc_RsaSSL_Verify(p_sig, slen, p_msg, msglen, ctx->pubkey);
     if (ret < 0)
     {
         th_printf("e-[wc_RsaSSL_Verify: %d]\r\n", ret);
@@ -143,7 +118,7 @@ void
 th_rsa_destroy(void *p_context)
 {
     rsa_context_t *ctx = (rsa_context_t *)p_context;
-    FREE(ctx->prikey);
+    FREE(ctx->pubkey);
     FREE(ctx->rng);
     FREE(ctx);
 }

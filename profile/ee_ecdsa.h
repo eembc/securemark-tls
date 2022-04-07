@@ -21,7 +21,7 @@
 
 /**
  * @brief Creates a context and generates a key pair.
- * 
+ *
  * @param pp_context - A pointer to a context pointer to be created.
  * @param group - See the `ee_ecdh_group_t` enum
  * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
@@ -37,7 +37,7 @@ ee_status_t th_ecdsa_create(void **pp_context, ee_ecdh_group_t group);
  *
  * Note that even if the message is a hash, Ed25519 will perform another SHA-
  * 512 operation on it, as this is part of RFC 8032.
- * 
+ *
  * `p_siglen` should point to the buffer size on input; on return it will
  * contain the length of the signature.
  *
@@ -56,7 +56,7 @@ ee_status_t th_ecdsa_sign(void *         p_context,
 
 /**
  * @brief Verify a message (hash) with the public key.
- * 
+ *
  * It will return EE_STATUS_OK on message verify, and EE_STATUS_ERROR if the
  * message does not verify, or if there is some other error (which shall
  * be reported with `th_printf("e-[....]r\n");`.
@@ -77,7 +77,7 @@ ee_status_t th_ecdsa_verify(void *        p_context,
 
 /**
  * @brief Return the public key generated during `th_ecdsa_create`.
- * 
+ *
  * @param p_context - The context from the `create` function
  * @param p_out - Buffer to receive the public key
  * @param p_outlen - Number of bytes used in the buffer
@@ -89,9 +89,9 @@ ee_status_t th_ecdsa_get_public_key(void *         p_context,
 
 /**
  * @brief Set the public key in the context in order to perform a verify.
- * 
+ *
  * For EcDSA, the key shall be in SECP1 uncompressed format { 04 | X | Y }.
- * 
+ *
  * @param p_context - The context from the `create` function
  * @param p_pub - The public key buffer
  * @param publen - Length of the public key buffer
