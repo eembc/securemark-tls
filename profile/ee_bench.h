@@ -227,7 +227,6 @@ arg_claimed_t ee_bench_parse(char *p_command, bool verify);
  * @param olen - Length of the output buffer
  * @param iter - Number of iterations to perform
  */
-void e
 void
 ee_bench_rsa_verify(ee_rsa_id_t id, unsigned int n, unsigned int i, bool verify);
 #endif /* __EE_BENCH_H */
