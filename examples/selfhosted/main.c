@@ -58,9 +58,9 @@
 /* Stored timestamps (a single primitive may generate multiple stamps) */
 #define MAX_TIMESTAMPS 64u
 /* `true` to turn on debugging messages */
-#define DEBUG_VERIFY false
+#define DEBUG_VERIFY true
 /* Only run a single iteration of each task (for debug) */
-//#define DO_SINGLE
+#define DO_SINGLE
 // All wrapper functions fit this prototype (n=dataset octets, i=iterations)
 typedef uint16_t wrapper_function_t(unsigned int n, unsigned int i);
 /**
@@ -454,6 +454,83 @@ MAKE_WRAP_ECDSA(p256r1, EE_P256R1)
 MAKE_WRAP_ECDSA(p384, EE_P384)
 MAKE_WRAP_ECDSA(ed25519, EE_Ed25519)
 
+void ee_xbench_ecdsa_sign(ee_ecdh_group_t, uint32_t, uint32_t, bool);
+
+uint16_t
+xwrap_ecdsa_sign(ee_ecdh_group_t g, uint32_t i)
+{
+    uint8_t *msg = th_buffer_address();
+    uint8_t *pub;
+    uint8_t *sig;
+    uint16_t crc;
+    size_t x;
+
+    /* Self-hosted always uses the same message so that the CRC matches. */
+    th_memcpy(msg, g_dsa_message, 32);
+    /* The DUT fills in the public key, followed by the signature. */
+    pub = msg + 32;
+    sig = pub + ee_pub_sz[g];
+    /* This function calls the primitives and manages the buffer. */
+    ee_xbench_ecdsa_sign(g, 32, i, false);
+    /* Normally, the host GUI verifies the signature, but in self-hoste mode
+       we just check the CRC of signature because it is deterministic. */
+    for (crc = 0, x = 0; x < ee_sig_sz[g]; ++x)
+    {
+        crc = crcu16(crc, (uint8_t)sig[x]);
+    }
+    return crc; 
+}
+
+void ee_xbench_ecdsa_verify(ee_ecdh_group_t, uint32_t, uint32_t, bool);
+
+uint16_t
+xwrap_ecdsa_verify(ee_ecdh_group_t g, uint32_t i)
+{
+    uint8_t *msg;
+    uint32_t *publen;
+    uint8_t *pub;
+    uint32_t *siglen;
+    uint8_t *sig;
+    uint8_t *passfail;
+
+    /* Input message */
+    msg = th_buffer_address();
+    th_memcpy(msg, g_dsa_message, 32);
+    /* Length of public key TODO: Raw for now ... */
+    publen = (uint32_t *)(msg + 32);
+    *publen = ee_pub_sz[g] + 1;
+    /* Public key */
+    pub = (uint8_t *)publen + sizeof(uint32_t);
+    th_memcpy(pub, g_ecc_public_keys[g], ee_pub_sz[g] + 1);
+    /* Length of signature */
+    siglen = (uint32_t *)(pub + *publen);
+    *siglen = g_dsa_signatures_sizes[g];
+    /* Signature */
+    sig = (uint8_t *)siglen + sizeof(uint32_t);
+    th_memcpy(sig, g_dsa_signatures[g], g_dsa_signatures_sizes[g]);
+    /* Results of verification */
+    passfail = sig + *siglen;
+    /* This function calls the primitives and manages the buffer. */
+    ee_xbench_ecdsa_verify(g, 32, i, false);
+    /* No CRC here, just pass/fail, e.g. 1/0 */
+    return *passfail; 
+}
+
+#define XMAKE_WRAP_ECDSA(nick, group)                                  \
+    uint16_t xwrap_ecdsa_sign_##nick(unsigned int n, unsigned int i)   \
+    {                                                                 \
+        return xwrap_ecdsa_sign(group, i);            \
+    } \
+    uint16_t xwrap_ecdsa_verify_##nick(unsigned int n, unsigned int i)   \
+    {                                                                 \
+        return xwrap_ecdsa_verify(group, i);            \
+    }
+
+XMAKE_WRAP_ECDSA(p256r1, EE_P256R1)
+XMAKE_WRAP_ECDSA(p384, EE_P384)
+XMAKE_WRAP_ECDSA(ed25519, EE_Ed25519)
+
+
 #define MAX_MODULUS 512
 uint16_t
 pre_wrap_rsa(ee_rsa_id_t       id,
@@ -620,6 +697,9 @@ typedef struct
     char *              name;
 } task_entry_t;
 
+#define XTASK(name, n, w, crc) \
+    { xwrap_##name, n, 0.0, (float)w, 0x0, crc, #name },
+
 #define TASK(name, n, w, crc) \
     { wrap_##name, n, 0.0, (float)w, 0x0, crc, #name },
 
@@ -638,6 +718,9 @@ typedef struct
 // clang-format off
 static task_entry_t g_task[] =
 {
+    XTASK(ecdsa_sign_p256r1    ,   32,  1.0f, 0xae0a)
+    XTASK(ecdsa_verify_p256r1    ,   32,  1.0f, 0xae0a)
+#if 0
     /*
      *   Macro nickname       ,Bytes, weight, crc
      */
@@ -725,6 +808,7 @@ static task_entry_t g_task[] =
     TASK(rsa_verify_2048      ,   32,  1.0f, 0x8a62)
     TASK(rsa_verify_3072      ,   32,  1.0f, 0x1ed4)
     TASK(rsa_verify_4096      ,   32,  1.0f, 0x7147)
+#endif
 };
 // clang-format on
 static const size_t g_numtasks = sizeof(g_task) / sizeof(task_entry_t);

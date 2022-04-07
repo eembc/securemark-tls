@@ -156,6 +156,89 @@ ee_bench_ecdh(ee_ecdh_group_t g, uint_fast32_t i, bool verify)
     }
 }
 
+ee_status_t
+th_ecdsa_xcreate(void **pp_context, ee_ecdh_group_t group);
+
+ee_status_t
+th_ecdsa_xsign(void *p_context, uint8_t *p_msg, uint_fast32_t msglen, uint8_t *p_sig, uint_fast32_t *p_siglen);
+
+ee_status_t
+th_ecdsa_xverify(void *p_context, uint8_t *p_msg, uint_fast32_t msglen, uint8_t *p_sig, uint_fast32_t siglen);
+
+ee_status_t
+th_ecdsa_xget_public_key(void *p_context, uint8_t *p_out, uint_fast32_t *p_outlen);
+
+ee_status_t
+th_ecdsa_xset_public(void *p_context, uint8_t *p_pub, uint_fast32_t publen);
+
+ee_status_t
+th_ecdsa_xdestroy(void *p_context);
+
+void
+ee_xbench_ecdsa_sign(ee_ecdh_group_t g, uint_fast32_t n, uint_fast32_t i, bool verify)
+{
+    /* Sig will be ASN.1 so may vary, just put some reasonable values. */
+    uint_fast32_t publen = 256;
+    uint_fast32_t siglen = 256;
+
+    uint8_t *p_msg = th_buffer_address();
+    uint8_t *p_pub = p_msg + n;
+    uint8_t *p_sig = p_pub + publen;
+
+    void *p_ctx = NULL;
+
+    fill_rand(p_msg, n);
+
+    th_ecdsa_xcreate(&p_ctx, g);
+    th_timestamp();
+    th_pre();
+    while (i-- > 0)
+    {
+        th_ecdsa_xsign(p_ctx, p_msg, n, p_sig, &siglen);
+    }
+    th_post();
+    th_timestamp();
+    th_ecdsa_xget_public_key(p_ctx, p_pub, &publen);
+    th_ecdsa_xdestroy(p_ctx);
+
+    ee_printmemline(p_msg, n, "m-ecdsa-sign-msg-");
+    ee_printmemline(p_sig, siglen, "m-ecdsa-sign-signature-");
+    ee_printmemline(p_pub, publen, "m-ecdsa-sign-pubkey-");
+}
+
+void
+ee_xbench_ecdsa_verify(ee_ecdh_group_t g, uint_fast32_t n, uint_fast32_t i, bool verify)
+{
+    uint8_t *p_msg = th_buffer_address();
+    uint32_t *p_publen = (uint32_t *)(p_msg + n);
+    uint8_t *p_pub = (uint8_t *)p_publen + sizeof(uint32_t);
+    uint32_t *p_siglen = (uint32_t *)(p_pub + *p_publen);
+    uint8_t *p_sig = (uint8_t *)p_siglen + sizeof(uint32_t);
+    uint8_t *p_passfail = p_sig + *p_siglen;
+
+    void *p_ctx = NULL;
+    ee_status_t status;
+
+    th_ecdsa_xcreate(&p_ctx, g);
+    th_ecdsa_xset_public(p_ctx, p_pub, *p_publen);
+    th_timestamp();
+    th_pre();
+    while (i-- > 0)
+    {
+        status = th_ecdsa_xverify(p_ctx, p_msg, n, p_sig, *p_siglen);
+    }
+    th_post();
+    th_timestamp();
+    th_ecdsa_xdestroy(p_ctx);
+
+    *p_passfail = status == EE_STATUS_OK ? 1 : 0;
+
+    ee_printmemline(p_msg, n, "m-ecdsa-sign-msg-");
+    ee_printmemline(p_sig, *p_siglen, "m-ecdsa-sign-signature-");
+    ee_printmemline(p_pub, *p_publen, "m-ecdsa-sign-pubkey-");
+    th_printf("m-ecdsa-sign-passfail-%d\n", *p_passfail);
+}
+
 void
 ee_bench_ecdsa(ee_ecdh_group_t g,
                ee_ecdsa_func_t func,

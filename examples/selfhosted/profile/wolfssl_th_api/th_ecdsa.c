@@ -294,3 +294,201 @@ th_ecdsa_destroy(void *p_context, ee_ecdh_group_t group)
             break;
     }
 }
+
+typedef struct
+{
+    union
+    {
+        ecc_key ecc;
+        ed25519_key ed25519;
+    } key;
+    WC_RNG rng;
+    ecc_curve_id curve;
+} ctx_t;
+
+void ee_printmemline(uint8_t *p_addr, uint_fast32_t len, char *p_user_header);
+
+#define CHK1(x) { ret = x; if (ret < 0) { goto error; }}
+
+ee_status_t
+th_ecdsa_xcreate(void **pp_context, ee_ecdh_group_t group)
+{
+    ctx_t *ctx = (ctx_t *)th_malloc(sizeof(ctx_t));
+    int ret;
+
+    wc_InitRng_ex(&(ctx->rng), HEAP_HINT, DEVID);
+    /* Switch from EEMBC group enums to SDK enums for consistency, make key. */
+    switch (group)
+    {
+        case EE_P256R1:
+            ctx->curve = ECC_SECP256R1;
+            CHK1(wc_ecc_init_ex(&(ctx->key.ecc), HEAP_HINT, DEVID));
+            CHK1(wc_ecc_make_key(&(ctx->rng), 32, &(ctx->key.ecc)));
+            CHK1(wc_ecc_set_deterministic(&(ctx->key.ecc), 1));
+            break;
+        case EE_P384:
+            ctx->curve = ECC_SECP384R1;
+            CHK1(wc_ecc_init_ex(&(ctx->key.ecc), HEAP_HINT, DEVID));
+            CHK1(wc_ecc_make_key(&(ctx->rng), 48, &(ctx->key.ecc)));
+            CHK1(wc_ecc_set_deterministic(&(ctx->key.ecc), 1));
+            break;
+        case EE_C25519:
+            ctx->curve = ECC_X25519; /* [sic], should be C25519? */
+            CHK1(wc_ed25519_init_ex(&(ctx->key.ed25519), HEAP_HINT, DEVID));
+            CHK1(wc_ed25519_make_key(&(ctx->rng), 32, &(ctx->key.ed25519)));
+            break;
+        default:
+            th_printf("e-[th_ecdsa_xcreate: invalid group %d]\r\n", group);
+            return EE_STATUS_ERROR;
+    }
+    *pp_context = ctx;
+    return EE_STATUS_OK;
+error:
+    th_printf("e-[th_ecdsa_xcreate: error %d]\r\n", ret);
+    return EE_STATUS_ERROR;
+}
+
+ee_status_t
+th_ecdsa_xsign(void *p_context, uint8_t *p_msg, uint_fast32_t msglen, uint8_t *p_sig, uint_fast32_t *p_siglen)
+{
+    ctx_t *c = (ctx_t *)p_context;
+    int ret;
+
+    switch (c->curve)
+    {
+        case ECC_SECP256R1:
+        case ECC_SECP384R1:
+            CHK1(wc_ecc_sign_hash(p_msg, msglen, p_sig, p_siglen, &(c->rng), &(c->key.ecc)));
+            break;
+        case ECC_X25519:
+            CHK1(wc_ed25519_sign_msg(p_msg, msglen, p_sig, p_siglen, &(c->key.ed25519)));
+            break;
+        default:
+            th_printf("e-[th_ecdsa_xsign: invalid curve %d]\r\n", c->curve);
+            return EE_STATUS_ERROR;
+    }
+    return EE_STATUS_OK;
+error:
+    th_printf("e-[th_ecdsa_xsign: error %d]\r\n", ret);
+    return EE_STATUS_ERROR;
+}
+
+
+ee_status_t
+th_ecdsa_xverify(void *p_context, uint8_t *p_msg, uint_fast32_t msglen, uint8_t *p_sig, uint_fast32_t siglen)
+{
+    ctx_t *c = (ctx_t *)p_context;
+    int ret;
+    int verify = 0;
+
+    ee_printmemline(p_sig, siglen, "sig: ");
+    ee_printmemline(p_msg, msglen, "msg: ");
+
+    switch (c->curve)
+    {
+        case ECC_SECP256R1:
+        case ECC_SECP384R1:
+            ret = wc_ecc_verify_hash(p_sig, siglen, p_msg, msglen, &verify, &(c->key.ecc));
+            if (ret != 0 || verify != 1)
+            {
+                th_printf("e-[wc_ecc_verify_hash: %d, verify %d]\r\n", ret, verify);
+                return EE_STATUS_ERROR;
+            }
+            break;
+        case ECC_X25519:
+            ret = wc_ed25519_verify_msg(p_sig, siglen, p_msg, msglen, &verify, &(c->key.ed25519));
+            if (ret != 0 || verify != 1)
+            {
+                th_printf("e-[wc_ed25519_verify_msg: %d]\r\n", ret);
+                return EE_STATUS_ERROR;
+            }            break;
+        default:
+            th_printf("e-[th_ecdsa_xsign: invalid curve %d]\r\n", c->curve);
+            return EE_STATUS_ERROR;
+    }
+    return EE_STATUS_OK;
+}
+
+
+ee_status_t
+th_ecdsa_xget_public_key(void *p_context, uint8_t *p_out, uint_fast32_t *p_outlen)
+{
+    ctx_t *c = (ctx_t *)p_context;
+    int ret;
+
+    switch (c->curve)
+    {
+        case ECC_SECP256R1:
+        case ECC_SECP384R1:
+            CHK1(wc_ecc_export_x963(&(c->key.ecc), p_out, p_outlen));
+            break;
+        case ECC_X25519:
+            CHK1(wc_ed25519_export_public(&(c->key.ed25519), p_out, p_outlen));
+            break;
+        default:
+            th_printf("e-[th_ecdsa_xget_public_key: invalid curve %d]\r\n", c->curve);
+            return EE_STATUS_ERROR;
+    }
+    return EE_STATUS_OK;
+error:
+    th_printf("e-[th_ecdsa_xget_public_key: error %d]\r\n", ret);
+    return EE_STATUS_ERROR;
+}
+
+ee_status_t
+th_ecdsa_xset_public(void *p_context, uint8_t *p_pub, uint_fast32_t publen)
+{
+    ctx_t *c = (ctx_t *)p_context;
+    int ret;
+
+    ee_printmemline(p_pub, publen, "pub: ");
+
+    switch (c->curve)
+    {
+        case ECC_SECP256R1:
+        case ECC_SECP384R1:
+            CHK1(wc_ecc_import_x963(p_pub, publen, &(c->key.ecc)));
+            break;
+        case ECC_X25519:
+            CHK1(wc_ed25519_import_public(p_pub, publen, &(c->key.ed25519)));
+            break;
+        default:
+            th_printf("e-[th_ecdsa_xset_public: invalid curve %d]\r\n", c->curve);
+            return EE_STATUS_ERROR;
+    }
+    return EE_STATUS_OK;
+error:
+    th_printf("e-[th_ecdsa_xset_public: error %d]\r\n", ret);
+    return EE_STATUS_ERROR;
+}
+
+ee_status_t
+th_ecdsa_xdestroy(void *p_context)
+{
+    ctx_t *c = (ctx_t *)p_context;
+
+    if (NULL == c)
+    {
+        return EE_STATUS_OK;
+    }
+    switch (c->curve)
+    {
+        case ECC_SECP256R1:
+        case ECC_SECP384R1:
+            wc_ecc_free(&(c->key.ecc));
+            break;
+        case ECC_X25519:
+            wc_ed25519_free(&(c->key.ed25519));
+            break;
+        default:
+            th_printf("e-[th_ecdsa_xdestroy: invalid curve %d]\r\n", c->curve);
+            /* still need to free ctx! ... return EE_STATUS_ERROR; */
+            break;
+    }
+    wc_FreeRng(&(c->rng));
+    th_free(c);
+
+    c = NULL;
+
+    return EE_STATUS_OK;
+}
