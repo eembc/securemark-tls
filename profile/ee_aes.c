@@ -62,11 +62,11 @@ ee_aes(ee_aes_mode_t  mode,
 
     if (func == EE_AES_ENC)
     {
-        th_printf("m-aes%d_%s-encrypt-start\r\n", bits, m);
         th_timestamp();
         th_pre();
         while (iter-- > 0)
         {
+            ret = EE_STATUS_OK;
             if (th_aes_init(p_context, p_key, keylen, p_iv, func, mode)
                 != EE_STATUS_OK)
             {
@@ -84,6 +84,7 @@ ee_aes(ee_aes_mode_t  mode,
                                 p_context, &(p_in[i]), &(p_out[i]))
                             != EE_STATUS_OK)
                         {
+                            th_aes_deinit(p_context, mode);
                             goto err_enc_exit;
                         }
                     }
@@ -116,11 +117,11 @@ ee_aes(ee_aes_mode_t  mode,
                     th_printf("e-[Invalid AES enum: %d]\r\n", mode);
                     goto exit;
             }
+            th_aes_deinit(p_context, mode);
             if (ret != EE_STATUS_OK)
             {
                 goto err_enc_exit;
             }
-            th_aes_deinit(p_context, mode);
         }
         th_post();
         th_timestamp();
@@ -133,6 +134,7 @@ ee_aes(ee_aes_mode_t  mode,
         th_pre();
         while (iter-- > 0)
         {
+            ret = EE_STATUS_OK;
             if (th_aes_init(p_context, p_key, keylen, p_iv, func, mode)
                 != EE_STATUS_OK)
             {
@@ -150,6 +152,7 @@ ee_aes(ee_aes_mode_t  mode,
                                 p_context, &(p_in[i]), &(p_out[i]))
                             != EE_STATUS_OK)
                         {
+                            th_aes_deinit(p_context, mode);
                             goto err_dec_exit;
                         }
                     }
@@ -182,11 +185,11 @@ ee_aes(ee_aes_mode_t  mode,
                     th_printf("e-[Invalid AES enum: %d]\r\n", mode);
                     goto exit;
             }
+            th_aes_deinit(p_context, mode);
             if (ret != EE_STATUS_OK)
             {
                 goto err_dec_exit;
             }
-            th_aes_deinit(p_context, mode);
         }
         th_post();
         th_timestamp();
