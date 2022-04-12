@@ -26,6 +26,13 @@ typedef enum ee_ecdh_group_t
     EE_Ed25519 = 3, /* Not a group, but used for control later on. */
 } ee_ecdh_group_t;
 
+static char *ee_ecdh_group_names[] = {
+    "p256r1",
+    "p384",
+    "c25519",
+    "ed25519"
+};
+
 /**
  * @brief Creates a context and generates a key pair.
  *
@@ -47,6 +54,11 @@ ee_status_t th_ecdh_set_peer_public_key(void *        p_context,
                                         uint8_t *     p_pub,
                                         uint_fast32_t publen);
 
+
+ee_status_t
+th_ecdh_get_public_key(void *        p_context,
+                     uint8_t *     p_pub,
+                            uint_fast32_t *p_publen);
 /**
  * @brief Perform an ECDH key mix and create a shared secret.
  *

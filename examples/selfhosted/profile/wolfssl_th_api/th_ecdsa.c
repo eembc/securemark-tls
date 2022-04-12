@@ -14,6 +14,7 @@
 #include <wolfssl/version.h>
 #include <wolfssl/wolfcrypt/ecc.h>
 #include <wolfssl/wolfcrypt/ed25519.h>
+#include <wolfssl/wolfcrypt/error-crypt.h>
 
 /* can be set for static memory use */
 #define HEAP_HINT NULL
@@ -73,7 +74,7 @@ th_ecdsa_create(void **pp_context, ee_ecdh_group_t group)
             break;
         case EE_Ed25519:
             ctx->curve = ECC_X25519; /* [sic], should be C25519? */
-            CHK1(wc_ed25519_init_ex(&(ctx->key.ed25519), HEAP_HINT, DEVID));
+            CHK1(wc_ed25519_init(&(ctx->key.ed25519)));
             CHK1(wc_ed25519_make_key(&(ctx->rng), 32, &(ctx->key.ed25519)));
             break;
         default:
@@ -130,7 +131,7 @@ th_ecdsa_verify(void *        p_context,
     ctx_t *c = (ctx_t *)p_context;
     int    ret;
     int    verify = 0;
-
+    
     switch (c->curve)
     {
         case ECC_SECP256R1:
@@ -139,8 +140,12 @@ th_ecdsa_verify(void *        p_context,
                 p_sig, siglen, p_msg, msglen, &verify, &(c->key.ecc)));
             break;
         case ECC_X25519:
-            CHK1(wc_ed25519_verify_msg(
-                p_sig, siglen, p_msg, msglen, &verify, &(c->key.ed25519)));
+            ret = wc_ed25519_verify_msg(
+                p_sig, siglen, p_msg, msglen, &verify, &(c->key.ed25519));
+            if (ret != 0 && ret != SIG_VERIFY_E) {
+              th_printf("e-[wc_ed25519_verify_msg: %d]\r\n", ret);
+              return EE_STATUS_ERROR;
+            }
             break;
         default:
             th_printf("e-[th_ecdsa_sign: invalid curve %d]\r\n", c->curve);

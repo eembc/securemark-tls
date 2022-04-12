@@ -138,19 +138,34 @@ void
 ee_bench_ecdh(ee_ecdh_group_t g, uint_fast32_t i, bool verify)
 {
     uint32_t *p_publen = (uint32_t *)th_buffer_address();
+    /* The host will send data in BE if it is not an octet stream. */
+    *p_publen = EE_FROM_BE32(*p_publen);
     uint8_t * p_pub    = (uint8_t *)p_publen + sizeof(uint32_t);
-    uint32_t *p_seclen = (uint32_t *)p_pub + *p_publen;
+    uint32_t *p_seclen = (uint32_t *)(p_pub + *p_publen);
+    /* The host will send data in BE if it is not an octet stream. */
+    *p_seclen = EE_FROM_BE32(*p_seclen);
     uint8_t * p_sec    = (uint8_t *)p_seclen + sizeof(uint32_t);
+    
+    uint8_t *p_dutpub = p_sec +*p_seclen;
+    uint32_t dutpublen = 256;
 
     void *      p_context = NULL;
     ee_status_t ret       = EE_STATUS_OK;
-
+    
     th_ecdh_create(&p_context, g);
     th_ecdh_set_peer_public_key(p_context, p_pub, *p_publen);
+    th_printf("m-ecdh-%s-iter[%d]\r\n", ee_ecdh_group_names[g], i);
+    th_printf("m-ecdh-%s-start\r\n", ee_ecdh_group_names[g]);
+    th_timestamp();
+    th_pre();
     do
     {
         ret = th_ecdh_calc_secret(p_context, p_sec, p_seclen);
     } while (--i > 0 && ret == EE_STATUS_OK);
+    th_post();
+    th_timestamp();
+    th_printf("m-ecdh-%s-finish\r\n", ee_ecdh_group_names[g]);
+    th_ecdh_get_public_key(p_context, p_dutpub, &dutpublen);
     th_ecdh_destroy(p_context);
 
     if (ret != EE_STATUS_OK)
@@ -160,7 +175,7 @@ ee_bench_ecdh(ee_ecdh_group_t g, uint_fast32_t i, bool verify)
 
     if (verify)
     {
-        ee_printmemline(p_pub, *p_publen, "m-bench-ecdh-host-public-");
+        ee_printmemline(p_dutpub, dutpublen, "m-bench-ecdh-public-");
         ee_printmemline(p_sec, *p_seclen, "m-bench-ecdh-secret-");
     }
 }
@@ -185,6 +200,8 @@ ee_bench_ecdsa_sign(ee_ecdh_group_t g,
     fill_rand(p_msg, n);
 
     th_ecdsa_create(&p_context, g);
+    th_printf("m-ecdsa-%s-sign-iter[%d]\r\n", ee_ecdh_group_names[g], i);
+    th_printf("m-ecdsa-%s-sign-start\r\n", ee_ecdh_group_names[g]);
     th_timestamp();
     th_pre();
     do
@@ -193,6 +210,7 @@ ee_bench_ecdsa_sign(ee_ecdh_group_t g,
     } while (--i > 0 && ret == EE_STATUS_OK);
     th_post();
     th_timestamp();
+    th_printf("m-ecdsa-%s-sign-finish\r\n", ee_ecdh_group_names[g]);
     th_ecdsa_get_public_key(p_context, p_pub, &publen);
     th_ecdsa_destroy(p_context);
 
@@ -217,8 +235,12 @@ ee_bench_ecdsa_verify(ee_ecdh_group_t g,
 {
     uint8_t *   p_msg      = th_buffer_address();
     uint32_t *  p_publen   = (uint32_t *)(p_msg + n);
+    /* The host will send data in BE if it is not an octet stream. */
+    *p_publen = EE_FROM_BE32(*p_publen);
     uint8_t *   p_pub      = (uint8_t *)p_publen + sizeof(uint32_t);
     uint32_t *  p_siglen   = (uint32_t *)(p_pub + *p_publen);
+    /* The host will send data in BE if it is not an octet stream. */
+    *p_siglen = EE_FROM_BE32(*p_siglen);
     uint8_t *   p_sig      = (uint8_t *)p_siglen + sizeof(uint32_t);
     uint8_t *   p_passfail = p_sig + *p_siglen;
     void *      p_ctx      = NULL;
@@ -226,6 +248,8 @@ ee_bench_ecdsa_verify(ee_ecdh_group_t g,
 
     th_ecdsa_create(&p_ctx, g);
     th_ecdsa_set_public_key(p_ctx, p_pub, *p_publen);
+    th_printf("m-ecdsa-%s-verify-iter[%d]\r\n", ee_ecdh_group_names[g], i);
+    th_printf("m-ecdsa-%s-verify-start\r\n", ee_ecdh_group_names[g]);
     th_timestamp();
     th_pre();
     do
@@ -234,6 +258,7 @@ ee_bench_ecdsa_verify(ee_ecdh_group_t g,
     } while (--i > 0 && ret == EE_STATUS_OK);
     th_post();
     th_timestamp();
+    th_printf("m-ecdsa-%s-verify-finish\r\n", ee_ecdh_group_names[g]);
     th_ecdsa_destroy(p_ctx);
 
     *p_passfail = ret == EE_STATUS_OK ? 1 : 0;
@@ -243,7 +268,7 @@ ee_bench_ecdsa_verify(ee_ecdh_group_t g,
         ee_printmemline(p_msg, n, "m-ecdsa-sign-msg-");
         ee_printmemline(p_sig, *p_siglen, "m-ecdsa-sign-signature-");
         ee_printmemline(p_pub, *p_publen, "m-ecdsa-sign-pubkey-");
-        th_printf("m-ecdsa-sign-passfail-%d\n", *p_passfail);
+        th_printf("m-ecdsa-sign-passfail-%d\r\n", *p_passfail);
     }
 }
 
@@ -252,8 +277,12 @@ ee_bench_rsa_verify(ee_rsa_id_t id, unsigned int n, unsigned int i, bool verify)
 {
     uint8_t *   p_msg      = th_buffer_address();
     uint32_t *  p_publen   = (uint32_t *)(p_msg + n);
+    /* The host will send data in BE if it is not an octet stream. */
+    *p_publen = EE_FROM_BE32(*p_publen);
     uint8_t *   p_pub      = (uint8_t *)p_publen + sizeof(uint32_t);
     uint32_t *  p_siglen   = (uint32_t *)(p_pub + *p_publen);
+    /* The host will send data in BE if it is not an octet stream. */
+    *p_siglen = EE_FROM_BE32(*p_siglen);
     uint8_t *   p_sig      = (uint8_t *)p_siglen + sizeof(uint32_t);
     uint8_t *   p_passfail = p_sig + *p_siglen;
     void *      p_context  = NULL;
@@ -278,6 +307,7 @@ ee_bench_rsa_verify(ee_rsa_id_t id, unsigned int n, unsigned int i, bool verify)
         ee_printmemline(p_pub, *p_publen, "m-bench-rsa-pri-");
         ee_printmemline(p_msg, n, "m-bench-rsa-msg-");
         ee_printmemline(p_sig, *p_siglen, "m-bench-rsa-sig-");
+        th_printf("m-ecdsa-sign-passfail-%d\r\n", *p_passfail);
     }
 }
 
@@ -427,6 +457,10 @@ ee_bench_parse(char *p_command, bool verify)
     else if (th_strncmp(p_subcmd, "ecdh-p384", EE_CMD_SIZE) == 0)
     {
         ee_bench_ecdh(EE_P384, i, verify);
+    }
+    else if (th_strncmp(p_subcmd, "ecdh-x25519", EE_CMD_SIZE) == 0)
+    {
+        ee_bench_ecdh(EE_C25519, i, verify);
     }
     else if (th_strncmp(p_subcmd, "ecdsa-p256-sign", EE_CMD_SIZE) == 0)
     {

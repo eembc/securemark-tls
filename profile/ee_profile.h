@@ -25,7 +25,7 @@
 
 #define EE_FW_VERSION "SecureMark-TLS Firmware v2.0.0"
 /* Minimum buffer size for the benchmark (TODO: What is it for 2.0?) */
-#define EE_MINBUF 8192
+#define EE_MINBUF (1024 * 8)
 
 /**
  * @brief This is the profile command parser. It is called from the function

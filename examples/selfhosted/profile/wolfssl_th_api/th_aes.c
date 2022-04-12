@@ -99,17 +99,25 @@ th_aes_deinit(void *p_context, ee_aes_mode_t mode)
 ee_status_t
 th_aes_ecb_encrypt(void *p_context, const uint8_t *p_pt, uint8_t *p_ct)
 {
-    return wc_AesEcbEncrypt((Aes *)p_context, p_ct, p_pt, AES_BLOCK_SIZE)
-               ? EE_STATUS_ERROR
-               : EE_STATUS_OK;
+    int ret;
+    ret = wc_AesEcbEncrypt((Aes *)p_context, p_ct, p_pt, AES_BLOCK_SIZE);
+    if (ret != 0) {
+        th_printf("e-[wc_AesEcbEncrypt: %d]\r\n", ret);
+        return EE_STATUS_ERROR;
+    }
+    return EE_STATUS_OK;
 }
 
 ee_status_t
 th_aes_ecb_decrypt(void *p_context, const uint8_t *p_ct, uint8_t *p_pt)
 {
-    return wc_AesEcbDecrypt((Aes *)p_context, p_pt, p_ct, AES_BLOCK_SIZE)
-               ? EE_STATUS_ERROR
-               : EE_STATUS_OK;
+    int ret;
+    ret = wc_AesEcbDecrypt((Aes *)p_context, p_pt, p_ct, AES_BLOCK_SIZE);
+    if (ret != 0) {
+        th_printf("e-[wc_AesEcbDecrypt: %d]\r\n", ret);
+        return EE_STATUS_ERROR;
+    }
+    return EE_STATUS_OK;
 }
 
 ee_status_t
@@ -118,9 +126,13 @@ th_aes_ctr_encrypt(void *         p_context,
                    uint_fast32_t  ptlen,
                    uint8_t *      p_ct)
 {
-    return wc_AesCtrEncrypt((Aes *)p_context, p_ct, p_pt, ptlen)
-               ? EE_STATUS_ERROR
-               : EE_STATUS_OK;
+    int ret;
+    ret = wc_AesCtrEncrypt((Aes *)p_context, p_ct, p_pt, ptlen);
+    if (ret != 0) {
+        th_printf("e-[wc_AesCtrEncrypt: %d]\r\n", ret);
+        return EE_STATUS_ERROR;
+    }
+    return EE_STATUS_OK;
 }
 
 ee_status_t
@@ -129,9 +141,14 @@ th_aes_ctr_decrypt(void *         p_context,
                    uint_fast32_t  ctlen,
                    uint8_t *      p_pt)
 {
-    return wc_AesCtrEncrypt((Aes *)p_context, p_pt, p_ct, ctlen)
-               ? EE_STATUS_ERROR
-               : EE_STATUS_OK;
+    int ret;
+    /* [sic] AesCtrEncrypt is also used for decrypt */
+    ret = wc_AesCtrEncrypt((Aes *)p_context, p_pt, p_ct, ctlen);
+    if (ret != 0) {
+        th_printf("e-[wc_AesCtr(de)Encrypt: %d]\r\n", ret);
+        return EE_STATUS_ERROR;
+    }
+    return EE_STATUS_OK;
 }
 
 ee_status_t
@@ -144,7 +161,8 @@ th_aes_ccm_encrypt(void *         p_context,
                    const uint8_t *p_iv,
                    uint_fast32_t  ivlen)
 {
-    return wc_AesCcmEncrypt((Aes *)p_context,
+    int ret;
+    ret = wc_AesCcmEncrypt((Aes *)p_context,
                             p_ct,
                             p_pt,
                             ptlen,
@@ -153,9 +171,12 @@ th_aes_ccm_encrypt(void *         p_context,
                             p_tag,
                             taglen,
                             NULL,
-                            0)
-               ? EE_STATUS_ERROR
-               : EE_STATUS_OK;
+                            0);
+    if (ret != 0) {
+        th_printf("e-[wc_AesCcmEncrypt: %d]\r\n", ret);
+        return EE_STATUS_ERROR;
+    }
+    return EE_STATUS_OK;
 }
 
 ee_status_t
@@ -168,7 +189,8 @@ th_aes_ccm_decrypt(void *         p_context,
                    const uint8_t *p_iv,
                    uint_fast32_t  ivlen)
 {
-    return wc_AesCcmDecrypt((Aes *)p_context,
+    int ret;
+    ret = wc_AesCcmDecrypt((Aes *)p_context,
                             p_pt,
                             p_ct,
                             ctlen,
@@ -177,9 +199,12 @@ th_aes_ccm_decrypt(void *         p_context,
                             p_tag,
                             taglen,
                             NULL,
-                            0)
-               ? EE_STATUS_ERROR
-               : EE_STATUS_OK;
+                            0);
+    if (ret != 0) {
+        th_printf("e-[wc_AesCcmDecrypt: %d]\r\n", ret);
+        return EE_STATUS_ERROR;
+    }
+    return EE_STATUS_OK;
 }
 
 ee_status_t
@@ -192,7 +217,8 @@ th_aes_gcm_encrypt(void *         p_context,
                    const uint8_t *p_iv,
                    uint_fast32_t  ivlen)
 {
-    return wc_AesGcmEncrypt((Aes *)p_context,
+    int ret;
+    ret = wc_AesGcmEncrypt((Aes *)p_context,
                             p_ct,
                             p_pt,
                             ptlen,
@@ -201,9 +227,12 @@ th_aes_gcm_encrypt(void *         p_context,
                             p_tag,
                             taglen,
                             NULL,
-                            0)
-               ? EE_STATUS_ERROR
-               : EE_STATUS_OK;
+                            0);
+    if (ret != 0) {
+        th_printf("e-[wc_AesGcmEncrypt: %d]\r\n", ret);
+        return EE_STATUS_ERROR;
+    }
+    return EE_STATUS_OK;
 }
 
 ee_status_t
@@ -216,7 +245,8 @@ th_aes_gcm_decrypt(void *         p_context,
                    const uint8_t *p_iv,
                    uint_fast32_t  ivlen)
 {
-    return wc_AesGcmDecrypt((Aes *)p_context,
+    int ret;
+    ret = wc_AesGcmDecrypt((Aes *)p_context,
                             p_pt,
                             p_ct,
                             ctlen,
@@ -225,9 +255,12 @@ th_aes_gcm_decrypt(void *         p_context,
                             p_tag,
                             taglen,
                             NULL,
-                            0)
-               ? EE_STATUS_ERROR
-               : EE_STATUS_OK;
+                            0);
+    if (ret != 0) {
+        th_printf("e-[wc_AesGcmDecrypt: %d]\r\n", ret);
+        return EE_STATUS_ERROR;
+    }
+    return EE_STATUS_OK;
 }
 
 void

@@ -20,7 +20,9 @@ th_chachapoly_create(void **pp_context)
 }
 
 ee_status_t
-th_chachapoly_init(void *p_context, const uint8_t *p_key, uint_fast32_t keylen)
+th_chachapoly_init(void *               p_context,
+                   const uint8_t *      p_key,
+                   uint_fast32_t        keylen)
 {
 #warning "th_chachapoly_init not implemented"
     return EE_STATUS_OK;

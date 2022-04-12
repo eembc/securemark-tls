@@ -31,8 +31,8 @@ ee_chachapoly(ee_chachapoly_func_t func,
         return;
     }
 
-    th_printf("m-chachapoly-iterations-%d\r\n", iter);
-    th_printf("m-chachapoly-message-length-%d\r\n", len);
+    th_printf("m-chachapoly-iter[%d]\r\n", iter);
+    th_printf("m-chachapoly-length[%d]\r\n", len);
 
     if (func == EE_CHACHAPOLY_ENC)
     {

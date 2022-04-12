@@ -13,6 +13,7 @@
 #include <wolfssl/options.h>
 #include <wolfssl/wolfcrypt/ecc.h>
 #include <wolfssl/wolfcrypt/curve25519.h>
+void ee_printmemline(uint8_t *, int, char *);
 
 /* can be set for static memory use */
 #define HEAP_HINT NULL
@@ -62,19 +63,31 @@ th_ecdh_create(void **pp_context, ee_ecdh_group_t group)
         return EE_STATUS_ERROR;
     }
     th_memset(ctx, 0, sizeof(ctx_t));
-    wc_InitRng_ex(&(ctx->rng), HEAP_HINT, DEVID);
+    if ((ret = wc_InitRng_ex(&(ctx->rng), HEAP_HINT, DEVID)) != 0) {
+        th_printf("e-[wc_InitRng_ex: %d]\r\n", ret);
+        return EE_STATUS_ERROR;
+    }
     /* Switch from EEMBC group enums to SDK enums for consistency, make key. */
     switch (group)
     {
         case EE_P256R1:
             ctx->curve = ECC_SECP256R1;
             CHK1(wc_ecc_init_ex(&(ctx->key.ecc), HEAP_HINT, DEVID));
-            CHK1(wc_ecc_make_key(&(ctx->rng), 32, &(ctx->key.ecc)));
+            CHK1(wc_ecc_init_ex(&(ctx->peer.ecc), HEAP_HINT, DEVID));
+            if ((ret = wc_ecc_make_key(&(ctx->rng), 32, &(ctx->key.ecc))) != 0) {
+                th_printf("e-[wc_ecc_make_key (p256): %d]\r\n", ret);
+                return EE_STATUS_ERROR;
+            };
             break;
         case EE_P384:
             ctx->curve = ECC_SECP384R1;
             CHK1(wc_ecc_init_ex(&(ctx->key.ecc), HEAP_HINT, DEVID));
-            CHK1(wc_ecc_make_key(&(ctx->rng), 48, &(ctx->key.ecc)));
+            CHK1(wc_ecc_init_ex(&(ctx->peer.ecc), HEAP_HINT, DEVID));
+            // CHK1(wc_ecc_make_key(&(ctx->rng), 48, &(ctx->key.ecc)));
+            if ((ret = wc_ecc_make_key(&(ctx->rng), 48, &(ctx->key.ecc))) != 0) {
+                th_printf("e-[wc_ecc_make_key (p384): %d]\r\n", ret);
+                return EE_STATUS_ERROR;
+            };
             break;
         case EE_C25519:
             ctx->curve = ECC_X25519; /* [sic], should be C25519? */
@@ -106,11 +119,9 @@ th_ecdh_set_peer_public_key(void *        p_context,
     {
         case ECC_SECP256R1:
         case ECC_SECP384R1:
-            CHK1(wc_ecc_init_ex(&(ctx->peer.ecc), HEAP_HINT, DEVID));
             CHK1(wc_ecc_import_x963(p_pub, publen, &(ctx->peer.ecc)));
             break;
         case ECC_X25519:
-            CHK1(wc_curve25519_init(&(ctx->peer.c25519)));
             CHK1(wc_curve25519_import_public_ex(
                 p_pub, publen, &(ctx->peer.c25519), EC25519_LITTLE_ENDIAN));
             break;
@@ -125,6 +136,35 @@ error:
     return EE_STATUS_ERROR;
 }
 
+
+ee_status_t
+th_ecdh_get_public_key(void *        p_context,
+                     uint8_t *     p_pub,
+                            uint_fast32_t *p_publen)
+{
+    int    ret;
+    ctx_t *ctx = (ctx_t *)p_context;
+
+    switch (ctx->curve)
+    {
+        case ECC_SECP256R1:
+        case ECC_SECP384R1:
+            CHK1(wc_ecc_export_x963(&(ctx->key.ecc), p_pub, p_publen));
+            break;
+        case ECC_X25519:
+            CHK1(wc_curve25519_export_public_ex(&(ctx->key.c25519),
+                p_pub, p_publen, EC25519_LITTLE_ENDIAN));
+            break;
+        default:
+            th_printf("e-[th_ecdh_get_public_key: invalid curve %d]\r\n",
+                      ctx->curve);
+            return EE_STATUS_ERROR;
+    }
+    return EE_STATUS_OK;
+error:
+    th_printf("e-[th_ecdh_get_public_key: error %d]\r\n", ret);
+    return EE_STATUS_ERROR;
+}
 ee_status_t
 th_ecdh_calc_secret(void *p_context, uint8_t *p_sec, uint_fast32_t *p_seclen)
 {

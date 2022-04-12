@@ -26,8 +26,8 @@ ee_sha(ee_sha_size_t  size,
         th_printf("e-sha%d-[Failed to create context]\r\n", size);
         return;
     }
-    th_printf("m-sha%d-iter-%d\r\n", size, iter);
-    th_printf("m-sha%d-message-length-%d\r\n", size, len);
+    th_printf("m-sha%d-iter[%d]\r\n", size, iter);
+    th_printf("m-sha%d-length[%d]\r\n", size, len);
     th_printf("m-sha%d-start\r\n", size);
     th_timestamp();
     th_pre();
