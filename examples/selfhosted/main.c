@@ -362,9 +362,12 @@ pre_wrap_ecdh(ee_ecdh_group_t g, unsigned int i)
 
     *p_publen = g_ecc_public_key_sizes[g];
     p_pub     = (uint8_t *)p_publen + sizeof(uint32_t);
-    p_seclen  = (uint32_t *)p_pub + *p_publen;
+    p_seclen  = (uint32_t *)(p_pub + *p_publen);
     p_sec     = (uint8_t *)p_seclen + sizeof(uint32_t);
     th_memcpy(p_pub, g_ecc_public_keys[g], *p_publen);
+
+    *p_seclen = 256; // Reasonably-sized space for the sig.
+
     ee_bench_ecdh(g, i, DEBUG_VERIFY);
     /* TODO: We don't have access to the private key so we cannot verify. */
     return 0;
