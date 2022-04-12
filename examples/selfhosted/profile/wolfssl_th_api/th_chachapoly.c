@@ -14,25 +14,29 @@
 #include <wolfssl/wolfcrypt/chacha20_poly1305.h>
 #include "ee_chachapoly.h"
 
-/* Set during our init call since there's no portable context for enc/dec */
-uint8_t g_localKey[CHACHA20_POLY1305_AEAD_KEYSIZE];
-
 ee_status_t
 th_chachapoly_create(void **pp_context)
 {
     /* wolfCrypt creates uses a local context in its chachapoly functions */
+    *pp_context = (uint8_t *)th_malloc(CHACHA20_POLY1305_AEAD_KEYSIZE);
+    if (*pp_context == NULL) {
+        th_printf("e-[th_chachapoly_create: malloc fail]\r\n");
+        return EE_STATUS_ERROR;
+    }
     return EE_STATUS_OK;
 }
 
 ee_status_t
 th_chachapoly_init(void *p_context, const uint8_t *p_key, uint_fast32_t keylen)
 {
+    uint8_t *p_ctx = (uint8_t *)p_context;
+
     if (keylen != CHACHA20_POLY1305_AEAD_KEYSIZE)
     {
         th_printf("e-[wolfSSL expects a %d-byte tag for ChaChaPoly]\r\n",
                   CHACHA20_POLY1305_AEAD_KEYSIZE);
     }
-    th_memcpy(g_localKey, p_key, CHACHA20_POLY1305_AEAD_KEYSIZE);
+    th_memcpy(p_ctx, p_key, CHACHA20_POLY1305_AEAD_KEYSIZE);
     /* wolfCrypt creates uses a local context in its chachapoly functions */
     return EE_STATUS_OK;
 }
@@ -41,6 +45,7 @@ void
 th_chachapoly_deinit(void *p_context)
 {
     /* wolfCrypt creates uses a local context in its chachapoly functions */
+    /* No need to decrypt anything */
 }
 
 ee_status_t
@@ -53,8 +58,10 @@ th_chachapoly_encrypt(void *         p_context,
                       uint8_t *      p_iv,
                       uint_fast32_t  ivlen)
 {
+    uint8_t *p_key = (uint8_t *)p_context;
+
     return wc_ChaCha20Poly1305_Encrypt(
-               g_localKey, p_iv, NULL, 0, p_pt, ptlen, p_ct, p_tag)
+               p_key, p_iv, NULL, 0, p_pt, ptlen, p_ct, p_tag)
                    == 0
                ? EE_STATUS_OK
                : EE_STATUS_ERROR;
@@ -70,8 +77,10 @@ th_chachapoly_decrypt(void *         p_context,
                       uint8_t *      p_iv,
                       uint_fast32_t  ivlen)
 {
+    uint8_t *p_key = (uint8_t *)p_context;
+
     return wc_ChaCha20Poly1305_Decrypt(
-               g_localKey, p_iv, NULL, 0, p_ct, ctlen, p_tag, p_pt)
+               p_key, p_iv, NULL, 0, p_ct, ctlen, p_tag, p_pt)
                    == 0
                ? EE_STATUS_OK
                : EE_STATUS_ERROR;
@@ -80,5 +89,5 @@ th_chachapoly_decrypt(void *         p_context,
 void
 th_chachapoly_destroy(void *p_context)
 {
-    /* wolfCrypt creates uses a local context in its chachapoly functions */
+    th_free(p_context);
 }
