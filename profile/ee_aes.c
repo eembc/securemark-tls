@@ -62,7 +62,6 @@ ee_aes(ee_aes_mode_t  mode,
 
     if (func == EE_AES_ENC)
     {
-        th_printf("m-aes%d_%s-encrypt-start\r\n", bits, m);
         th_timestamp();
         th_pre();
         while (iter-- > 0)
