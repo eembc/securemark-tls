@@ -22,15 +22,13 @@
     || defined(__BIG_ENDIAN__) || defined(__ARMEB__) || defined(__THUMBEB__) \
     || defined(__AARCH64EB__) || defined(_MIBSEB) || defined(__MIBSEB)       \
     || defined(__MIBSEB__)
-#define EE_FROM_BE32(x) (x)
-#define EE_TO_BE32(x)   (x)
+#define EE_FIX_ENDIAN(x) bswap32(x)
 #define
 #elif defined(__BYTE_ORDER) && __BYTE_ORDER == __LITTLE_ENDIAN            \
     || defined(__LITTLE_ENDIAN__) || defined(__ARMEL__)                   \
     || defined(__THUMBEL__) || defined(__AARCH64EL__) || defined(_MIPSEL) \
     || defined(__MIPSEL) || defined(__MIPSEL__)
-#define EE_FROM_BE32(x) bswap32(x)
-#define EE_TO_BE32(x)   bswap32(x)
+#define EE_FIX_ENDIAN(x) (x)
 #else
 #error "I don't know what architecture this is!"
 #endif
