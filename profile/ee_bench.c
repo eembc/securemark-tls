@@ -139,11 +139,15 @@ ee_bench_ecdh(ee_ecdh_group_t g, uint_fast32_t i, bool verify)
 {
     uint32_t *p_publen = (uint32_t *)th_buffer_address();
     /* The host will send data in BE if it is not an octet stream. */
-    *p_publen          = EE_FROM_BE32(*p_publen);
+    *p_publen          = EE_FIX_ENDIAN(*p_publen);
+    if (*p_publen > 0x80000) {
+        th_printf("e-[Possible incorrect endian configuration]\r\n");
+        return;
+    }
     uint8_t * p_pub    = (uint8_t *)p_publen + sizeof(uint32_t);
     uint32_t *p_seclen = (uint32_t *)(p_pub + *p_publen);
     /* The host will send data in BE if it is not an octet stream. */
-    *p_seclen      = EE_FROM_BE32(*p_seclen);
+    *p_seclen      = EE_FIX_ENDIAN(*p_seclen);
     uint8_t *p_sec = (uint8_t *)p_seclen + sizeof(uint32_t);
 
     uint8_t *p_dutpub  = p_sec + *p_seclen;
@@ -236,11 +240,15 @@ ee_bench_ecdsa_verify(ee_ecdh_group_t g,
     uint8_t * p_msg    = th_buffer_address();
     uint32_t *p_publen = (uint32_t *)(p_msg + n);
     /* The host will send data in BE if it is not an octet stream. */
-    *p_publen          = EE_FROM_BE32(*p_publen);
+    *p_publen          = EE_FIX_ENDIAN(*p_publen);
+    if (*p_publen > 0x80000) {
+        th_printf("e-[Possible incorrect endian configuration]\r\n");
+        return;
+    }
     uint8_t * p_pub    = (uint8_t *)p_publen + sizeof(uint32_t);
     uint32_t *p_siglen = (uint32_t *)(p_pub + *p_publen);
     /* The host will send data in BE if it is not an octet stream. */
-    *p_siglen              = EE_FROM_BE32(*p_siglen);
+    *p_siglen              = EE_FIX_ENDIAN(*p_siglen);
     uint8_t *   p_sig      = (uint8_t *)p_siglen + sizeof(uint32_t);
     uint8_t *   p_passfail = p_sig + *p_siglen;
     void *      p_ctx      = NULL;
@@ -278,11 +286,15 @@ ee_bench_rsa_verify(ee_rsa_id_t id, unsigned int n, unsigned int i, bool verify)
     uint8_t * p_msg    = th_buffer_address();
     uint32_t *p_publen = (uint32_t *)(p_msg + n);
     /* The host will send data in BE if it is not an octet stream. */
-    *p_publen          = EE_FROM_BE32(*p_publen);
+    *p_publen          = EE_FIX_ENDIAN(*p_publen);
+    if (*p_publen > 0x80000) {
+        th_printf("e-[Possible incorrect endian configuration]\r\n");
+        return;
+    }
     uint8_t * p_pub    = (uint8_t *)p_publen + sizeof(uint32_t);
     uint32_t *p_siglen = (uint32_t *)(p_pub + *p_publen);
     /* The host will send data in BE if it is not an octet stream. */
-    *p_siglen              = EE_FROM_BE32(*p_siglen);
+    *p_siglen              = EE_FIX_ENDIAN(*p_siglen);
     uint8_t *   p_sig      = (uint8_t *)p_siglen + sizeof(uint32_t);
     uint8_t *   p_passfail = p_sig + *p_siglen;
     void *      p_context  = NULL;

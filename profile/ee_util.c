@@ -141,6 +141,7 @@ ee_printmemline(uint8_t *p_addr, uint_fast32_t len, char *p_user_header)
 uint32_t
 bswap32(uint32_t x)
 {
+    printf("bswap(%08x)\n", x);
     return ((((x)&0xff000000) >> 24) | (((x)&0x00ff0000) >> 8)
             | (((x)&0x0000ff00) << 8) | (((x)&0x000000ff) << 24));
 }
