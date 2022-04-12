@@ -45,9 +45,9 @@ th_buffer_size(void)
     return BUFFER_SIZE;
 }
 
-ee_status_t th_profile_initialize(void)
+ee_status_t
+th_profile_initialize(void)
 {
-  // we don't need to do anything extra.
-  return EE_STATUS_OK;
+    // we don't need to do anything extra.
+    return EE_STATUS_OK;
 }
-

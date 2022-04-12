@@ -131,7 +131,7 @@ th_ecdsa_verify(void *        p_context,
     ctx_t *c = (ctx_t *)p_context;
     int    ret;
     int    verify = 0;
-    
+
     switch (c->curve)
     {
         case ECC_SECP256R1:
@@ -142,9 +142,10 @@ th_ecdsa_verify(void *        p_context,
         case ECC_X25519:
             ret = wc_ed25519_verify_msg(
                 p_sig, siglen, p_msg, msglen, &verify, &(c->key.ed25519));
-            if (ret != 0 && ret != SIG_VERIFY_E) {
-              th_printf("e-[wc_ed25519_verify_msg: %d]\r\n", ret);
-              return EE_STATUS_ERROR;
+            if (ret != 0 && ret != SIG_VERIFY_E)
+            {
+                th_printf("e-[wc_ed25519_verify_msg: %d]\r\n", ret);
+                return EE_STATUS_ERROR;
             }
             break;
         default:

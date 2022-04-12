@@ -69,7 +69,16 @@ void ee_printmem(uint8_t *p_addr, uint_fast32_t len, char *p_user_header);
  */
 void ee_printmemline(uint8_t *p_addr, uint_fast32_t len, char *p_user_header);
 
-
-uint32_t bswap32 (uint32_t x);
+/**
+ * @brief Swap the bytes in a 32-bit value. This is due to the fact that
+ * int32 values are stored in the DUT's `th_buffer` from the host GUI. The
+ * host GUI always writes big-endian, but the architecture port will need to
+ * make sure that the macros in `profile/th_util.h` can figure out the DUT
+ * endianness.
+ *
+ * @param x - The 32-bit value to swap
+ * @return uint32_t - The swapped 32-bit value
+ */
+uint32_t bswap32(uint32_t x);
 
 #endif /* _EE_UTIL_H */
