@@ -60,8 +60,8 @@
 /* `1` to turn on debugging messages */
 #define DEBUG_VERIFY 0
 /* Only run a single iteration of each task (for debug) */
-#define DO_SINGLE 1
-// All wrapper functions fit this prototype (n=dataset octets, i=iterations)
+#define DO_SINGLE 0
+/* All wrapper functions fit this prototype (n=dataset octets, i=iterations) */
 typedef uint16_t wrapper_function_t(unsigned int n, unsigned int i);
 /**
  * This variable indicates that timestamps should be ignored. It is used when
@@ -500,52 +500,38 @@ wrap_variation_001(unsigned int n, unsigned int i)
     return (uint16_t)0;
 }
 
-/** TUNING FUNCTION ***********************************************************/
-
 /**
- * The benchmark wrappers all take an datasize, n, and a number of
- * iterations, i. This function increases i by a proportional amount
- * computed from the current iterations per second and returns the number
- * of iterations required by the benchmark.
+ * @brief Find a number of iterations that meets both the minimum iteration
+ * requirement and the minimum runtime requirement.
+ *
+ * @param n - Data size (if used by the function)
+ * @param func - The function pointer
+ * @return uint32_t - The number of iterations required
  */
-size_t
+uint64_t
 tune_iterations(unsigned int n, wrapper_function_t *func)
 {
-    size_t   iter;
-    size_t   total_iter;
-    uint64_t total_us;
-    float    ipus;
-    float    delta;
-
-    iter       = MIN_ITER;
-    total_iter = 0;
-    total_us   = 0;
-
-    while (total_us < MIN_RUNTIME_USEC)
+    uint32_t eps   = 1;
+    uint32_t mint  = 0;
+    uint64_t dt1   = 0;
+    uint64_t dt2   = 0;
+    uint64_t guess = 1;
+    /* This converges faster than previous method. */
+    do
     {
+        guess *= 10;
         clear_timestamps();
-        (*func)(n, iter);
-        total_iter += iter;
-        total_us += g_timestamps[1] - g_timestamps[0];
-
-        if (total_us > 0)
-        {
-            ipus  = (float)total_iter / total_us;
-            delta = (float)MIN_RUNTIME_USEC - total_us;
-            iter  = (size_t)(ipus * delta);
-            iter  = iter == 0 ? 1 : iter;
-        }
-        else if (total_us == 0)
-        {
-            th_printf("e-[Loop time was zero microseconds, unlikely.]\r\n");
-            exit(-1);
-        }
-        else
-        {
-            iter *= 2;
-        }
-    }
-    return total_iter;
+        (*func)(n, guess);
+        dt1 = (g_timestamps[1] - g_timestamps[0]) / 1e3;
+        clear_timestamps();
+        (*func)(n, guess);
+        dt2  = (g_timestamps[1] - g_timestamps[0]) / 1e3;
+        eps  = (dt1 > dt2) ? (dt1 - dt2) : (dt2 - dt1);
+        mint = (dt1 < dt2) ? dt1 : dt2;
+    } while (eps > guess || dt1 < 100 || guess < MIN_ITER);
+    /* Integer div will floor <10, so multiply by 10%, but before the division
+       in order to add more precision to the integer divide). */
+    return (guess * 11000) / mint;
 }
 
 // We tune each function independently by using a table entry for each wrapper:
@@ -669,11 +655,16 @@ static const size_t g_numtasks = sizeof(g_task) / sizeof(task_entry_t);
 int
 main(void)
 {
-    size_t i;
-    size_t iterations;
-    float  component_score;
-    float  score;
+    size_t   i;
+    uint64_t iterations;
+    uint64_t dt;
+    float    component_score;
+    float    score;
 
+    setbuf(stdout, 0);
+    /* N.B.: We use printf here rather than th_printf because we mute it to
+       keep things less messy. If you can't use printf, use th_printf and turn
+       off QUIET in the CMakeLists.txt file. */
     printf("Running each primitive for at least %us or %u iterations.\n",
            MIN_RUNTIME_SEC,
            MIN_ITER);
@@ -684,11 +675,15 @@ main(void)
     printf("-- ------------------------- ----- --- ---------------\n");
     for (i = 0; i < g_numtasks; ++i)
     {
+        printf("%2ld %-25s %5d %3.0f ",
+               i + 1,
+               g_task[i].name,
+               g_task[i].n,
+               g_task[i].weight);
 #if DO_SINGLE == 1
-        iterations = 1;
         ee_srand(0); // CRCs are computed with seed 0
-        g_task[i].actual_crc = (*g_task[i].func)(g_task[i].n, iterations);
-        clear_timestamps();
+        g_task[i].actual_crc = (*g_task[i].func)(g_task[i].n, 1);
+        dt                   = 0;
 #else
         // First, compute the correct # of iterations for each primitive
         iterations = tune_iterations(g_task[i].n, g_task[i].func);
@@ -698,8 +693,8 @@ main(void)
         // Now do a run with the correct number of iterations to get ips
         clear_timestamps();
         (*g_task[i].func)(g_task[i].n, iterations);
-        g_task[i].ips
-            = (float)iterations / ((g_timestamps[1] - g_timestamps[0]) / 1e6f);
+        dt            = (g_timestamps[1] - g_timestamps[0]);
+        g_task[i].ips = (float)iterations / (dt / 1e6f);
 #endif
         /**
          * Generate the component and final scores.
@@ -711,17 +706,16 @@ main(void)
          */
         component_score = g_task[i].weight / g_task[i].ips;
         score += component_score;
-        printf("%2ld %-25s %5d %3.0f %15.3f",
-               i + 1,
-               g_task[i].name,
-               g_task[i].n,
-               g_task[i].weight,
-               g_task[i].ips);
+        printf("%15.3f", g_task[i].ips);
         if (g_task[i].actual_crc != g_task[i].expected_crc)
         {
             printf(" ***ERROR: CRCs did not match, expected 0x%04x, got 0x%04x",
                    g_task[i].expected_crc,
                    g_task[i].actual_crc);
+        }
+        if (dt < MIN_RUNTIME_USEC)
+        {
+            printf(" ***ERROR: Not enough runtime %.3f sec.", dt / 1.0e6f);
         }
         printf("\n");
     }
