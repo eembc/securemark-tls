@@ -682,6 +682,7 @@ main(void)
                g_task[i].weight);
 #if DO_SINGLE == 1
         ee_srand(0); // CRCs are computed with seed 0
+        clear_timestamps();
         g_task[i].actual_crc = (*g_task[i].func)(g_task[i].n, 1);
         dt                   = 0;
 #else
