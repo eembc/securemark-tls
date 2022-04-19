@@ -108,8 +108,8 @@ th_ecdsa_sign(void *         p_context,
                 p_msg, msglen, p_sig, p_siglen, &(c->rng), &(c->key.ecc)));
             break;
         case ECC_X25519:
-            CHK1(wc_ed25519_sign_msg(
-                p_msg, msglen, p_sig, p_siglen, &(c->key.ed25519)));
+            CHK1(wc_ed25519ph_sign_hash(
+                p_msg, msglen, p_sig, p_siglen, &(c->key.ed25519), NULL, 0));
             break;
         default:
             th_printf("e-[th_ecdsa_sign: invalid curve %d]\r\n", c->curve);
@@ -140,8 +140,9 @@ th_ecdsa_verify(void *        p_context,
                 p_sig, siglen, p_msg, msglen, &verify, &(c->key.ecc)));
             break;
         case ECC_X25519:
-            ret = wc_ed25519_verify_msg(
-                p_sig, siglen, p_msg, msglen, &verify, &(c->key.ed25519));
+            ret = wc_ed25519ph_verify_hash(
+                p_sig, siglen, p_msg, msglen, &verify, &(c->key.ed25519), NULL,
+                0);
             if (ret != 0 && ret != SIG_VERIFY_E)
             {
                 th_printf("e-[wc_ed25519_verify_msg: %d]\r\n", ret);
