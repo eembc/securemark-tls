@@ -1,6 +1,6 @@
 # Introduction
 
-EEMBC® SecureMark™ is an objective, standardized benchmarking framework for measuring the efficiency of cryptographic processing solutions. Within SecureMark, EEMBC plans to support test and analysis of various security profiles for different application domains. The first version is called SecureMark-TLS, which focuses on Transport Layer Security (TLS) for internet of things (IoT) edge nodes.
+EEMBC's SecureMark® benchmark is an objective, standardized benchmarking framework for measuring the efficiency of cryptographic processing solutions. Within SecureMark, EEMBC plans to support test and analysis of various security profiles for different application domains. The first version is called SecureMark-TLS, which focuses on Transport Layer Security (TLS) for internet of things (IoT) edge nodes.
 
 This repository contains the SecureMark-TLS firmware for *standalone* execution, which does not require the external hardware test-harness, nor the host GUI software. This means you can run the benchmark and collect just performance scores. In order collect official energy scores and upload them to the EEMBC website, you will need both the hardware for the test-harness and a license for the host software. While this is still the same benchmark workload, the host software is needed to determines the run was valid (i.e. to discourage cheating and verify adherence to the "Run Rules"), and the test-harness is needed to collect the measurements required to compute the energy-efficiency score.
 
