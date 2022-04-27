@@ -20,7 +20,7 @@ th_sha_create(void **pp_context, ee_sha_size_t size)
 }
 
 ee_status_t
-th_sha_init(void *p_context, ee_sha_size_t size)
+th_sha_init(void *p_context)
 {
 #warning "th_sha_init not implemented"
     return EE_STATUS_OK;
@@ -28,7 +28,6 @@ th_sha_init(void *p_context, ee_sha_size_t size)
 
 ee_status_t
 th_sha_process(void *         p_context,
-               ee_sha_size_t  size,
                const uint8_t *p_in,
                uint_fast32_t  len)
 {
@@ -37,14 +36,14 @@ th_sha_process(void *         p_context,
 }
 
 ee_status_t
-th_sha_done(void *p_context, ee_sha_size_t size, uint8_t *p_result)
+th_sha_done(void *p_context, uint8_t *p_result)
 {
 #warning "th_sha_done not implemented"
     return EE_STATUS_OK;
 }
 
 void
-th_sha_destroy(void *p_context, ee_sha_size_t size)
+th_sha_destroy(void *p_context)
 {
 #warning "th_sha_destroy not implemented"
 }

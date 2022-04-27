@@ -13,43 +13,65 @@
 #include <wolfssl/options.h>
 #include <wolfssl/wolfcrypt/sha256.h>
 #include <wolfssl/wolfcrypt/sha512.h>
+#include <wolfssl/wolfcrypt/types.h>
 
 #include "ee_sha.h"
+
+/* can be set for static memory use */
+#define HEAP_HINT NULL
+/* used with crypto callbacks and async */
+#define DEVID -1
+
+typedef struct BenchmarkHashContext_s
+{
+    enum wc_HashType type;
+    union ShaUnion_u {
+        wc_Sha256 sha256;
+        wc_Sha384 sha384;
+    } sha;
+} ctx_t;
 
 ee_status_t
 th_sha_create(void **pp_context, ee_sha_size_t size)
 {
+    ctx_t *ctx;
+
+    ctx = (ctx_t *)th_malloc(sizeof(ctx_t));
+    if (NULL == ctx)
+    {
+        th_printf("e-[th_sha_create() malloc failure]\r\n");
+        return EE_STATUS_ERROR;
+    }
     switch (size)
     {
+        /* Switch to wolfSSL identifiers. */
         case EE_SHA256:
-            *pp_context = (void *)th_malloc(sizeof(wc_Sha256));
+            ctx->type = WC_HASH_TYPE_SHA3_256;
             break;
         case EE_SHA384:
-            *pp_context = (void *)th_malloc(sizeof(wc_Sha384));
+            ctx->type = WC_HASH_TYPE_SHA3_384;
             break;
         default:
             th_printf("e-[th_sha_create() invalid SHA size]\r\n");
             return EE_STATUS_ERROR;
     }
-    if (NULL == *pp_context)
-    {
-        th_printf("e-[th_sha_create() malloc failure]\r\n");
-        return EE_STATUS_ERROR;
-    }
+    *pp_context = (void *)ctx;
     return EE_STATUS_OK;
 }
 
 ee_status_t
-th_sha_init(void *p_context, ee_sha_size_t size)
+th_sha_init(void *p_context)
 {
+    ctx_t *ctx = (ctx_t *)p_context;
     int ret;
-    switch (size)
+
+    switch (ctx->type)
     {
-        case EE_SHA256:
-            ret = wc_InitSha256((wc_Sha256 *)p_context);
+        case WC_HASH_TYPE_SHA3_256:
+            ret = wc_InitSha256_ex(&(ctx->sha.sha256), HEAP_HINT, DEVID);
             break;
-        case EE_SHA384:
-            ret = wc_InitSha384((wc_Sha384 *)p_context);
+        case WC_HASH_TYPE_SHA3_384:
+            ret = wc_InitSha384_ex(&(ctx->sha.sha384), HEAP_HINT, DEVID);
             break;
         default:
             th_printf("e-[th_sha_init() invalid SHA size]\r\n");
@@ -65,18 +87,19 @@ th_sha_init(void *p_context, ee_sha_size_t size)
 
 ee_status_t
 th_sha_process(void *         p_context,
-               ee_sha_size_t  size,
                const uint8_t *p_in,
                uint_fast32_t  len)
 {
+    ctx_t *ctx = (ctx_t *)p_context;
     int ret;
-    switch (size)
+
+    switch (ctx->type)
     {
-        case EE_SHA256:
-            ret = wc_Sha256Update((wc_Sha256 *)p_context, p_in, len);
+        case WC_HASH_TYPE_SHA3_256:
+            ret = wc_Sha256Update(&(ctx->sha.sha256), p_in, len);
             break;
-        case EE_SHA384:
-            ret = wc_Sha384Update((wc_Sha384 *)p_context, p_in, len);
+        case WC_HASH_TYPE_SHA3_384:
+            ret = wc_Sha384Update(&(ctx->sha.sha384), p_in, len);
             break;
         default:
             th_printf("e-[th_sha_process() invalid SHA size]\r\n");
@@ -91,16 +114,18 @@ th_sha_process(void *         p_context,
 }
 
 ee_status_t
-th_sha_done(void *p_context, ee_sha_size_t size, uint8_t *p_result)
+th_sha_done(void *p_context, uint8_t *p_result)
 {
+    ctx_t *ctx = (ctx_t *)p_context;
     int ret;
-    switch (size)
+
+    switch (ctx->type)
     {
-        case EE_SHA256:
-            ret = wc_Sha256Final((wc_Sha256 *)p_context, p_result);
+        case WC_HASH_TYPE_SHA3_256:
+            ret = wc_Sha256Final(&(ctx->sha.sha256), p_result);
             break;
-        case EE_SHA384:
-            ret = wc_Sha384Final((wc_Sha384 *)p_context, p_result);
+        case WC_HASH_TYPE_SHA3_384:
+            ret = wc_Sha384Final(&(ctx->sha.sha384), p_result);
             break;
         default:
             th_printf("e-[th_sha_done() invalid SHA size]\r\n");
@@ -115,23 +140,25 @@ th_sha_done(void *p_context, ee_sha_size_t size, uint8_t *p_result)
 }
 
 void
-th_sha_destroy(void *p_context, ee_sha_size_t size)
+th_sha_destroy(void *p_context)
 {
+    ctx_t *ctx = (ctx_t *)p_context;
+
     if (NULL == p_context)
     {
         return;
     }
-    switch (size)
+    switch (ctx->type)
     {
-        case EE_SHA256:
-            wc_Sha256Free((wc_Sha256 *)p_context);
+        case WC_HASH_TYPE_SHA3_256:
+            wc_Sha256Free(&(ctx->sha.sha256));
             break;
-        case EE_SHA384:
-            wc_Sha384Free((wc_Sha384 *)p_context);
+        case WC_HASH_TYPE_SHA3_384:
+            wc_Sha384Free(&(ctx->sha.sha384));
             break;
         default:
             th_printf("e-[th_sha_destroy() invalid SHA size]\r\n");
     }
-    th_free(p_context);
+    th_free(ctx);
     p_context = NULL;
 }

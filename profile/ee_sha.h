@@ -54,22 +54,19 @@ ee_status_t th_sha_create(void **pp_context, ee_sha_size_t size);
  * @brief Initialize the context.
  *
  * @param p_context - The context from the `create` function
- * @param size - See the `ee_sha_size_t` enum
  * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
-ee_status_t th_sha_init(void *p_context, ee_sha_size_t size);
+ee_status_t th_sha_init(void *p_context);
 
 /**
  * @brief Add more data to the running digest (also called update).
  *
  * @param p_context - The context from the `create` function
- * @param size - See the `ee_sha_size_t` enum
  * @param p_in - The input buffer
  * @param len - Length of the input buffer
  * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
 ee_status_t th_sha_process(void *         p_context,
-                           ee_sha_size_t  size,
                            const uint8_t *p_in,
                            uint_fast32_t  len);
 
@@ -78,18 +75,16 @@ ee_status_t th_sha_process(void *         p_context,
  * be large enough to hold the digest.
  *
  * @param p_context - The context from the `create` function
- * @param size - See the `ee_sha_size_t` enum
  * @param p_out - The output digest buffer
  * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
-ee_status_t th_sha_done(void *p_context, ee_sha_size_t size, uint8_t *p_out);
+ee_status_t th_sha_done(void *p_context, uint8_t *p_out);
 
 /**
  * @brief Deallocate/destroy the context
  *
  * @param p_context - The context from the `create` function
- * @param size - See the `ee_sha_size_t` enum
  */
-void th_sha_destroy(void *p_context, ee_sha_size_t size);
+void th_sha_destroy(void *p_context);
 
 #endif /* __EE_SHA_H */

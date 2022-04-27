@@ -31,7 +31,7 @@ ee_sha(ee_sha_size_t  size,
     th_printf("m-sha%d-start\r\n", size);
     th_timestamp();
     th_pre();
-    if (th_sha_init(p_context, size) != EE_STATUS_OK)
+    if (th_sha_init(p_context) != EE_STATUS_OK)
     {
         th_post();
         th_printf("e-sha%d-[Failed to initialize]\r\n", size);
@@ -39,14 +39,14 @@ ee_sha(ee_sha_size_t  size,
     }
     while (iter-- > 0)
     {
-        if (th_sha_process(p_context, size, p_in, len) != EE_STATUS_OK)
+        if (th_sha_process(p_context, p_in, len) != EE_STATUS_OK)
         {
             th_post();
             th_printf("e-sha%d-[Failed to process bytes]\r\n", size);
             goto exit;
         }
         /* Version 2.x moved this into the timing loop. */
-        if (th_sha_done(p_context, size, p_out) != EE_STATUS_OK)
+        if (th_sha_done(p_context, p_out) != EE_STATUS_OK)
         {
             th_post();
             th_printf("e-sha%d-[Failed to complete]\r\n", size);
@@ -57,5 +57,5 @@ ee_sha(ee_sha_size_t  size,
     th_timestamp();
     th_printf("m-sha%d-finish\r\n", size);
 exit:
-    th_sha_destroy(p_context, size);
+    th_sha_destroy(p_context);
 }
