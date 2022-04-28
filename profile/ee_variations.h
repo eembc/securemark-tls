@@ -27,7 +27,9 @@
  * for crypto accelerators.
  *
  * @param iter - Number of iterations to perform.
+ * @return uint32_t - Execution time in microseconds
  */
-void ee_variation_001(uint_fast32_t iter);
+
+uint32_t ee_variation_001(uint_fast32_t iter);
 
 #endif

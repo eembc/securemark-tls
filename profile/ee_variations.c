@@ -21,7 +21,7 @@
         }                      \
     }
 
-void
+uint32_t
 ee_variation_001(uint_fast32_t iter)
 {
     void *        p_csha1 = NULL;
@@ -35,12 +35,14 @@ ee_variation_001(uint_fast32_t iter)
     uint8_t       p_ct[VAR001_AES_LEN];
     uint8_t       p_key[16];
     uint_fast32_t idx;
+    uint32_t      t0 = 0;
+    uint32_t      t1 = 0;
 
     p_msg = (uint8_t *)th_malloc(VAR001_SESSION_LEN);
     if (p_msg == NULL)
     {
         th_printf("e-variation-001-[malloc() fail]\r\n");
-        return;
+        return 0;
     }
 
     /**
@@ -61,7 +63,7 @@ ee_variation_001(uint_fast32_t iter)
     }
 
     th_printf("m-variation-001-start\r\n");
-    th_timestamp();
+    t0 = th_timestamp();
     th_pre();
     while (iter-- > 0)
     {
@@ -123,7 +125,7 @@ ee_variation_001(uint_fast32_t iter)
         th_sha_destroy(p_csha1);
     }
     th_post();
-    th_timestamp();
+    t1 = th_timestamp();
     goto exit;
 
 error_exit:
@@ -137,4 +139,5 @@ error_exit:
 exit:
     th_free(p_msg);
     th_printf("m-variation-001-finish\r\n");
+    return t1 - t0;
 }

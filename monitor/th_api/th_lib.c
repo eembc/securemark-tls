@@ -39,6 +39,7 @@ void
 th_timestamp_initialize(void)
 {
     /* USER CODE 1 BEGIN */
+    /* Some BSP/MSP/SDKs initialize the GPIO long before we even get here! */
     /* USER CODE 1 END */
     /* Always print this message, the host needs it. */
     th_printf(EE_MSG_TIMESTAMP_MODE);
@@ -48,35 +49,51 @@ th_timestamp_initialize(void)
 }
 
 /**
- * PORTME: Generate a falling edge. Since GPIO pin is OPEN-DRAIN it is OK to
- * float and let the pullup resistor drive.
+ * @brief Performs two functions: First, it returns a uint32_t timestamp value
+ * of the number of microseconds currently counted by a monotonically increasing
+ * counter. The minimum resolution is one millisecond for the framework. If the
+ * timer only provides milliecond resolution, multiply by 1000. Second, it
+ * generates output. If running in energy mode, it pulls an OPEN-DRAIN GPIO low
+ * for at least 2 microseconds. If running in performance mode, it prints a
+ * pre-formatted message.
  *
- * NOTE: The hold time is 62.5ns.
+ * Typically in energy mode, the external energy monitor must synchronize with
+ * the DUT, and to avoid as much latency is possible, this is done with GPIO.
+ * However, in performance mode, an EMON is not used, so the DUT must report
+ * a timestamp that the Host GUI will use to compute performance.
+ *
+ * Lastly, the returned value may be used by some profiles for self-tuning.
+ *
+ * Some profiles perform a significant amount of self-tuning before the
+ * benchmark begins. In these cases, the timestamp itself can be supressed to
+ * avoid flooding the other components in the framework with unnecessary
+ * timestamps (hence, the `g_mute_timestamps` global).
+ *
+ * @return uint32_t - The number of microseconds elapsed since the last call.
+ * 
+ * PORTME: This function is essential.
  */
-void
+uint32_t
 th_timestamp(void)
 {
-    if (g_mute_timestamps)
-    {
-        return;
-    }
-    else
-    {
+    uint32_t elapsedMicroSeconds = 0;
+    /* USER CODE 1 BEGIN */
 #warning "th_timestamp() not implemented"
+    /* USER CODE 1 END */
+    if (!g_mute_timestamps)
+    {
 #if EE_CFG_ENERGY_MODE == 1
         /**
-         * 1. pull pin low
-         * 2. wait at least 62.5ns
-         * 3. set pin high
+         * 1. pull open-drain pin low
+         * 2. wait at least 2us
+         * 3. release pin
          */
 #else
-        uint32_t elapsedMicroSeconds = 0;
-        /* USER CODE 1 BEGIN */
-        /* USER CODE 1 END */
         /* This message must be printed, the host needs it. */
         th_printf(EE_MSG_TIMESTAMP, elapsedMicroSeconds);
 #endif
     }
+    return elapsedMicroSeconds;
 }
 
 /**

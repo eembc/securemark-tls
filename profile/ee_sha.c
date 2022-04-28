@@ -12,24 +12,26 @@
 
 #include "ee_sha.h"
 
-void
+uint32_t
 ee_sha(ee_sha_size_t  size,
        const uint8_t *p_in,
        uint_fast32_t  len,
        uint8_t *      p_out,
        uint_fast32_t  iter)
 {
-    void *p_context;
+    void *   p_context;
+    uint32_t t0 = 0;
+    uint32_t t1 = 0;
 
     if (th_sha_create(&p_context, size) != EE_STATUS_OK)
     {
         th_printf("e-sha%d-[Failed to create context]\r\n", size);
-        return;
+        return 0;
     }
     th_printf("m-sha%d-iter[%d]\r\n", size, iter);
     th_printf("m-sha%d-length[%d]\r\n", size, len);
     th_printf("m-sha%d-start\r\n", size);
-    th_timestamp();
+    t0 = th_timestamp();
     th_pre();
     if (th_sha_init(p_context) != EE_STATUS_OK)
     {
@@ -54,8 +56,9 @@ ee_sha(ee_sha_size_t  size,
         }
     }
     th_post();
-    th_timestamp();
+    t1 = th_timestamp();
     th_printf("m-sha%d-finish\r\n", size);
 exit:
     th_sha_destroy(p_context);
+    return t1 - t0;
 }

@@ -38,11 +38,12 @@
  * @param n - The length of the random message to create
  * @param i - The number of iterations to perform
  * @param verify - Print verification messages for the host
+ * @return uint32_t - Execution time in microseconds
  */
-void ee_bench_sha(ee_sha_size_t size,
-                  uint_fast32_t n,
-                  uint_fast32_t i,
-                  bool          verify);
+uint32_t ee_bench_sha(ee_sha_size_t size,
+                      uint_fast32_t n,
+                      uint_fast32_t i,
+                      bool          verify);
 
 /**
  * @brief The top-level AES benchmark wrapper.
@@ -68,13 +69,14 @@ void ee_bench_sha(ee_sha_size_t size,
  * @param n - The length of the text (plain/cipher, depends on function)
  * @param i - The number of iterations to perform
  * @param verify - Print verification messages for the host
+ * @return uint32_t - Execution time in microseconds
  */
-void ee_bench_aes(ee_aes_mode_t mode,
-                  ee_aes_func_t func,
-                  uint_fast32_t keylen,
-                  uint_fast32_t n,
-                  uint_fast32_t i,
-                  bool          verify);
+uint32_t ee_bench_aes(ee_aes_mode_t mode,
+                      ee_aes_func_t func,
+                      uint_fast32_t keylen,
+                      uint_fast32_t n,
+                      uint_fast32_t i,
+                      bool          verify);
 
 /**
  * @brief The top-level ChaCha20-Poly1305 benchmark wrapper.
@@ -96,8 +98,12 @@ void ee_bench_aes(ee_aes_mode_t mode,
  * @param n - The length of the text (plain/cipher, depends on function)
  * @param i - The number of iterations to perform
  * @param verify - Print verification messages for the host
+ * @return uint32_t - Execution time in microseconds
  */
-void ee_bench_chachapoly(ee_chachapoly_func_t func, int n, int i, bool verify);
+uint32_t ee_bench_chachapoly(ee_chachapoly_func_t func,
+                             int                  n,
+                             int                  i,
+                             bool                 verify);
 
 /**
  * @brief The top-level ECDH benchmark wrapper.
@@ -118,8 +124,9 @@ void ee_bench_chachapoly(ee_chachapoly_func_t func, int n, int i, bool verify);
  * @param g - See the `ee_ecdh_group_t` enum
  * @param i - The number of iterations to perform
  * @param verify - Print verification messages for the host
+ * @return uint32_t - Execution time in microseconds
  */
-void ee_bench_ecdh(ee_ecdh_group_t g, uint_fast32_t i, bool verify);
+uint32_t ee_bench_ecdh(ee_ecdh_group_t g, uint_fast32_t i, bool verify);
 
 /**
  * @brief The top-level ECDSA/EdDSA sign benchmark wrapper.
@@ -143,11 +150,12 @@ void ee_bench_ecdh(ee_ecdh_group_t g, uint_fast32_t i, bool verify);
  * @param n - The length of the message to sign
  * @param i - The number of iterations to perform
  * @param verify - Print verification messages for the host
+ * @return uint32_t - Execution time in microseconds
  */
-void ee_bench_ecdsa_sign(ee_ecdh_group_t g,
-                         uint_fast32_t   n,
-                         uint_fast32_t   i,
-                         bool            verify);
+uint32_t ee_bench_ecdsa_sign(ee_ecdh_group_t g,
+                             uint_fast32_t   n,
+                             uint_fast32_t   i,
+                             bool            verify);
 
 /**
  * @brief The top-level ECDSA/EdDSA sign benchmark wrapper.
@@ -178,11 +186,12 @@ void ee_bench_ecdsa_sign(ee_ecdh_group_t g,
  * @param n - The length of the message to sign
  * @param i - The number of iterations to perform
  * @param verify - Print verification messages for the host
+ * @return uint32_t - Execution time in microseconds
  */
-void ee_bench_ecdsa_verify(ee_ecdh_group_t g,
-                           uint_fast32_t   n,
-                           uint_fast32_t   i,
-                           bool            verify);
+uint32_t ee_bench_ecdsa_verify(ee_ecdh_group_t g,
+                               uint_fast32_t   n,
+                               uint_fast32_t   i,
+                               bool            verify);
 
 /**
  * @brief The top-level RSA benchmark wrapper.
@@ -208,11 +217,12 @@ void ee_bench_ecdsa_verify(ee_ecdh_group_t g,
  * @param id - The RSA enum indicating the modulus
  * @param i - The number of iterations to perform
  * @param verify - Print verification messages for the host
+ * @return uint32_t - Execution time in microseconds
  */
-void ee_bench_rsa_verify(ee_rsa_id_t  id,
-                         unsigned int n,
-                         unsigned int i,
-                         bool         verify);
+uint32_t ee_bench_rsa_verify(ee_rsa_id_t  id,
+                             unsigned int n,
+                             unsigned int i,
+                             bool         verify);
 
 arg_claimed_t ee_bench_parse(char *p_command, bool verify);
 
