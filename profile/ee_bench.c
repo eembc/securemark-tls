@@ -454,6 +454,14 @@ ee_bench_parse(char *p_command, bool verify)
     {
         ee_bench_aes(EE_AES_CCM, EE_AES_DEC, EE_AES_256KEYLEN, n, i, verify);
     }
+    else if (th_strncmp(p_subcmd, "aes256-gcm-enc", EE_CMD_SIZE) == 0)
+    {
+        ee_bench_aes(EE_AES_GCM, EE_AES_ENC, EE_AES_256KEYLEN, n, i, verify);
+    }
+    else if (th_strncmp(p_subcmd, "aes256-gcm-dec", EE_CMD_SIZE) == 0)
+    {
+        ee_bench_aes(EE_AES_GCM, EE_AES_DEC, EE_AES_256KEYLEN, n, i, verify);
+    }
     else if (th_strncmp(p_subcmd, "chachapoly-enc", EE_CMD_SIZE) == 0)
     {
         ee_bench_chachapoly(EE_CHACHAPOLY_ENC, n, i, verify);
