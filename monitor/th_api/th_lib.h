@@ -40,11 +40,11 @@
  */
 #define TH_VENDOR_NAME_STRING "unspecified"
 
-void th_monitor_initialize(void);
-void th_timestamp_initialize(void);
-void th_timestamp(void);
-void th_serialport_initialize(void);
-void th_printf(const char *fmt, ...);
-void th_command_ready(volatile char *);
+void     th_monitor_initialize(void);
+void     th_timestamp_initialize(void);
+uint32_t th_timestamp(void);
+void     th_serialport_initialize(void);
+void     th_printf(const char *fmt, ...);
+void     th_command_ready(volatile char *);
 
 #endif /* __TH_LIB_H */

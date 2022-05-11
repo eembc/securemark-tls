@@ -13,7 +13,7 @@
 #include "ee_main.h"
 #include "ee_chachapoly.h"
 
-void
+uint32_t
 ee_chachapoly(ee_chachapoly_func_t func,
               uint8_t *            p_key,
               uint8_t *            p_iv,
@@ -23,12 +23,14 @@ ee_chachapoly(ee_chachapoly_func_t func,
               uint8_t *            p_tag,
               uint_fast32_t        iter)
 {
-    void *p_context;
+    void *   p_context;
+    uint32_t t0 = 0;
+    uint32_t t1 = 0;
 
     if (th_chachapoly_create(&p_context) != EE_STATUS_OK)
     {
         th_printf("e-chachapoly-[Failed to create context]\r\n");
-        return;
+        return 0;
     }
 
     th_printf("m-chachapoly-iter[%d]\r\n", iter);
@@ -37,7 +39,7 @@ ee_chachapoly(ee_chachapoly_func_t func,
     if (func == EE_CHACHAPOLY_ENC)
     {
         th_printf("m-chachapoly-encrypt-start\r\n");
-        th_timestamp();
+        t0 = th_timestamp();
         th_pre();
         while (iter-- > 0)
         {
@@ -65,13 +67,13 @@ ee_chachapoly(ee_chachapoly_func_t func,
             th_chachapoly_deinit(p_context);
         }
         th_post();
-        th_timestamp();
+        t1 = th_timestamp();
         th_printf("m-chachapoly-encrypt-finish\r\n");
     }
     else
     {
         th_printf("m-chachapoly-decrypt-start\r\n");
-        th_timestamp();
+        t0 = th_timestamp();
         th_pre();
         while (iter-- > 0)
         {
@@ -99,9 +101,10 @@ ee_chachapoly(ee_chachapoly_func_t func,
             th_chachapoly_deinit(p_context);
         }
         th_post();
-        th_timestamp();
+        t1 = th_timestamp();
         th_printf("m-chachapoly-decrypt-finish\r\n");
     }
 exit:
     th_chachapoly_destroy(p_context);
+    return t1 - t0;
 }

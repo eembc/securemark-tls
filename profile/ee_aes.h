@@ -57,17 +57,18 @@ typedef enum ee_aes_func_t
  * @param p_out - Output CT/PT buffer
  * @param p_tag - Tag buffer
  * @param iter - Number of iterations to perform
+ * @return uint32_t - Execution time in microseconds
  */
-void ee_aes(ee_aes_mode_t  mode,
-            ee_aes_func_t  func,
-            const uint8_t *p_key,
-            uint_fast32_t  keylen,
-            const uint8_t *p_iv,
-            const uint8_t *p_in,
-            uint_fast32_t  len,
-            uint8_t *      p_out,
-            uint8_t *      p_tag,
-            uint_fast32_t  iter);
+uint32_t ee_aes(ee_aes_mode_t  mode,
+                ee_aes_func_t  func,
+                const uint8_t *p_key,
+                uint_fast32_t  keylen,
+                const uint8_t *p_iv,
+                const uint8_t *p_in,
+                uint_fast32_t  len,
+                uint8_t *      p_out,
+                uint8_t *      p_tag,
+                uint_fast32_t  iter);
 
 /**
  * @brief Create a context for a given mode.

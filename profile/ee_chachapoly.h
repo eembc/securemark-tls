@@ -43,15 +43,16 @@ typedef enum
  * @param p_out - Output CT/PT buffer
  * @param p_tag - Tag buffer
  * @param i - Number of iterations to perform
+ * @return uint32_t - Execution time in microseconds
  */
-void ee_chachapoly(ee_chachapoly_func_t func,
-                   uint8_t *            p_key,
-                   uint8_t *            p_iv,
-                   uint8_t *            p_in,
-                   uint_fast32_t        len,
-                   uint8_t *            p_out,
-                   uint8_t *            p_tag,
-                   uint_fast32_t        i);
+uint32_t ee_chachapoly(ee_chachapoly_func_t func,
+                       uint8_t *            p_key,
+                       uint8_t *            p_iv,
+                       uint8_t *            p_in,
+                       uint_fast32_t        len,
+                       uint8_t *            p_out,
+                       uint8_t *            p_tag,
+                       uint_fast32_t        i);
 
 /**
  * @brief Creates a context.

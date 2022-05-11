@@ -34,12 +34,13 @@ typedef enum ee_sha_size_t
  * @param len - Length of the input buffer
  * @param p_out - Output buffer (must be large enough to hold the digest)
  * @param iter - Number of iterations to perform
+ * @return uint32_t - Execution time in microseconds
  */
-void ee_sha(ee_sha_size_t  size,
-            const uint8_t *p_in,
-            uint_fast32_t  len,
-            uint8_t *      p_out,
-            uint_fast32_t  iter);
+uint32_t ee_sha(ee_sha_size_t  size,
+                const uint8_t *p_in,
+                uint_fast32_t  len,
+                uint8_t *      p_out,
+                uint_fast32_t  iter);
 
 /**
  * @brief Creates a context.

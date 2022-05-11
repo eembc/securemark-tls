@@ -36,24 +36,24 @@ fill_rand(uint8_t *p_buffer, size_t len)
     }
 }
 
-void
+uint32_t
 ee_bench_sha(ee_sha_size_t size, uint_fast32_t n, uint_fast32_t i, bool verify)
 {
     uint8_t *p_in  = th_buffer_address();
     uint8_t *p_out = p_in + n;
+    uint32_t dt;
 
     fill_rand(p_in, n);
-
-    ee_sha(size, p_in, n, p_out, i);
-
+    dt = ee_sha(size, p_in, n, p_out, i);
     if (verify)
     {
         ee_printmemline(p_in, n, "m-bench-sha-in");
         ee_printmemline(p_out, size / 8, "m-bench-sha-out");
     }
+    return dt;
 }
 
-void
+uint32_t
 ee_bench_aes(ee_aes_mode_t mode,
              ee_aes_func_t func,
              uint_fast32_t keylen,
@@ -67,11 +67,11 @@ ee_bench_aes(ee_aes_mode_t mode,
     uint8_t *p_in  = p_iv + ivlen;
     uint8_t *p_out = p_in + n;
     uint8_t *p_tag = p_out + n;
+    uint32_t dt;
 
     fill_rand(p_key, keylen);
     fill_rand(p_iv, ivlen);
     fill_rand(p_in, n);
-
     if (func == EE_AES_DEC)
     {
         /* Encrypt something for the decrypt loop to decrypt */
@@ -83,9 +83,7 @@ ee_bench_aes(ee_aes_mode_t mode,
         p_in         = p_out;
         p_out        = tmp;
     }
-
-    ee_aes(mode, func, p_key, keylen, p_iv, p_in, n, p_out, p_tag, i);
-
+    dt = ee_aes(mode, func, p_key, keylen, p_iv, p_in, n, p_out, p_tag, i);
     if (verify)
     {
         /* Not all of these are used (ECB, CCM), but print them anyway. */
@@ -95,9 +93,10 @@ ee_bench_aes(ee_aes_mode_t mode,
         ee_printmemline(p_out, n, "m-bench-aes-out-");
         ee_printmemline(p_tag, EE_AES_TAGLEN, "m-bench-aes-tag-");
     }
+    return dt;
 }
 
-void
+uint32_t
 ee_bench_chachapoly(ee_chachapoly_func_t func, int n, int i, bool verify)
 {
     uint8_t *p_key = th_buffer_address();
@@ -105,11 +104,11 @@ ee_bench_chachapoly(ee_chachapoly_func_t func, int n, int i, bool verify)
     uint8_t *p_in  = p_iv + EE_CHACHAPOLY_IVLEN;
     uint8_t *p_out = p_in + n;
     uint8_t *p_tag = p_out + n;
+    uint32_t dt;
 
     fill_rand(p_key, EE_CHACHAPOLY_KEYLEN);
     fill_rand(p_iv, EE_CHACHAPOLY_IVLEN);
     fill_rand(p_in, n);
-
     if (func == EE_CHACHAPOLY_DEC)
     {
         /* Encrypt something for the decrypt loop to decrypt */
@@ -121,9 +120,7 @@ ee_bench_chachapoly(ee_chachapoly_func_t func, int n, int i, bool verify)
         p_in         = p_out;
         p_out        = tmp;
     }
-
-    ee_chachapoly(func, p_key, p_iv, p_in, n, p_out, p_tag, i);
-
+    dt = ee_chachapoly(func, p_key, p_iv, p_in, n, p_out, p_tag, i);
     if (verify)
     {
         ee_printmemline(p_key, EE_CHACHAPOLY_KEYLEN, "m-bench-chachapoly-key-");
@@ -132,17 +129,21 @@ ee_bench_chachapoly(ee_chachapoly_func_t func, int n, int i, bool verify)
         ee_printmemline(p_out, n, "m-bench-chachapoly-out-");
         ee_printmemline(p_tag, EE_AES_TAGLEN, "m-bench-chachapoly-tag-");
     }
+    return dt;
 }
 
-void
+uint32_t
 ee_bench_ecdh(ee_ecdh_group_t g, uint_fast32_t i, bool verify)
 {
+    uint32_t  t0       = 0;
+    uint32_t  t1       = 0;
     uint32_t *p_publen = (uint32_t *)th_buffer_address();
     /* The host will send data in BE if it is not an octet stream. */
-    *p_publen          = EE_FIX_ENDIAN(*p_publen);
-    if (*p_publen > 0x80000) {
+    *p_publen = EE_FIX_ENDIAN(*p_publen);
+    if (*p_publen > 0x80000)
+    {
         th_printf("e-[Possible incorrect endian configuration]\r\n");
-        return;
+        return 0;
     }
     uint8_t * p_pub    = (uint8_t *)p_publen + sizeof(uint32_t);
     uint32_t *p_seclen = (uint32_t *)(p_pub + *p_publen);
@@ -160,14 +161,14 @@ ee_bench_ecdh(ee_ecdh_group_t g, uint_fast32_t i, bool verify)
     th_ecdh_set_peer_public_key(p_context, p_pub, *p_publen);
     th_printf("m-ecdh-%s-iter[%d]\r\n", ee_ecdh_group_names[g], i);
     th_printf("m-ecdh-%s-start\r\n", ee_ecdh_group_names[g]);
-    th_timestamp();
+    t0 = th_timestamp();
     th_pre();
     do
     {
         ret = th_ecdh_calc_secret(p_context, p_sec, p_seclen);
     } while (--i > 0 && ret == EE_STATUS_OK);
     th_post();
-    th_timestamp();
+    t1 = th_timestamp();
     th_printf("m-ecdh-%s-finish\r\n", ee_ecdh_group_names[g]);
     th_ecdh_get_public_key(p_context, p_dutpub, &dutpublen);
     th_ecdh_destroy(p_context);
@@ -182,14 +183,17 @@ ee_bench_ecdh(ee_ecdh_group_t g, uint_fast32_t i, bool verify)
         ee_printmemline(p_dutpub, dutpublen, "m-bench-ecdh-public-");
         ee_printmemline(p_sec, *p_seclen, "m-bench-ecdh-secret-");
     }
+    return t1 - t0;
 }
 
-void
+uint32_t
 ee_bench_ecdsa_sign(ee_ecdh_group_t g,
                     uint_fast32_t   n,
                     uint_fast32_t   i,
                     bool            verify)
 {
+    uint32_t t0 = 0;
+    uint32_t t1 = 0;
     /* Sig will be ASN.1 so may vary, just put some reasonable values. */
     uint_fast32_t publen = 256;
     uint_fast32_t siglen = 256;
@@ -206,14 +210,14 @@ ee_bench_ecdsa_sign(ee_ecdh_group_t g,
     th_ecdsa_create(&p_context, g);
     th_printf("m-ecdsa-%s-sign-iter[%d]\r\n", ee_ecdh_group_names[g], i);
     th_printf("m-ecdsa-%s-sign-start\r\n", ee_ecdh_group_names[g]);
-    th_timestamp();
+    t0 = th_timestamp();
     th_pre();
     do
     {
         ret = th_ecdsa_sign(p_context, p_msg, n, p_sig, &siglen);
     } while (--i > 0 && ret == EE_STATUS_OK);
     th_post();
-    th_timestamp();
+    t1 = th_timestamp();
     th_printf("m-ecdsa-%s-sign-finish\r\n", ee_ecdh_group_names[g]);
     th_ecdsa_get_public_key(p_context, p_pub, &publen);
     th_ecdsa_destroy(p_context);
@@ -229,21 +233,26 @@ ee_bench_ecdsa_sign(ee_ecdh_group_t g,
         ee_printmemline(p_sig, siglen, "m-ecdsa-sign-signature-");
         ee_printmemline(p_pub, publen, "m-ecdsa-sign-pubkey-");
     }
+
+    return t1 - t0;
 }
 
-void
+uint32_t
 ee_bench_ecdsa_verify(ee_ecdh_group_t g,
                       uint_fast32_t   n,
                       uint_fast32_t   i,
                       bool            verify)
 {
+    uint32_t  t0       = 0;
+    uint32_t  t1       = 0;
     uint8_t * p_msg    = th_buffer_address();
     uint32_t *p_publen = (uint32_t *)(p_msg + n);
     /* The host will send data in BE if it is not an octet stream. */
-    *p_publen          = EE_FIX_ENDIAN(*p_publen);
-    if (*p_publen > 0x80000) {
+    *p_publen = EE_FIX_ENDIAN(*p_publen);
+    if (*p_publen > 0x80000)
+    {
         th_printf("e-[Possible incorrect endian configuration]\r\n");
-        return;
+        return 0;
     }
     uint8_t * p_pub    = (uint8_t *)p_publen + sizeof(uint32_t);
     uint32_t *p_siglen = (uint32_t *)(p_pub + *p_publen);
@@ -258,14 +267,14 @@ ee_bench_ecdsa_verify(ee_ecdh_group_t g,
     th_ecdsa_set_public_key(p_ctx, p_pub, *p_publen);
     th_printf("m-ecdsa-%s-verify-iter[%d]\r\n", ee_ecdh_group_names[g], i);
     th_printf("m-ecdsa-%s-verify-start\r\n", ee_ecdh_group_names[g]);
-    th_timestamp();
+    t0 = th_timestamp();
     th_pre();
     do
     {
         ret = th_ecdsa_verify(p_ctx, p_msg, n, p_sig, *p_siglen);
     } while (--i > 0 && ret == EE_STATUS_OK);
     th_post();
-    th_timestamp();
+    t1 = th_timestamp();
     th_printf("m-ecdsa-%s-verify-finish\r\n", ee_ecdh_group_names[g]);
     th_ecdsa_destroy(p_ctx);
 
@@ -278,18 +287,22 @@ ee_bench_ecdsa_verify(ee_ecdh_group_t g,
         ee_printmemline(p_pub, *p_publen, "m-ecdsa-sign-pubkey-");
         th_printf("m-ecdsa-sign-passfail-%d\r\n", *p_passfail);
     }
+    return t1 - t0;
 }
 
-void
+uint32_t
 ee_bench_rsa_verify(ee_rsa_id_t id, unsigned int n, unsigned int i, bool verify)
 {
+    uint32_t  t0       = 0;
+    uint32_t  t1       = 0;
     uint8_t * p_msg    = th_buffer_address();
     uint32_t *p_publen = (uint32_t *)(p_msg + n);
     /* The host will send data in BE if it is not an octet stream. */
-    *p_publen          = EE_FIX_ENDIAN(*p_publen);
-    if (*p_publen > 0x80000) {
+    *p_publen = EE_FIX_ENDIAN(*p_publen);
+    if (*p_publen > 0x80000)
+    {
         th_printf("e-[Possible incorrect endian configuration]\r\n");
-        return;
+        return 0;
     }
     uint8_t * p_pub    = (uint8_t *)p_publen + sizeof(uint32_t);
     uint32_t *p_siglen = (uint32_t *)(p_pub + *p_publen);
@@ -302,14 +315,14 @@ ee_bench_rsa_verify(ee_rsa_id_t id, unsigned int n, unsigned int i, bool verify)
 
     th_rsa_create(&p_context);
     th_rsa_set_public_key(p_context, p_pub, *p_publen);
-    th_timestamp();
+    t0 = th_timestamp();
     th_pre();
     do
     {
         ret = th_rsa_verify(p_context, p_msg, n, p_sig, *p_siglen);
     } while (--i > 0 && ret == EE_STATUS_OK);
     th_post();
-    th_timestamp();
+    t1 = th_timestamp();
     th_rsa_destroy(p_context);
 
     *p_passfail = ret == EE_STATUS_OK ? 1 : 0;
@@ -321,6 +334,7 @@ ee_bench_rsa_verify(ee_rsa_id_t id, unsigned int n, unsigned int i, bool verify)
         ee_printmemline(p_sig, *p_siglen, "m-bench-rsa-sig-");
         th_printf("m-ecdsa-sign-passfail-%d\r\n", *p_passfail);
     }
+    return t1 - t0;
 }
 
 arg_claimed_t

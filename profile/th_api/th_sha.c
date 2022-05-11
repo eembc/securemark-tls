@@ -27,9 +27,7 @@ th_sha_init(void *p_context)
 }
 
 ee_status_t
-th_sha_process(void *         p_context,
-               const uint8_t *p_in,
-               uint_fast32_t  len)
+th_sha_process(void *p_context, const uint8_t *p_in, uint_fast32_t len)
 {
 #warning "th_sha_process not implemented"
     return EE_STATUS_OK;

@@ -60,57 +60,23 @@
 /* `1` to turn on debugging messages */
 #define DEBUG_VERIFY 0
 /* Only run a single iteration of each task (for debug) */
-#define DO_SINGLE 0
-/* All wrapper functions fit this prototype (n=dataset octets, i=iterations) */
-typedef uint16_t wrapper_function_t(unsigned int n, unsigned int i);
-/**
- * This variable indicates that timestamps should be ignored. It is used when
- * performing composite operations with multiple primitives that generate
- * multiple timestamps. For example, encrypting before a decrypt. Porting
- * developers do not need to worry about this.
- */
-/* defined in th_api/th_lib.c */
-extern bool g_mute_timestamps;
-
-/** TIMESTAMP IMPLEMENTATION **************************************************/
-
-/**
- * The framework expects an external agent to monitor the timestamp message.
- * Since there is no external agent, create a local stack of stamps.
- */
-static uint64_t g_timestamps[MAX_TIMESTAMPS];
-static size_t   g_stamp_idx = 0;
-
-void
-push_timestamp(uint64_t us)
+#define CRC_ONLY 0
+/* All wrapper functions fit this prototype (dataset octets, iterations, res) */
+typedef struct
 {
-    assert(g_stamp_idx < MAX_TIMESTAMPS);
-    g_timestamps[g_stamp_idx] = us;
-    ++g_stamp_idx;
-}
-
-void
-clear_timestamps(void)
-{
-    g_stamp_idx = 0;
-    /*@-redef*/ /*@-retvalother*/
-    th_memset(g_timestamps, 0, MAX_TIMESTAMPS * sizeof(uint64_t));
-}
+    uint16_t crc;
+    uint32_t dt;
+} wres_t;
+typedef void wrapper_function_t(uint32_t, uint32_t, wres_t *);
 
 /**
- * Here we have completely redfined th_timestamp. Instead of generating a
- * GPIO, it issues a string (optional, since there is nothing to read it),
- * but it also pushes a timestamp to the g_timestamps array for later
- * retrieval.
+ * @brief Generate a timestamp for performance compuation. Since we are running
+ * self-hosted, there's no need for GPIO or an output message, just return
+ * the elapsedMicroSeconds.
  *
- * This example uses POSIX clock_gettime(). If your platform does not
- * support this function, implement something with at LEAST millisecond
- * accuracy. Do not remove the verify conditional or the push.
- *
- * In order to ensure the basic functionality remains untouched, only edit
- * the code in the "USER CODE" segments.
+ * @return uint32_t - Elapsed microseconds
  */
-void
+uint32_t
 th_timestamp(void)
 {
     // --- BEGIN USER CODE 1
@@ -118,39 +84,22 @@ th_timestamp(void)
     struct timespec t;
     /*@-unrecog*/
     clock_gettime(CLOCK_REALTIME, &t);
+    const unsigned long NSEC_PER_SEC      = 1000000000UL;
+    const unsigned long TIMER_RES_DIVIDER = 1000UL;
+    uint64_t            elapsedMicroSeconds;
+    /*@-usedef*/
+    elapsedMicroSeconds = t.tv_sec * (NSEC_PER_SEC / TIMER_RES_DIVIDER)
+                          + t.tv_nsec / TIMER_RES_DIVIDER;
 #elif _WIN32
     struct timeb t;
     uint64_t     elapsedMicroSeconds;
-
     ftime(&t);
+    elapsedMicroSeconds
+        = ((uint64_t)t.time) * 1000 * 1000 + ((uint64_t)t.millitm) * 1000;
 #else
 #error "Operating system not recognized"
 #endif
-    // --- END USER CODE 1
-    if (g_mute_timestamps)
-    {
-        return;
-    }
-    else
-    {
-        // --- BEGIN USER CODE 2
-#if (__linux__ || __APPLE__)
-        const unsigned long NSEC_PER_SEC      = 1000000000UL;
-        const unsigned long TIMER_RES_DIVIDER = 1000UL;
-        uint64_t            elapsedMicroSeconds;
-        /*@-usedef*/
-        elapsedMicroSeconds = t.tv_sec * (NSEC_PER_SEC / TIMER_RES_DIVIDER)
-                              + t.tv_nsec / TIMER_RES_DIVIDER;
-#elif _WIN32
-        elapsedMicroSeconds
-            = ((uint64_t)t.time) * 1000 * 1000 + ((uint64_t)t.millitm) * 1000;
-#else
-#error "Operating system not recognized"
-#endif
-        // --- END USER CODE 2
-        th_printf(EE_MSG_TIMESTAMP, elapsedMicroSeconds);
-        push_timestamp(elapsedMicroSeconds);
-    }
+    return elapsedMicroSeconds;
 }
 
 /** ERROR HANDLER **/
@@ -255,60 +204,58 @@ crcu16(uint16_t newval, uint16_t crc)
  * decryption.
  */
 
-uint16_t
-pre_wrap_sha(ee_sha_size_t size, unsigned int n, unsigned int i)
+void
+pre_wrap_sha(ee_sha_size_t size, uint32_t n, uint32_t i, wres_t *res)
 {
     uint8_t *p = th_buffer_address();
-    size_t   x;
-    uint16_t crc;
 
-    ee_bench_sha(size, n, i, DEBUG_VERIFY);
-    for (crc = 0, x = 0; x < (size / 8); ++x)
+    res->dt  = ee_bench_sha(size, n, i, DEBUG_VERIFY);
+    res->crc = 0;
+    for (size_t x = 0; x < (size / 8); ++x)
     {
-        crc = crcu16(crc, (uint8_t)(p + n)[x]);
+        res->crc = crcu16(res->crc, (uint8_t)(p + n)[x]);
     }
-    return crc;
 }
 
-#define MAKE_WRAP_SHA(x)                                 \
-    uint16_t wrap_sha##x(unsigned int n, unsigned int i) \
-    {                                                    \
-        return pre_wrap_sha(EE_SHA##x, n, i);            \
+#define MAKE_WRAP_SHA(x)                                  \
+    void wrap_sha##x(uint32_t n, uint32_t i, wres_t *res) \
+    {                                                     \
+        pre_wrap_sha(EE_SHA##x, n, i, res);               \
     }
 
 MAKE_WRAP_SHA(256)
 MAKE_WRAP_SHA(384)
 
-uint16_t
-pre_wrap_aes(ee_aes_mode_t mode,   // input: cipher mode
-             ee_aes_func_t func,   // input: func (EE_AES_ENC|EE_AES_DEC)
-             uint32_t      keylen, // input: length of key in bytes
-             uint32_t      n,      // input: length of input in bytes
-             uint32_t      i       // input: # of test iterations
-)
+void
+pre_wrap_aes(ee_aes_mode_t mode,
+             ee_aes_func_t func,
+             uint32_t      keylen,
+             uint32_t      n,
+             uint32_t      i,
+             wres_t *      res)
 {
     uint8_t *p_out;
     int      ivlen = mode == EE_AES_CTR ? EE_AES_CTR_IVLEN : EE_AES_AEAD_IVLEN;
-    uint16_t crc;
-    size_t   x;
 
-    p_out = th_buffer_address() + keylen + ivlen + n;
-    ee_bench_aes(mode, func, keylen, n, i, DEBUG_VERIFY);
-    for (crc = 0, x = 0; x < n; ++x)
+    p_out    = th_buffer_address() + keylen + ivlen + n;
+    res->dt  = ee_bench_aes(mode, func, keylen, n, i, DEBUG_VERIFY);
+    res->crc = 0;
+    for (size_t x = 0; x < n; ++x)
     {
-        crc = crcu16(crc, (uint8_t)p_out[x]);
+        res->crc = crcu16(res->crc, (uint8_t)p_out[x]);
     }
-    return crc;
 }
 
-#define MAKE_WRAP_AES(bits, MODE, nick)                                        \
-    uint16_t wrap_aes##bits##_##nick##_encrypt(unsigned int n, unsigned int i) \
-    {                                                                          \
-        return pre_wrap_aes(EE_AES_##MODE, EE_AES_ENC, bits / 8, n, i);        \
-    }                                                                          \
-    uint16_t wrap_aes##bits##_##nick##_decrypt(unsigned int n, unsigned int i) \
-    {                                                                          \
-        return pre_wrap_aes(EE_AES_##MODE, EE_AES_DEC, bits / 8, n, i);        \
+#define MAKE_WRAP_AES(bits, MODE, nick)                               \
+    void wrap_aes##bits##_##nick##_encrypt(                           \
+        uint32_t n, uint32_t i, wres_t *res)                          \
+    {                                                                 \
+        pre_wrap_aes(EE_AES_##MODE, EE_AES_ENC, bits / 8, n, i, res); \
+    }                                                                 \
+    void wrap_aes##bits##_##nick##_decrypt(                           \
+        uint32_t n, uint32_t i, wres_t *res)                          \
+    {                                                                 \
+        pre_wrap_aes(EE_AES_##MODE, EE_AES_DEC, bits / 8, n, i, res); \
     }
 
 MAKE_WRAP_AES(128, ECB, ecb)
@@ -319,41 +266,41 @@ MAKE_WRAP_AES(256, ECB, ecb)
 MAKE_WRAP_AES(256, CTR, ctr)
 MAKE_WRAP_AES(256, CCM, ccm)
 
-uint16_t
-pre_wrap_chachapoly(ee_chachapoly_func_t func, unsigned int n, unsigned int i)
+void
+pre_wrap_chachapoly(ee_chachapoly_func_t func,
+                    uint32_t             n,
+                    uint32_t             i,
+                    wres_t *             res)
 {
     uint8_t *p_out;
-    uint16_t crc;
-    size_t   x;
 
     assert(th_buffer_size() > (EE_CHACHAPOLY_KEYLEN + EE_CHACHAPOLY_IVLEN
                                + EE_CHACHAPOLY_TAGLEN + +n));
     p_out
         = th_buffer_address() + EE_CHACHAPOLY_KEYLEN + EE_CHACHAPOLY_IVLEN + n;
 
-    ee_bench_chachapoly(func, n, i, DEBUG_VERIFY);
-
-    for (crc = 0, x = 0; x < n; ++x)
+    res->dt  = ee_bench_chachapoly(func, n, i, DEBUG_VERIFY);
+    res->crc = 0;
+    for (size_t x = 0; x < n; ++x)
     {
-        crc = crcu16(crc, (uint8_t)p_out[x]);
+        res->crc = crcu16(res->crc, (uint8_t)p_out[x]);
     }
-    return crc;
 }
 
-uint16_t
-wrap_chachapoly_encrypt(unsigned int n, unsigned int i)
+void
+wrap_chachapoly_encrypt(uint32_t n, uint32_t i, wres_t *res)
 {
-    return pre_wrap_chachapoly(EE_CHACHAPOLY_ENC, n, i);
+    pre_wrap_chachapoly(EE_CHACHAPOLY_ENC, n, i, res);
 }
 
-uint16_t
-wrap_chachapoly_decrypt(unsigned int n, unsigned int i)
+void
+wrap_chachapoly_decrypt(uint32_t n, uint32_t i, wres_t *res)
 {
-    return pre_wrap_chachapoly(EE_CHACHAPOLY_DEC, n, i);
+    pre_wrap_chachapoly(EE_CHACHAPOLY_DEC, n, i, res);
 }
 
-uint16_t
-pre_wrap_ecdh(ee_ecdh_group_t g, unsigned int i)
+void
+pre_wrap_ecdh(ee_ecdh_group_t g, uint32_t i, wres_t *res)
 {
     uint32_t *p_publen = (uint32_t *)th_buffer_address();
     uint8_t * p_pub;
@@ -368,35 +315,35 @@ pre_wrap_ecdh(ee_ecdh_group_t g, unsigned int i)
 
     *p_seclen = 256; // Reasonably-sized space for the sig.
 
-    ee_bench_ecdh(g, i, DEBUG_VERIFY);
+    res->dt = ee_bench_ecdh(g, i, DEBUG_VERIFY);
     /* TODO: We don't have access to the private key so we cannot verify. */
-    return 0;
+    res->crc = 0;
 }
 
-#define MAKE_WRAP_ECDH(nick, group)                           \
-    uint16_t wrap_ecdh_##nick(unsigned int n, unsigned int i) \
-    {                                                         \
-        return pre_wrap_ecdh(group, i);                       \
+#define MAKE_WRAP_ECDH(nick, group)                            \
+    void wrap_ecdh_##nick(uint32_t n, uint32_t i, wres_t *res) \
+    {                                                          \
+        pre_wrap_ecdh(group, i, res);                          \
     }
 
 MAKE_WRAP_ECDH(p256r1, EE_P256R1)
 MAKE_WRAP_ECDH(p384, EE_P384)
 MAKE_WRAP_ECDH(x25519, EE_C25519)
 
-uint16_t
-pre_wrap_ecdsa_sign(ee_ecdh_group_t g, uint32_t i)
+void
+pre_wrap_ecdsa_sign(ee_ecdh_group_t g, uint32_t i, wres_t *res)
 {
     uint8_t  msglen = sizeof(g_dsa_message);
     uint8_t *msg    = th_buffer_address();
 
     th_memcpy(msg, g_dsa_message, msglen);
-    ee_bench_ecdsa_sign(g, msglen, i, false);
+    res->dt = ee_bench_ecdsa_sign(g, msglen, i, false);
     /* Since the DUT generates a new keypair every run, we can't CRC */
-    return 0;
+    res->crc = 0;
 }
 
-uint16_t
-pre_wrap_ecdsa_verify(ee_ecdh_group_t g, uint32_t i)
+void
+pre_wrap_ecdsa_verify(ee_ecdh_group_t g, uint32_t i, wres_t *res)
 {
     uint8_t   msglen = sizeof(g_dsa_message);
     uint8_t * msg    = th_buffer_address();
@@ -424,27 +371,27 @@ pre_wrap_ecdsa_verify(ee_ecdh_group_t g, uint32_t i)
     passfail  = sig + *siglen;
     *passfail = 0;
     /* This function calls the primitives and manages the buffer. */
-    ee_bench_ecdsa_verify(g, msglen, i, false);
+    res->dt = ee_bench_ecdsa_verify(g, msglen, i, false);
     /* No CRC here, just pass/fail, e.g. 1/0 */
-    return *passfail;
+    res->crc = *passfail;
 }
 
-#define MAKE_WRAP_ECDSA(nick, group)                                  \
-    uint16_t wrap_ecdsa_sign_##nick(unsigned int n, unsigned int i)   \
-    {                                                                 \
-        return pre_wrap_ecdsa_sign(group, i);                         \
-    }                                                                 \
-    uint16_t wrap_ecdsa_verify_##nick(unsigned int n, unsigned int i) \
-    {                                                                 \
-        return pre_wrap_ecdsa_verify(group, i);                       \
+#define MAKE_WRAP_ECDSA(nick, group)                                   \
+    void wrap_ecdsa_sign_##nick(uint32_t n, uint32_t i, wres_t *res)   \
+    {                                                                  \
+        pre_wrap_ecdsa_sign(group, i, res);                            \
+    }                                                                  \
+    void wrap_ecdsa_verify_##nick(uint32_t n, uint32_t i, wres_t *res) \
+    {                                                                  \
+        pre_wrap_ecdsa_verify(group, i, res);                          \
     }
 
 MAKE_WRAP_ECDSA(p256r1, EE_P256R1)
 MAKE_WRAP_ECDSA(p384, EE_P384)
 MAKE_WRAP_ECDSA(ed25519, EE_Ed25519)
 
-uint16_t
-pre_wrap_rsa_verify(ee_rsa_id_t id, unsigned int i)
+void
+pre_wrap_rsa_verify(ee_rsa_id_t id, uint32_t i, wres_t *res)
 {
     uint8_t   msglen = sizeof(g_dsa_message);
     uint8_t * msg    = th_buffer_address();
@@ -472,32 +419,32 @@ pre_wrap_rsa_verify(ee_rsa_id_t id, unsigned int i)
     passfail  = sig + *siglen;
     *passfail = 0;
     /* This function calls the primitives and manages the buffer. */
-    ee_bench_rsa_verify(id, msglen, i, false);
+    res->dt = ee_bench_rsa_verify(id, msglen, i, false);
     /* No CRC here, just pass/fail, e.g. 1/0 */
-    return *passfail;
+    res->crc = *passfail;
 }
 
-#define MAKE_WRAP_RSA(nick, id)                                     \
-    uint16_t wrap_rsa_verify_##nick(unsigned int n, unsigned int i) \
-    {                                                               \
-        return pre_wrap_rsa_verify(id, i);                          \
+#define MAKE_WRAP_RSA(nick, id)                                      \
+    void wrap_rsa_verify_##nick(uint32_t n, uint32_t i, wres_t *res) \
+    {                                                                \
+        pre_wrap_rsa_verify(id, i, res);                             \
     }
 
 MAKE_WRAP_RSA(2048, EE_RSA_2048)
 MAKE_WRAP_RSA(3072, EE_RSA_3072)
 MAKE_WRAP_RSA(4096, EE_RSA_4096)
 
-uint16_t
-wrap_variation_001(unsigned int n, unsigned int i)
+void
+wrap_variation_001(uint32_t n, uint32_t i, wres_t *res)
 {
-    n = 0; // unused
-    ee_variation_001(i);
+    n       = 0; /* unused */
+    res->dt = ee_variation_001(i);
     /**
      * There is no way to compute CRC without touching deeper code, but since
      * we've already exercised the primitives in the variation, we don't
      * actually need a CRC.
      */
-    return (uint16_t)0;
+    res->crc = 0;
 }
 
 /**
@@ -509,23 +456,22 @@ wrap_variation_001(unsigned int n, unsigned int i)
  * @return uint32_t - The number of iterations required
  */
 uint64_t
-tune_iterations(unsigned int n, wrapper_function_t *func)
+tune_iterations(uint32_t n, wrapper_function_t *func)
 {
     uint32_t eps   = 1;
     uint32_t mint  = 0;
-    uint64_t dt1   = 0;
-    uint64_t dt2   = 0;
+    uint32_t dt1   = 0;
+    uint32_t dt2   = 0;
     uint64_t guess = 1;
+    wres_t   res;
     /* This converges faster than previous method. */
     do
     {
         guess *= 10;
-        clear_timestamps();
-        (*func)(n, guess);
-        dt1 = (g_timestamps[1] - g_timestamps[0]) / 1e3;
-        clear_timestamps();
-        (*func)(n, guess);
-        dt2  = (g_timestamps[1] - g_timestamps[0]) / 1e3;
+        (*func)(n, guess, &res);
+        dt1 = res.dt / 1e3;
+        (*func)(n, guess, &res);
+        dt2  = res.dt / 1e3;
         eps  = (dt1 > dt2) ? (dt1 - dt2) : (dt2 - dt1);
         mint = (dt1 < dt2) ? dt1 : dt2;
     } while (eps > guess || dt1 < 100 || guess < MIN_ITER);
@@ -657,9 +603,9 @@ main(void)
 {
     size_t   i;
     uint64_t iterations;
-    uint64_t dt;
     float    component_score;
     float    score;
+    wres_t   res;
 
     setbuf(stdout, 0);
     /* N.B.: We use printf here rather than th_printf because we mute it to
@@ -680,22 +626,22 @@ main(void)
                g_task[i].name,
                g_task[i].n,
                g_task[i].weight);
-#if DO_SINGLE == 1
+#if DEBUG_VERIFY == 1
+        printf("\n");
+#endif
+        iterations = 0; /* avoid unused warning if CRC_ONLY */
+        /* CRC's are always computed with seed 0 */
         ee_srand(0); // CRCs are computed with seed 0
-        clear_timestamps();
-        g_task[i].actual_crc = (*g_task[i].func)(g_task[i].n, 1);
-        dt                   = 0;
-#else
-        // First, compute the correct # of iterations for each primitive
-        iterations = tune_iterations(g_task[i].n, g_task[i].func);
-        // Compute a CRC from a single iteration, also warm up the test
-        ee_srand(0); // CRCs are computed with seed 0
-        g_task[i].actual_crc = (*g_task[i].func)(g_task[i].n, 1);
-        // Now do a run with the correct number of iterations to get ips
-        clear_timestamps();
-        (*g_task[i].func)(g_task[i].n, iterations);
-        dt            = (g_timestamps[1] - g_timestamps[0]);
-        g_task[i].ips = (float)iterations / (dt / 1e6f);
+        (*g_task[i].func)(g_task[i].n, 1, &res);
+        g_task[i].actual_crc = res.crc;
+#if DEBUG_VERIFY == 0
+#if CRC_ONLY == 0
+        /* First, compute the correct # of iterations for each primitive. */
+        iterations           = tune_iterations(g_task[i].n, g_task[i].func);
+        g_task[i].actual_crc = res.crc;
+        /* Now do a run with the correct number of iterations to get ips */
+        (*g_task[i].func)(g_task[i].n, iterations, &res);
+        g_task[i].ips = (float)iterations / (res.dt / 1e6f);
 #endif
         /**
          * Generate the component and final scores.
@@ -714,13 +660,17 @@ main(void)
                    g_task[i].expected_crc,
                    g_task[i].actual_crc);
         }
-        if (dt < MIN_RUNTIME_USEC)
+#if CRC_ONLY == 0
+        if (res.dt < MIN_RUNTIME_USEC)
         {
-            printf(" ***ERROR: Not enough runtime %.3f sec.", dt / 1.0e6f);
+            printf(" ***ERROR: Not enough runtime %.3f sec.", res.dt / 1.0e6f);
         }
+#endif
         printf("\n");
+#endif /* DEBUG_VERIFY */
     }
     score = 1000.0f / score;
+    printf("\n");
     printf("SecureMark-TLS Score is %.3f marks\n", score);
     printf(
         "Disclaimer: this is not an official score. In order to submit an\n"

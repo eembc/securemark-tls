@@ -15,7 +15,7 @@
 /* This is an aesthetic decoder for log messages; must match ee_aes_mode_t */
 static const char *aes_cipher_mode_text[] = { "ecb", "ctr", "ccm", "gcm" };
 
-void
+uint32_t
 ee_aes(ee_aes_mode_t  mode,
        ee_aes_func_t  func,
        const uint8_t *p_key,
@@ -31,7 +31,9 @@ ee_aes(ee_aes_mode_t  mode,
     uint_fast32_t numblocks;
     uint_fast32_t i;
     uint_fast32_t j;
-    uint_fast16_t bits = keylen * 8;
+    uint32_t      t0   = 0;
+    uint32_t      t1   = 0;
+    uint16_t      bits = keylen * 8;
     const char *  m    = aes_cipher_mode_text[mode];
     ee_status_t   ret;
 
@@ -41,20 +43,20 @@ ee_aes(ee_aes_mode_t  mode,
         if (len < EE_AES_BLOCKLEN)
         {
             th_printf("e-aes%d_%s-[Input must be >=16 bytes]\r\n", bits, m);
-            return;
+            return 0;
         }
         numblocks = len / EE_AES_BLOCKLEN;
         if (len % EE_AES_BLOCKLEN != 0)
         {
             th_printf("e-aes%d_%s-[Input must be modulo 16]\r\n", bits, m);
-            return;
+            return 0;
         }
     }
 
     if (th_aes_create(&p_context, mode) != EE_STATUS_OK)
     {
         th_printf("e-aes%d_%s-[Failed to create context]\r\n", bits, m);
-        return;
+        return 0;
     }
 
     th_printf("m-aes%d_%s-iter[%d]\r\n", bits, m, iter);
@@ -62,7 +64,7 @@ ee_aes(ee_aes_mode_t  mode,
 
     if (func == EE_AES_ENC)
     {
-        th_timestamp();
+        t0 = th_timestamp();
         th_pre();
         while (iter-- > 0)
         {
@@ -124,13 +126,13 @@ ee_aes(ee_aes_mode_t  mode,
             }
         }
         th_post();
-        th_timestamp();
+        t1 = th_timestamp();
         th_printf("m-aes%d_%s-encrypt-finish\r\n", bits, m);
     }
     else
     {
         th_printf("m-aes%d_%s-decrypt-start\r\n", bits, m);
-        th_timestamp();
+        t0 = th_timestamp();
         th_pre();
         while (iter-- > 0)
         {
@@ -192,7 +194,7 @@ ee_aes(ee_aes_mode_t  mode,
             }
         }
         th_post();
-        th_timestamp();
+        t1 = th_timestamp();
         th_printf("m-aes%d_%s-decrypt-finish\r\n", bits, m);
     }
     goto exit;
@@ -206,4 +208,5 @@ err_dec_exit:
     goto exit;
 exit:
     th_aes_destroy(p_context);
+    return t1 - t0;
 }
