@@ -23,7 +23,6 @@
 typedef struct rsa_context_t
 {
     RsaKey *pubkey;
-    WC_RNG *rng;
 } rsa_context_t;
 
 #define FREE(x)         \
@@ -51,17 +50,16 @@ th_rsa_create(void **pp_context)
     th_memset(ctx, 0, sizeof(rsa_context_t));
 
     ctx->pubkey = (RsaKey *)th_malloc(sizeof(RsaKey));
-    ctx->rng    = (WC_RNG *)th_malloc(sizeof(WC_RNG));
 
-    if (!ctx->pubkey || !ctx->rng)
+    if (!ctx->pubkey)
     {
         th_printf("e-[th_rsa_create failed to malloc]\r\n");
         FREE(ctx->pubkey);
-        FREE(ctx->rng);
         FREE(ctx);
         return EE_STATUS_ERROR;
     }
 
+    // Initialize key structure to accept a key (not generating a pair)
     ret = wc_InitRsaKey_ex(ctx->pubkey, HEAP_HINT, DEVID);
     if (ret)
     {
@@ -118,6 +116,5 @@ th_rsa_destroy(void *p_context)
 {
     rsa_context_t *ctx = (rsa_context_t *)p_context;
     FREE(ctx->pubkey);
-    FREE(ctx->rng);
     FREE(ctx);
 }

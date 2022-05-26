@@ -165,6 +165,7 @@ error:
     th_printf("e-[th_ecdh_get_public_key: error %d]\r\n", ret);
     return EE_STATUS_ERROR;
 }
+
 ee_status_t
 th_ecdh_calc_secret(void *p_context, uint8_t *p_sec, uint_fast32_t *p_seclen)
 {
