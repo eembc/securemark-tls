@@ -50,7 +50,7 @@ ee_variation_001(unsigned int iterations)
     unsigned char  p_ct[VAR001_AES_SIZE];   // AES ciphertext
     unsigned char  p_key[AES_KEYSIZE];      // AES key
     size_t         idx;                     // Loop index
-    
+
     // Total number of bytes in the TLS handshake session-hash
     p_msg = (unsigned char *)th_malloc(VAR001_SESSION_SIZE);
     if (p_msg == NULL)
@@ -83,10 +83,10 @@ ee_variation_001(unsigned int iterations)
     {
         p_buf1 = p_msg; // p_buf1 creeps through the p_msg data
         p_buf2 = p_msg; // p_buf2 never moves, but use a diff name for clarity
-        
+
         CHECK(th_sha256_create(&p_csha1));
         CHECK(th_sha256_init(p_csha1));
-        
+
         // NOTE: All of these "magic numbers" are based on handshake analysis
 
         CHECK(th_sha256_process(p_csha1, p_buf1, 115)); p_buf1 += 115;
@@ -110,12 +110,14 @@ ee_variation_001(unsigned int iterations)
         CHECK(th_aes128_init(p_caes, p_key, AES_KEYSIZE, AES_ROUNDS, AES_ENC,
                              AES_ECB));
         CHECK(th_aes128_ecb_encrypt(p_caes, p_pt, p_ct));
+        th_aes128_deinit(p_caes, AES_ECB);
         th_aes128_destroy(p_caes, AES_ECB);
 
         CHECK(th_aes128_create(&p_caes, AES_ECB));
         CHECK(th_aes128_init(p_caes, p_key, AES_KEYSIZE, AES_ROUNDS, AES_ENC,
                              AES_ECB));
         CHECK(th_aes128_ecb_encrypt(p_caes, p_pt, p_ct));
+        th_aes128_deinit(p_caes, AES_ECB);
         th_aes128_destroy(p_caes, AES_ECB);
 
         CHECK(th_sha256_process(p_csha1, p_buf1,  16)); p_buf1 +=  16;
@@ -125,6 +127,7 @@ ee_variation_001(unsigned int iterations)
         CHECK(th_aes128_init(p_caes, p_key, AES_KEYSIZE, AES_ROUNDS, AES_ENC,
                              AES_ECB));
         CHECK(th_aes128_ecb_encrypt(p_caes, p_pt, p_ct));
+        th_aes128_deinit(p_caes, AES_ECB);
         th_aes128_destroy(p_caes, AES_ECB);
 
         CHECK(th_sha256_done(p_csha1, p_digest));

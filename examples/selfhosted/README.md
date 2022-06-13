@@ -40,14 +40,15 @@ This is to help verify the primitive SDK implementation is was done correctly.
 The `cmake` list file will build one of three options, depending on the following
 variables:
 
-`SELFHOSTED` - Builds a reference mbedTLS executable (mbedTLS source included)
+`SELFHOSTED` - Builds a reference mbedTLS executable (mbedTLS-2.4.2 source included)
+`PSA_MBEDTLS` - Builds a reference Arm PSA Crypto API 1.0 executable (mbedTLS-3.1.0 source included)
 `WOLFSSL` - Builds a reference wolfSSL executable (wolfSSL must be installed)
 default - Compiles and builds a library with the un-implemented functions
 
 ## Default `SELFHOSTED`: mbedTLS (2.4.2)
 
 This example uses `cmake`. The option `SELFHOSTED` enables the `EE_CFG_SELFHOSTED`
-flag in the code, and links in the local `profile/th_api` implementation (as
+flag in the code, and links in the local `profile/mbedtls_th_api` implementation (as
 well as `main.c`).
 
 ```
@@ -77,6 +78,48 @@ SecureMark-TLS Score is 112677.812 marks
 
 To compile the SecureMark-TLS benchmark on Windows using Visual Studio open 
 the Visual Studio project file at `visualc/sec-tls/sec-tls.vcxproj`.
+
+## PSA Crypto `PSA_MBEDTLS` self-hosted: mbedTLS (3.1.0)
+
+This example uses `cmake`. The option `PSA_MBEDTLS` enables the `EE_CFG_SELFHOSTED`
+flag in the code, and links in the local `profile/psa_crypto_th_api` implementation (as
+well as `main.c`). The included Mbed TLS 3.1.0 source was downloaded from Github
+(https://github.com/Mbed-TLS/mbedtls/tree/v3.1.0) and the following configuration files
+were changed, their originals are provided for convenience (suffix `_orig`):
+
+```
+`include/mbedtls/mbedtls_config.h`
+`include/psa/crypto_config.h`
+```
+
+To build, run `cmake` for SecureMark from this `examples/selfhosted` directory, 
+and execute the benchmark:
+
+```
+% mkdir build
+% cd build
+% cmake -PSA_MBEDTLS=1 ..
+% make
+% ./sec-tls
+Running each primitive for at least 10s or 10 iterations.
+Component #00 ips=    1332614.250 crc=0xc7b0 expected_crc=0xc7b0
+Component #01 ips=     788106.875 crc=0x5481 expected_crc=0x5481
+Component #02 ips=     737893.125 crc=0x998a expected_crc=0x998a
+Component #03 ips=    1089764.750 crc=0xd82d expected_crc=0xd82d
+Component #04 ips=     742346.625 crc=0x005b expected_crc=0x005b
+Component #05 ips=        731.236 crc=0xb659 expected_crc=0xb659
+Component #06 ips=       1877.058 crc=0x3a47 expected_crc=0x3a47
+Component #07 ips=        523.423 crc=0x3a47 expected_crc=0x3a47
+Component #08 ips=    6609670.500 crc=0x2151 expected_crc=0x2151
+Component #09 ips=    3183269.250 crc=0x3b3c expected_crc=0x3b3c
+Component #10 ips=     543877.250 crc=0x1d3f expected_crc=0x1d3f
+Component #11 ips=      76166.711 crc=0x0000 expected_crc=0x0000
+Component #12 ips=      49903.289 crc=0x9284 expected_crc=0x9284
+Component #13 ips=     202078.609 crc=0x989e expected_crc=0x989e
+SecureMark-TLS Score is 169532.562 marks
+Disclaimer: this is not an official score. In order to submit an
+official score, please contact support@eembc.org.
+```
 
 ## `WOLFSSL` self-hosted
 
