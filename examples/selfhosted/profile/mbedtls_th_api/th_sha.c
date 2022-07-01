@@ -12,8 +12,17 @@
 
 #include "mbedtls/mbedtls_config.h"
 #include "mbedtls/sha256.h"
+#include "mbedtls/sha512.h"
 
 #include "ee_sha.h"
+
+typedef struct {
+    ee_sha_size_t size;
+    union {
+        mbedtls_sha256_context sha256;
+        mbedtls_sha512_context sha512;
+    } ctx;
+} th_mbedtls_sha_context_t;
 
 /**
  * Create the context passed between functions.
@@ -21,16 +30,23 @@
  * return EE_STATUS_OK on success.
  */
 ee_status_t
-th_sha256_create(void **context)
+th_sha_create(void **pp_context, ee_sha_size_t size)
 {
-    mbedtls_sha256_context *sha256;
-    sha256 = th_malloc(sizeof(mbedtls_sha256_context));
-    if (!sha256)
+    th_mbedtls_sha_context_t *ctx;
+
+    if (size != EE_SHA256 && size != EE_SHA384)
     {
-        th_printf("e-[th_sha256_create malloc fail]\r\n");
+        th_printf("e-[th_sha_create unsupported size]\r\n");
         return EE_STATUS_ERROR;
     }
-    *context = (void *)sha256;
+    ctx = th_malloc(sizeof(th_mbedtls_sha_context_t));
+    if (!ctx)
+    {
+        th_printf("e-[th_sha_create malloc fail]\r\n");
+        return EE_STATUS_ERROR;
+    }
+    ctx->size = size;
+    *pp_context = (void *)ctx;
     return EE_STATUS_OK;
 }
 
@@ -40,11 +56,33 @@ th_sha256_create(void **context)
  * return EE_STATUS_OK on success.
  */
 ee_status_t
-th_sha256_init(void *context)
+th_sha_init(void *p_context)
 {
-    mbedtls_sha256_init((mbedtls_sha256_context *)context);
-    mbedtls_sha256_starts((mbedtls_sha256_context *)context,
-                          0 /* 0 for SHA-256 */);
+    int ret;
+    if (((th_mbedtls_sha_context_t*)(p_context))->size == EE_SHA256)
+    {
+        mbedtls_sha256_init(&((th_mbedtls_sha_context_t*)(p_context))->ctx.sha256);
+        ret = mbedtls_sha256_starts(&((th_mbedtls_sha_context_t*)(p_context))->ctx.sha256,
+                                    0 /* 0 for SHA-256 */);
+    }
+    else if (((th_mbedtls_sha_context_t*)(p_context))->size == EE_SHA384)
+    {
+        mbedtls_sha512_init(&((th_mbedtls_sha_context_t*)(p_context))->ctx.sha512);
+        ret = mbedtls_sha512_starts(&((th_mbedtls_sha_context_t*)(p_context))->ctx.sha512,
+                                    1 /* 1 for SHA-384 */);
+    }
+    else
+    {
+        th_printf("e-[th_sha_init unsupported size]\r\n");
+        return EE_STATUS_ERROR;
+    }
+
+    if (ret != 0)
+    {
+        th_printf("e-[th_sha_init: -0x%04x]\r\n", -ret);
+        return EE_STATUS_ERROR;
+    }
+
     return EE_STATUS_OK;
 }
 
@@ -54,12 +92,29 @@ th_sha256_init(void *context)
  * return EE_STATUS_OK on success.
  */
 ee_status_t
-th_sha256_process(void *         p_context, // input: portable context
-                  const uint8_t *p_in,      // input: data to hash
-                  uint_fast32_t  len        // input: length of data in bytes
-)
+th_sha_process(void *p_context, const uint8_t *p_in, uint_fast32_t len)
 {
-    mbedtls_sha256_update((mbedtls_sha256_context *)p_context, p_in, len);
+    int ret;
+    if (((th_mbedtls_sha_context_t*)(p_context))->size == EE_SHA256)
+    {
+        ret = mbedtls_sha256_update(&((th_mbedtls_sha_context_t*)(p_context))->ctx.sha256, p_in, len);
+    }
+    else if (((th_mbedtls_sha_context_t*)(p_context))->size == EE_SHA384)
+    {
+        ret = mbedtls_sha512_update(&((th_mbedtls_sha_context_t*)(p_context))->ctx.sha512, p_in, len);
+    }
+    else
+    {
+        th_printf("e-[th_sha_process unsupported size]\r\n");
+        return EE_STATUS_ERROR;
+    }
+
+    if (ret != 0)
+    {
+        th_printf("e-[th_sha_process: -0x%04x]\r\n", -ret);
+        return EE_STATUS_ERROR;
+    }
+
     return EE_STATUS_OK;
 }
 
@@ -69,9 +124,29 @@ th_sha256_process(void *         p_context, // input: portable context
  * return EE_STATUS_OK on success.
  */
 ee_status_t
-th_sha256_done(void *context, unsigned char *result)
+th_sha_done(void *p_context, uint8_t *p_result)
 {
-    mbedtls_sha256_finish((mbedtls_sha256_context *)context, result);
+    int ret;
+    if (((th_mbedtls_sha_context_t*)(p_context))->size == EE_SHA256)
+    {
+        ret = mbedtls_sha256_finish(&((th_mbedtls_sha_context_t*)(p_context))->ctx.sha256, p_result);
+    }
+    else if (((th_mbedtls_sha_context_t*)(p_context))->size == EE_SHA384)
+    {
+        ret = mbedtls_sha512_finish(&((th_mbedtls_sha_context_t*)(p_context))->ctx.sha512, p_result);
+    }
+    else
+    {
+        th_printf("e-[th_sha_done unsupported size]\r\n");
+        return EE_STATUS_ERROR;
+    }
+
+    if (ret != 0)
+    {
+        th_printf("e-[th_sha_done: -0x%04x]\r\n", -ret);
+        return EE_STATUS_ERROR;
+    }
+
     return EE_STATUS_OK;
 }
 
@@ -81,11 +156,7 @@ th_sha256_done(void *context, unsigned char *result)
  * return EE_STATUS_OK on success.
  */
 void
-th_sha256_destroy(void *context)
+th_sha_destroy(void *p_context)
 {
-    if (context != NULL)
-    {
-        th_free(context);
-        context = NULL;
-    }
+    th_free(p_context);
 }
