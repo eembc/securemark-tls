@@ -68,6 +68,12 @@ th_memcpy(void *dst, const void *src, size_t n)
 }
 
 void *
+th_memmove(void *dst, const void *src, size_t n)
+{
+    return memmove(dst, src, n);
+}
+
+void *
 th_malloc(size_t size)
 {
     return malloc(size);

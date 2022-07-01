@@ -28,6 +28,7 @@ char *th_strtok(/*@null@*/ char *str1, const char *sep);
 int   th_atoi(const char *str);
 void *th_memset(void *b, int c, size_t len);
 void *th_memcpy(void *dst, const void *src, size_t n);
+void *th_memmove(void *dst, const void *src, size_t n);
 /*@null@*/ /*@out@*/
 void *th_malloc(size_t size);
 /*@null@*/ /*@out@*/
