@@ -260,6 +260,8 @@ th_printf(const char *fmt, ...)
     /*@-retvalint*/
     th_vprintf(fmt, args);
     va_end(args);
+#else
+    (void) fmt;
 #endif
 }
 
@@ -533,6 +535,7 @@ wrap_ecdh(unsigned int n, unsigned int i)
     peerPublicXY  = g_ecc_peer_public_key;
     privkey       = g_ecc_private_key;
     g_verify_mode = false;
+    (void)n;
     ee_ecdh(peerPublicXY, ECC_QSIZE, privkey, ECC_DSIZE, shared, ECC_DSIZE, i);
     for (crc = 0, x = 0; x < ECC_DSIZE; ++x)
     {
@@ -545,6 +548,8 @@ uint16_t
 wrap_ecdsa_sign(unsigned int n, unsigned int i)
 {
     n = 0; // unused
+    (void)n;
+
     /**
      * ECDSA Sign & Verify a hash
      *
@@ -599,6 +604,7 @@ wrap_ecdsa_verify(unsigned int n, unsigned int i)
     uint16_t       crc;
 
     n = 0; // unused
+    (void)n;
 
     for (x = 0; x < HMAC_SIZE; ++x)
     {
@@ -627,6 +633,8 @@ uint16_t
 wrap_variation_001(unsigned int n, unsigned int i)
 {
     n             = 0; // unused
+    (void)n;
+
     g_verify_mode = false;
     ee_variation_001(i);
     /**
@@ -686,6 +694,8 @@ main(void)
     float  component_score;
     float  score;
 
+    th_buffer_initialize(); // added to run initialization
+
     printf("Running each primitive for at least %us or %u iterations.\n",
            MIN_RUNTIME_SEC,
            MIN_ITER);
@@ -722,10 +732,10 @@ main(void)
         {
             printf(" ***ERROR: CRCs did not match");
         }
-        printf("\n");
+        printf("\r\n");
     }
     score = 1000.0f / score;
-    printf("SecureMark-TLS Score is %.3f marks\n", score);
+    printf("SecureMark-TLS Score is %.3f marks\r\n", score);
     printf(
         "Disclaimer: this is not an official score. In order to submit an\n"
         "official score, please contact support@eembc.org.\n");

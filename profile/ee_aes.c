@@ -35,7 +35,7 @@ ee_aes128_ecb(
         th_printf("e-aes128_ecb-[Input must be >=%u bytes]\r\n", AES_BLOCKLEN);
         return;
     }
-    
+
     numblocks = len / AES_BLOCKLEN;
     if (len % AES_BLOCKLEN != 0) // Note: No padding
     {
@@ -77,6 +77,7 @@ ee_aes128_ecb(
                     goto exit;
                 }
             }
+            th_aes128_deinit(p_context, AES_ECB);
         }
         th_post();
         th_timestamp();
@@ -107,6 +108,7 @@ ee_aes128_ecb(
                     goto exit;
                 }
             }
+            th_aes128_deinit(p_context, AES_ECB);
         }
         th_post();
         th_timestamp();
