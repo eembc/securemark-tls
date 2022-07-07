@@ -24,12 +24,12 @@
  * return EE_STATUS_OK on success.
  */
 ee_status_t
-th_sha256_create(
-        void **context
-) {
+th_sha256_create(void **context)
+{
     psa_hash_operation_t *operation;
     operation = th_malloc(sizeof(psa_hash_operation_t));
-    if (! operation) {
+    if (!operation)
+    {
         th_printf("e-sha256-?malloc\r\n");
         return EE_STATUS_ERROR;
     }
@@ -43,11 +43,10 @@ th_sha256_create(
  * return EE_STATUS_OK on success.
  */
 ee_status_t
-th_sha256_init(
-        void *context
-) {
-    psa_hash_operation_t *operation = (psa_hash_operation_t *) context;
-    *operation = psa_hash_operation_init();
+th_sha256_init(void *context)
+{
+    psa_hash_operation_t *operation = (psa_hash_operation_t *)context;
+    *operation                      = psa_hash_operation_init();
     psa_hash_setup(operation, PSA_ALG_SHA_256);
     return EE_STATUS_OK;
 }
@@ -58,14 +57,12 @@ th_sha256_init(
  * return EE_STATUS_OK on success.
  */
 ee_status_t
-th_sha256_process(
-        void *context,
-        const unsigned char *in,
-        unsigned int size
-) {
+th_sha256_process(void *context, const unsigned char *in, unsigned int size)
+{
     psa_hash_operation_t *operation = (psa_hash_operation_t *)context;
-    psa_status_t status = psa_hash_update(operation, in, size);
-    if (status) return EE_STATUS_ERROR;
+    psa_status_t          status    = psa_hash_update(operation, in, size);
+    if (status)
+        return EE_STATUS_ERROR;
 
     return EE_STATUS_OK;
 }
@@ -76,14 +73,13 @@ th_sha256_process(
  * return EE_STATUS_OK on success.
  */
 ee_status_t
-th_sha256_done(
-        void *context,
-        unsigned char *result
-) {
+th_sha256_done(void *context, unsigned char *result)
+{
     psa_hash_operation_t *operation = (psa_hash_operation_t *)context;
-    size_t length = PSA_HASH_LENGTH(PSA_ALG_SHA_256);
+    size_t                length    = PSA_HASH_LENGTH(PSA_ALG_SHA_256);
     psa_status_t status = psa_hash_finish(operation, result, length, &length);
-    if (status) return EE_STATUS_ERROR;
+    if (status)
+        return EE_STATUS_ERROR;
 
     return EE_STATUS_OK;
 }
@@ -94,10 +90,10 @@ th_sha256_done(
  * return EE_STATUS_OK on success.
  */
 void
-th_sha256_destroy(
-        void *context
-) {
-    if (context != NULL) {
+th_sha256_destroy(void *context)
+{
+    if (context != NULL)
+    {
         th_free(context);
         context = NULL;
     }

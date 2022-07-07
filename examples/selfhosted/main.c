@@ -261,7 +261,7 @@ th_printf(const char *fmt, ...)
     th_vprintf(fmt, args);
     va_end(args);
 #else
-    (void) fmt;
+    (void)fmt;
 #endif
 }
 
@@ -632,7 +632,7 @@ wrap_ecdsa_verify(unsigned int n, unsigned int i)
 uint16_t
 wrap_variation_001(unsigned int n, unsigned int i)
 {
-    n             = 0; // unused
+    n = 0; // unused
     (void)n;
 
     g_verify_mode = false;

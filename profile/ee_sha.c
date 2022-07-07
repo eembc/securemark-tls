@@ -16,11 +16,10 @@
  * Runs a SHA-256 hash on an input message a given number of times.
  */
 void
-ee_sha256(
-    const unsigned char *p_in,      // input: bytes to hash
-    unsigned int         len,       // input: length of input in bytes
-    unsigned char       *p_result,  // output: resulting digest
-    unsigned int         iterations // input: # of test iterations
+ee_sha256(const unsigned char *p_in,      // input: bytes to hash
+          unsigned int         len,       // input: length of input in bytes
+          unsigned char *      p_result,  // output: resulting digest
+          unsigned int         iterations // input: # of test iterations
 )
 {
     void *p_context; // Generic context if needed by implementation

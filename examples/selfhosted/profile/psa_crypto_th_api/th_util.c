@@ -19,9 +19,11 @@
 #include "psa/crypto.h"
 
 #ifdef MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
-psa_status_t mbedtls_psa_external_get_random(
-    mbedtls_psa_external_random_context_t *context,
-    uint8_t *output, size_t output_size, size_t *output_length )
+psa_status_t
+mbedtls_psa_external_get_random(mbedtls_psa_external_random_context_t *context,
+                                uint8_t *                              output,
+                                size_t  output_size,
+                                size_t *output_length)
 {
     memset(output, 0xAA, output_size);
     *output_length = output_size;
@@ -39,19 +41,25 @@ static unsigned char g_generic_buffer[BUFFER_SIZE];
  * certain features (like UART) to save power during the loop.
  */
 
-void th_pre(void) {
+void
+th_pre(void)
+{
 }
 
-void th_post(void) {
+void
+th_post(void)
+{
 }
 
 /**
  * PORTME: If you opt to not use the heap, set up the buffer here.
  */
 void
-th_buffer_initialize(void) {
+th_buffer_initialize(void)
+{
     psa_status_t status = psa_crypto_init();
-    if (status) printf("psa_crypto_init failed with status %i.\r\n", status);
+    if (status)
+        printf("psa_crypto_init failed with status %i.\r\n", status);
 }
 
 /**
@@ -60,7 +68,8 @@ th_buffer_initialize(void) {
  * will always check to make sure it is suitably sized.
  */
 unsigned char *
-th_buffer_address(void) {
+th_buffer_address(void)
+{
     return g_generic_buffer;
 }
 
@@ -68,6 +77,7 @@ th_buffer_address(void) {
  * PORTME: If you opt to do a malloc, be sure to return the size here
  */
 size_t
-th_buffer_size(void) {
+th_buffer_size(void)
+{
     return BUFFER_SIZE;
 }

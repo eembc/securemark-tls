@@ -16,7 +16,7 @@
 
 // Command buffer (incoming commands from host)
 static char volatile g_cmd_buf[EE_CMD_SIZE + 1];
-static int volatile  g_cmd_pos = 0;
+static int volatile g_cmd_pos = 0;
 /**
  * Since the serial port ISR may be connected before the loop is ready, this
  * flag turns off the parser until the main routine is ready.

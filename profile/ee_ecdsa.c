@@ -20,14 +20,13 @@
  * PRIVATE: 32B secret
  */
 void
-ee_ecdsa_sign(
-    unsigned char *p_hash,      // input: sha256 digest
-    unsigned int   hlen,        // input: length of digest in bytes
-    unsigned char *p_sig,       // output: signature
-    unsigned int  *p_slen,      // in/out: input=MAX slen, output=resultant
-    unsigned char *p_private,   // input: private key (from host)
-    unsigned int   plen,        // input: private key length in bytes
-    unsigned int   iterations   // input: # of test iterations
+ee_ecdsa_sign(unsigned char *p_hash, // input: sha256 digest
+              unsigned int   hlen,   // input: length of digest in bytes
+              unsigned char *p_sig,  // output: signature
+              unsigned int * p_slen, // in/out: input=MAX slen, output=resultant
+              unsigned char *p_private, // input: private key (from host)
+              unsigned int   plen,      // input: private key length in bytes
+              unsigned int   iterations // input: # of test iterations
 )
 {
     void *p_context; // Generic context if needed by implementation
@@ -73,14 +72,13 @@ exit:
  * PRIVATE: 32B secret
  */
 void
-ee_ecdsa_verify(
-    unsigned char *p_hash,      // input: sha256 digest
-    unsigned int   hlen,        // input: length of digest in bytes
-    unsigned char *p_sig,       // input: signature
-    unsigned int   slen,        // input: length of signature in bytes
-    unsigned char *p_private,   // input: private key (from host)
-    unsigned int   plen,        // input: private key length in bytes
-    unsigned int   iterations   // input: # of test iterations
+ee_ecdsa_verify(unsigned char *p_hash,    // input: sha256 digest
+                unsigned int   hlen,      // input: length of digest in bytes
+                unsigned char *p_sig,     // input: signature
+                unsigned int   slen,      // input: length of signature in bytes
+                unsigned char *p_private, // input: private key (from host)
+                unsigned int   plen,      // input: private key length in bytes
+                unsigned int   iterations // input: # of test iterations
 )
 {
     void *p_context; // Generic context if needed by implementation

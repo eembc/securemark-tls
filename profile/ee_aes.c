@@ -16,19 +16,18 @@
  * Perform an AES128 ECB mode operation a given number of times.
  */
 void
-ee_aes128_ecb(
-    unsigned char  *p_key,      // input: key
-    unsigned char  *p_in,       // input: pointer to source input (pt or ct)
-    unsigned int    len,        // input: length of input in bytes
-    unsigned char  *p_out,      // output: pointer to output buffer
-    aes_function_t  func,       // input: func (AES_ENC|AES_DEC)
-    unsigned int    iterations  // input: # of test iterations
+ee_aes128_ecb(unsigned char *p_key, // input: key
+              unsigned char *p_in,  // input: pointer to source input (pt or ct)
+              unsigned int   len,   // input: length of input in bytes
+              unsigned char *p_out, // output: pointer to output buffer
+              aes_function_t func,  // input: func (AES_ENC|AES_DEC)
+              unsigned int   iterations // input: # of test iterations
 )
 {
-    void         *p_context;    // Generic context if needed by implementation
-    unsigned int  numblocks;    // This wrapper uses fixed-size blocks
-    unsigned int  i;            // iteration index
-    unsigned int  j;            // iteration index
+    void *       p_context; // Generic context if needed by implementation
+    unsigned int numblocks; // This wrapper uses fixed-size blocks
+    unsigned int i;         // iteration index
+    unsigned int j;         // iteration index
 
     if (len < AES_BLOCKLEN)
     {
@@ -59,8 +58,9 @@ ee_aes128_ecb(
         th_pre();
         while (iterations-- > 0)
         {
-            if (th_aes128_init(p_context, p_key, AES_KEYSIZE, AES_ROUNDS, func,
-                               AES_ECB) != EE_STATUS_OK)
+            if (th_aes128_init(
+                    p_context, p_key, AES_KEYSIZE, AES_ROUNDS, func, AES_ECB)
+                != EE_STATUS_OK)
             {
                 th_post();
                 th_printf("e-aes128_ecb-[Failed to initialize]\r\n");
@@ -90,8 +90,9 @@ ee_aes128_ecb(
         th_pre();
         while (iterations-- > 0)
         {
-            if (th_aes128_init(p_context, p_key, AES_KEYSIZE, AES_ROUNDS, func,
-                               AES_ECB) != EE_STATUS_OK)
+            if (th_aes128_init(
+                    p_context, p_key, AES_KEYSIZE, AES_ROUNDS, func, AES_ECB)
+                != EE_STATUS_OK)
             {
                 th_post();
                 th_printf("e-aes128_ecb-[Failed to initialize]\r\n");
@@ -123,14 +124,14 @@ exit:
  */
 void
 ee_aes128_ccm(
-    unsigned char  *p_key,      // input: key
-    unsigned char  *p_iv,       // input: initialization vector
-    unsigned char  *p_in,       // input: pointer to source input (pt or ct)
-    unsigned int    len,        // input: length of input in bytes
-    unsigned char  *p_tag,      // inout: output in encrypt, input on decrypt
-    unsigned char  *p_out,      // output: pointer to output buffer
-    aes_function_t  func,       // input: func (AES_ENC|AES_DEC)
-    unsigned int    iterations  // input: # of test iterations
+    unsigned char *p_key,     // input: key
+    unsigned char *p_iv,      // input: initialization vector
+    unsigned char *p_in,      // input: pointer to source input (pt or ct)
+    unsigned int   len,       // input: length of input in bytes
+    unsigned char *p_tag,     // inout: output in encrypt, input on decrypt
+    unsigned char *p_out,     // output: pointer to output buffer
+    aes_function_t func,      // input: func (AES_ENC|AES_DEC)
+    unsigned int   iterations // input: # of test iterations
 )
 {
     void *p_context; // Generic context if needed by implementation
@@ -157,15 +158,22 @@ ee_aes128_ccm(
         th_pre();
         while (iterations-- > 0)
         {
-            if (th_aes128_init(p_context, p_key, AES_KEYSIZE, AES_ROUNDS, func,
-                               AES_CCM) != EE_STATUS_OK)
+            if (th_aes128_init(
+                    p_context, p_key, AES_KEYSIZE, AES_ROUNDS, func, AES_CCM)
+                != EE_STATUS_OK)
             {
                 th_post();
                 th_printf("e-aes128_ccm-[Failed to initialize]\r\n");
                 goto exit;
             }
-            if (th_aes128_ccm_encrypt(p_context, p_in, len, p_out, p_tag, 
-                                      AES_KEYSIZE, p_iv, AES_IVSIZE)
+            if (th_aes128_ccm_encrypt(p_context,
+                                      p_in,
+                                      len,
+                                      p_out,
+                                      p_tag,
+                                      AES_KEYSIZE,
+                                      p_iv,
+                                      AES_IVSIZE)
                 != EE_STATUS_OK)
             {
                 th_post();
@@ -185,15 +193,22 @@ ee_aes128_ccm(
         th_pre();
         while (iterations-- > 0)
         {
-            if (th_aes128_init(p_context, p_key, AES_KEYSIZE, AES_ROUNDS, func,
-                               AES_CCM) != EE_STATUS_OK)
+            if (th_aes128_init(
+                    p_context, p_key, AES_KEYSIZE, AES_ROUNDS, func, AES_CCM)
+                != EE_STATUS_OK)
             {
                 th_post();
                 th_printf("e-aes128_ccm-[Failed to initialize]\r\n");
                 goto exit;
             }
-            if (th_aes128_ccm_decrypt(p_context, p_in, len, p_out, p_tag,
-                                      AES_KEYSIZE, p_iv, AES_IVSIZE)
+            if (th_aes128_ccm_decrypt(p_context,
+                                      p_in,
+                                      len,
+                                      p_out,
+                                      p_tag,
+                                      AES_KEYSIZE,
+                                      p_iv,
+                                      AES_IVSIZE)
                 != EE_STATUS_OK)
             {
                 th_post();

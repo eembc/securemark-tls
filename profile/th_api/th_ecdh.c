@@ -18,11 +18,10 @@
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_ecdh_create(
-    void **p_context // output: portable context
+th_ecdh_create(void **p_context // output: portable context
 )
 {
-    #warning "th_ecdh_create not implemented"
+#warning "th_ecdh_create not implemented"
     return EE_STATUS_OK;
 }
 
@@ -32,16 +31,15 @@ th_ecdh_create(
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_ecdh_init(
-    void           *p_context, // input: portable context
-    ecdh_group_t    group,     // input: see `ecdh_group_t` for options
-    unsigned char  *p_private, // input: private key, from host
-    unsigned int    prilen,    // input: private key length in bytes
-    unsigned char  *p_public,  // input: peer public key, from host
-    unsigned int    publen     // input: peer public key length in bytes
+th_ecdh_init(void *         p_context, // input: portable context
+             ecdh_group_t   group,     // input: see `ecdh_group_t` for options
+             unsigned char *p_private, // input: private key, from host
+             unsigned int   prilen,    // input: private key length in bytes
+             unsigned char *p_public,  // input: peer public key, from host
+             unsigned int   publen     // input: peer public key length in bytes
 )
 {
-    #warning "th_ecdh_init not implemented"
+#warning "th_ecdh_init not implemented"
     return EE_STATUS_OK;
 }
 
@@ -51,13 +49,12 @@ th_ecdh_init(
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_ecdh_calc_secret(
-    void          *p_context,  // input: portable context
-    unsigned char *p_secret,   // output: shared secret
-    unsigned int   slen        // input: length of shared buffer in bytes
+th_ecdh_calc_secret(void *         p_context, // input: portable context
+                    unsigned char *p_secret,  // output: shared secret
+                    unsigned int slen // input: length of shared buffer in bytes
 )
 {
-    #warning "th_ecdh_calc_secret not implemented"
+#warning "th_ecdh_calc_secret not implemented"
     return EE_STATUS_OK;
 }
 
@@ -65,9 +62,8 @@ th_ecdh_calc_secret(
  * Destroy the context created earlier.
  */
 void
-th_ecdh_destroy(
-    void *p_context // input: portable context
+th_ecdh_destroy(void *p_context // input: portable context
 )
 {
-    #warning "th_ecdh_destroy not implemented"
+#warning "th_ecdh_destroy not implemented"
 }

@@ -18,8 +18,9 @@
 
 #include "ee_ecdh.h"
 
-typedef struct {
-    psa_key_id_t private_key;
+typedef struct
+{
+    psa_key_id_t  private_key;
     unsigned char public_key[65];
 } ecdh_p256_context;
 
@@ -29,12 +30,12 @@ typedef struct {
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_ecdh_create(
-    void **p_context // output: portable context
+th_ecdh_create(void **p_context // output: portable context
 )
 {
     *p_context = (ecdh_p256_context *)th_malloc(sizeof(ecdh_p256_context));
-    if (*p_context == NULL) {
+    if (*p_context == NULL)
+    {
         th_printf("e-[malloc() fail in th_ecdh_create\r\n");
         return EE_STATUS_ERROR;
     }
@@ -47,26 +48,28 @@ th_ecdh_create(
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_ecdh_init(
-    void           *p_context, // input: portable context
-    ecdh_group_t    group,     // input: see `ecdh_group_t` for options
-    unsigned char  *p_private, // input: private key, from host
-    unsigned int    prilen,    // input: private key length in bytes
-    unsigned char  *p_public,  // input: peer public key, from host
-    unsigned int    publen     // input: peer public key length in bytes
+th_ecdh_init(void *         p_context, // input: portable context
+             ecdh_group_t   group,     // input: see `ecdh_group_t` for options
+             unsigned char *p_private, // input: private key, from host
+             unsigned int   prilen,    // input: private key length in bytes
+             unsigned char *p_public,  // input: peer public key, from host
+             unsigned int   publen     // input: peer public key length in bytes
 )
 {
     ecdh_p256_context *p_ecdh = (ecdh_p256_context *)p_context;
 
-    if (group != EE_P256R1) {
+    if (group != EE_P256R1)
+    {
         th_printf("e-[Invalid ECC curve in th_ecdh_init]\r\n");
         return EE_STATUS_ERROR;
     }
-    if (prilen != 32) {
+    if (prilen != 32)
+    {
         th_printf("e-[Invalid private key length in th_ecdh_init]\r\n");
         return EE_STATUS_ERROR;
     }
-    if (publen != 64) {
+    if (publen != 64)
+    {
         th_printf("e-[Invalid public key length in th_ecdh_init]\r\n");
         return EE_STATUS_ERROR;
     }
@@ -76,10 +79,13 @@ th_ecdh_init(
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
 
     psa_set_key_algorithm(&attributes, PSA_ALG_ECDH);
-    psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+    psa_set_key_type(&attributes,
+                     PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DERIVE);
-    status = psa_import_key(&attributes, p_private, prilen, &p_ecdh->private_key);
-    if (status) return EE_STATUS_ERROR;
+    status
+        = psa_import_key(&attributes, p_private, prilen, &p_ecdh->private_key);
+    if (status)
+        return EE_STATUS_ERROR;
 
     memcpy(&p_ecdh->public_key[1], p_public, publen);
     p_ecdh->public_key[0] = 0x04;
@@ -92,28 +98,31 @@ th_ecdh_init(
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_ecdh_calc_secret(
-    void          *p_context,  // input: portable context
-    unsigned char *p_secret,   // output: shared secret
-    unsigned int   slen        // input: length of shared buffer in bytes
+th_ecdh_calc_secret(void *         p_context, // input: portable context
+                    unsigned char *p_secret,  // output: shared secret
+                    unsigned int slen // input: length of shared buffer in bytes
 )
 {
     ecdh_p256_context *p_ecdh = (ecdh_p256_context *)p_context;
 
-    if (slen != 32) {
+    if (slen != 32)
+    {
         th_printf("e-[Invalid buffer length in th_ecdh_init]\r\n");
         return EE_STATUS_ERROR;
     }
 
     psa_status_t status;
-    size_t length;
+    size_t       length;
 
-    status = psa_raw_key_agreement(
-            PSA_ALG_ECDH,
-            p_ecdh->private_key,
-            p_ecdh->public_key, sizeof p_ecdh->public_key,
-            p_secret, slen, &length);
-    if (status) return EE_STATUS_ERROR;
+    status = psa_raw_key_agreement(PSA_ALG_ECDH,
+                                   p_ecdh->private_key,
+                                   p_ecdh->public_key,
+                                   sizeof p_ecdh->public_key,
+                                   p_secret,
+                                   slen,
+                                   &length);
+    if (status)
+        return EE_STATUS_ERROR;
 
     return EE_STATUS_OK;
 }
@@ -122,8 +131,7 @@ th_ecdh_calc_secret(
  * Destroy the context created earlier.
  */
 void
-th_ecdh_destroy(
-    void *p_context // input: portable context
+th_ecdh_destroy(void *p_context // input: portable context
 )
 {
     ecdh_p256_context *p_ecdh_context = (ecdh_p256_context *)p_context;

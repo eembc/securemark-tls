@@ -22,8 +22,8 @@
 void th_pre(void);
 void th_post(void);
 
-void th_buffer_initialize(void);
-unsigned char * th_buffer_address(void);
-size_t th_buffer_size(void);
+void           th_buffer_initialize(void);
+unsigned char *th_buffer_address(void);
+size_t         th_buffer_size(void);
 
 #endif

@@ -13,7 +13,7 @@
 #include "th_util.h"
 
 // NOTE: Feel free to replace the static variable with any allocation scheme
-#define BUFFER_SIZE (1024*4)
+#define BUFFER_SIZE (1024 * 4)
 static unsigned char g_generic_buffer[BUFFER_SIZE];
 
 /**
@@ -22,17 +22,22 @@ static unsigned char g_generic_buffer[BUFFER_SIZE];
  * certain features (like UART) to save power during the loop.
  */
 
-void th_pre(void) {
+void
+th_pre(void)
+{
 }
 
-void th_post(void) {
+void
+th_post(void)
+{
 }
 
 /**
  * PORTME: If you opt to not use the heap, set up the buffer here.
  */
 void
-th_buffer_initialize(void) {
+th_buffer_initialize(void)
+{
 }
 
 /**
@@ -41,14 +46,16 @@ th_buffer_initialize(void) {
  * will always check to make sure it is suitably sized.
  */
 unsigned char *
-th_buffer_address(void) {
-	return g_generic_buffer;
+th_buffer_address(void)
+{
+    return g_generic_buffer;
 }
 
 /**
  * PORTME: If you opt to do a malloc, be sure to return the size here
  */
 size_t
-th_buffer_size(void) {
-	return BUFFER_SIZE;
+th_buffer_size(void)
+{
+    return BUFFER_SIZE;
 }
