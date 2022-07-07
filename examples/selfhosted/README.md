@@ -98,7 +98,7 @@ and execute the benchmark:
 ```
 % mkdir build
 % cd build
-% cmake -PSA_MBEDTLS=1 ..
+% cmake -DPSA_MBEDTLS=1 ..
 % make
 % ./sec-tls
 Running each primitive for at least 10s or 10 iterations.
