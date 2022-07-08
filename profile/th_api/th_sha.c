@@ -44,7 +44,7 @@ th_sha256_init(void *p_context // input: portable context
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_sha256_process(void *               p_context, // input: portable context
+th_sha256_process(void                *p_context, // input: portable context
                   const unsigned char *p_in,      // input: data to hash
                   unsigned int         len // input: length of data in bytes
 )
@@ -59,7 +59,7 @@ th_sha256_process(void *               p_context, // input: portable context
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_sha256_done(void *         p_context, // input: portable context
+th_sha256_done(void          *p_context, // input: portable context
                unsigned char *p_result   // output: digest, SHA_SIZE bytes
 )
 {

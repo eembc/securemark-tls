@@ -24,7 +24,7 @@
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_aes128_create(void **           p_context, // output: portable context
+th_aes128_create(void            **p_context, // output: portable context
                  aes_cipher_mode_t mode       // input: AES_ENC or AES_DEC
 )
 {
@@ -61,7 +61,7 @@ static psa_key_id_t key = PSA_KEY_ID_NULL;
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_aes128_init(void *               p_context, // input: portable context
+th_aes128_init(void                *p_context, // input: portable context
                const unsigned char *p_key,     // input: key
                unsigned int         keylen,    // input: length of key in bytes
                unsigned int         rounds,    // input: number of AES rounds
@@ -154,7 +154,7 @@ th_aes128_init(void *               p_context, // input: portable context
  * de-init before initializing again, without destroying the context.
  */
 void
-th_aes128_deinit(void *            p_context, // input: portable context
+th_aes128_deinit(void             *p_context, // input: portable context
                  aes_cipher_mode_t mode       // input: AES_ECB or AES_CCM
 )
 {
@@ -176,9 +176,9 @@ th_aes128_deinit(void *            p_context, // input: portable context
  */
 ee_status_t
 th_aes128_ecb_encrypt(
-    void *               p_context, // input: portable context
+    void                *p_context, // input: portable context
     const unsigned char *p_pt,      // input: plaintext (AES_BLOCKSIZE bytes)
-    unsigned char *      p_ct       // output: ciphertext (AES_BLOCKSIZE bytes)
+    unsigned char       *p_ct       // output: ciphertext (AES_BLOCKSIZE bytes)
 )
 {
     size_t                  length;
@@ -198,9 +198,9 @@ th_aes128_ecb_encrypt(
  */
 ee_status_t
 th_aes128_ecb_decrypt(
-    void *               p_context, // input: portable context
+    void                *p_context, // input: portable context
     const unsigned char *p_ct,      // input: ciphertext (AES_BLOCKSIZE bytes)
-    unsigned char *      p_pt       // output: plaintext (AES_BLOCKSIZE bytes)
+    unsigned char       *p_pt       // output: plaintext (AES_BLOCKSIZE bytes)
 )
 {
     size_t                  length;
@@ -219,7 +219,7 @@ th_aes128_ecb_decrypt(
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_aes128_ccm_encrypt(void *               p_context, // input: portable context
+th_aes128_ccm_encrypt(void                *p_context, // input: portable context
                       const unsigned char *p_pt,      // input: plaintext
                       unsigned int ptlen, // input: length of plaintext in bytes
                       unsigned char *p_ct,   // output: ciphertext
@@ -259,13 +259,13 @@ th_aes128_ccm_encrypt(void *               p_context, // input: portable context
  */
 ee_status_t
 th_aes128_ccm_decrypt(
-    void *               p_context, // input: portable context
+    void                *p_context, // input: portable context
     const unsigned char *p_ct,      // input: ciphertext
     unsigned int         ctlen,     // input: length of ciphertext in bytes
-    unsigned char *      p_pt,      // output: plaintext
-    unsigned char *      p_tag,     // input: tag
+    unsigned char       *p_pt,      // output: plaintext
+    unsigned char       *p_tag,     // input: tag
     unsigned int         taglen,    // input: tag length in bytes
-    unsigned char *      p_iv,      // input: initialization vector
+    unsigned char       *p_iv,      // input: initialization vector
     unsigned int         ivlen      // input: IV length in bytes
 )
 {
@@ -274,16 +274,24 @@ th_aes128_ccm_decrypt(
     size_t                length;
     status = psa_aead_set_lengths(operation, 0, ctlen);
     if (status)
+    {
         goto exit;
+    }
     status = psa_aead_set_nonce(operation, p_iv, ivlen);
     if (status)
+    {
         goto exit;
+    }
     status = psa_aead_update(operation, p_ct, ctlen, p_pt, ctlen, &length);
     if (status)
+    {
         goto exit;
+    }
     status = psa_aead_verify(operation, NULL, 0, &length, p_tag, taglen);
     if (status)
+    {
         goto exit;
+    }
     status = psa_destroy_key(key);
     if (status)
         return EE_STATUS_ERROR;
@@ -300,7 +308,7 @@ exit:
  * Indicate the mode that was used for _create()
  */
 void
-th_aes128_destroy(void *            p_context, // input: portable context
+th_aes128_destroy(void             *p_context, // input: portable context
                   aes_cipher_mode_t mode       // input: AES_ECB or AES_CCM
 )
 {

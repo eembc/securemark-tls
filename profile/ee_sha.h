@@ -24,7 +24,7 @@
 
 void ee_sha256(const unsigned char *p_in,     // input: bytes to hash
                unsigned int         len,      // input: length of input in bytes
-               unsigned char *      p_result, // output: resulting digest
+               unsigned char       *p_result, // output: resulting digest
                unsigned int         iterations // input: # of test iterations
 );
 
@@ -62,7 +62,7 @@ ee_status_t th_sha256_process(void *p_context, // input: portable context
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t th_sha256_done(
-    void *         p_context, // input: portable context
+    void          *p_context, // input: portable context
     unsigned char *p_result   // output: digest, SHA_SIZE bytes
 );
 

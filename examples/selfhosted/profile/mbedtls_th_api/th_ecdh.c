@@ -91,7 +91,7 @@ load_private_key(void *p_context, unsigned char *p_private, size_t prilen)
 {
     int                   ret;
     mbedtls_ecdh_context *p_ecdh;
-    mbedtls_ecp_group *   p_grp;
+    mbedtls_ecp_group    *p_grp;
 
     p_ecdh = (mbedtls_ecdh_context *)p_context;
     p_grp  = &p_ecdh->grp;
@@ -127,7 +127,7 @@ load_private_key(void *p_context, unsigned char *p_private, size_t prilen)
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_ecdh_init(void *         p_context, // input: portable context
+th_ecdh_init(void          *p_context, // input: portable context
              ecdh_group_t   group,     // input: see `ecdh_group_t` for options
              unsigned char *p_private, // input: private key, from host
              unsigned int   prilen,    // input: private key length in bytes
@@ -179,7 +179,7 @@ th_ecdh_init(void *         p_context, // input: portable context
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_ecdh_calc_secret(void *         p_context, // input: portable context
+th_ecdh_calc_secret(void          *p_context, // input: portable context
                     unsigned char *p_secret,  // output: shared secret
                     unsigned int slen // input: length of shared buffer in bytes
 )

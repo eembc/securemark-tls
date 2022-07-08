@@ -24,7 +24,7 @@
 typedef struct ecc_context
 {
     ecc_key *key;
-    WC_RNG * rng;
+    WC_RNG  *rng;
 } ecc_context;
 
 /**
@@ -36,8 +36,8 @@ ee_status_t
 th_ecdh_create(void **p_context // output: portable context
 )
 {
-    WC_RNG *     rng;
-    ecc_key *    key;
+    WC_RNG      *rng;
+    ecc_key     *key;
     ecc_context *ctx;
 
     key = (ecc_key *)th_malloc(sizeof(ecc_key));
@@ -79,7 +79,7 @@ th_ecdh_create(void **p_context // output: portable context
  * return EE_STATUS_OK on success.
  */
 ee_status_t
-load_public_peer_key(void *         p_context,
+load_public_peer_key(void          *p_context,
                      unsigned char *p_pub, /* raw X | Y */
                      size_t         publen)
 {
@@ -135,7 +135,7 @@ load_private_key(void *p_context, unsigned char *p_private, size_t prilen)
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_ecdh_init(void *         p_context, // input: portable context
+th_ecdh_init(void          *p_context, // input: portable context
              ecdh_group_t   group,     // input: see `ecdh_group_t` for options
              unsigned char *p_private, // input: private key, from host
              unsigned int   prilen,    // input: private key length in bytes
@@ -189,7 +189,7 @@ th_ecdh_init(void *         p_context, // input: portable context
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_ecdh_calc_secret(void *         p_context, // input: portable context
+th_ecdh_calc_secret(void          *p_context, // input: portable context
                     unsigned char *p_secret,  // output: shared secret
                     unsigned int slen // input: length of shared buffer in bytes
 )

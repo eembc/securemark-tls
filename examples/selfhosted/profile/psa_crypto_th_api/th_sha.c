@@ -30,7 +30,7 @@ th_sha256_create(void **context)
     operation = th_malloc(sizeof(psa_hash_operation_t));
     if (!operation)
     {
-        th_printf("e-sha256-?malloc\r\n");
+        th_printf("e-[malloc() fail in th_sha256_create]\r\n");
         return EE_STATUS_ERROR;
     }
     *context = (void *)operation;

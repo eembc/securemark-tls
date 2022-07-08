@@ -55,7 +55,7 @@ ee_status_t th_ecdh_create(void **p_context // output: portable context
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t th_ecdh_init(
-    void *         p_context, // input: portable context
+    void          *p_context, // input: portable context
     ecdh_group_t   group,     // input: see `ecdh_group_t` for options
     unsigned char *p_private, // input: private key, from host
     unsigned int   prilen,    // input: private key length in bytes
@@ -69,7 +69,7 @@ ee_status_t th_ecdh_init(
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t th_ecdh_calc_secret(
-    void *         p_context, // input: portable context
+    void          *p_context, // input: portable context
     unsigned char *p_secret,  // output: shared secret
     unsigned int   slen       // input: length of shared buffer in bytes
 );

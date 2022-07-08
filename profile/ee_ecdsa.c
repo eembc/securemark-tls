@@ -23,7 +23,7 @@ void
 ee_ecdsa_sign(unsigned char *p_hash, // input: sha256 digest
               unsigned int   hlen,   // input: length of digest in bytes
               unsigned char *p_sig,  // output: signature
-              unsigned int * p_slen, // in/out: input=MAX slen, output=resultant
+              unsigned int  *p_slen, // in/out: input=MAX slen, output=resultant
               unsigned char *p_private, // input: private key (from host)
               unsigned int   plen,      // input: private key length in bytes
               unsigned int   iterations // input: # of test iterations

@@ -24,7 +24,7 @@ ee_aes128_ecb(unsigned char *p_key, // input: key
               unsigned int   iterations // input: # of test iterations
 )
 {
-    void *       p_context; // Generic context if needed by implementation
+    void        *p_context; // Generic context if needed by implementation
     unsigned int numblocks; // This wrapper uses fixed-size blocks
     unsigned int i;         // iteration index
     unsigned int j;         // iteration index

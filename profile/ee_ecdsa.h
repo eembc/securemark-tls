@@ -34,7 +34,7 @@ void ee_ecdsa_sign(
     unsigned char *p_hash,    // input: sha256 digest
     unsigned int   hlen,      // input: length of digest in bytes
     unsigned char *p_sig,     // output: signature
-    unsigned int * p_slen,    // in/out: input=MAX slen, output=resultant
+    unsigned int  *p_slen,    // in/out: input=MAX slen, output=resultant
     unsigned char *p_private, // input: private key (from host)
     unsigned int   plen,      // input: private key length in bytes
     unsigned int   iterations // input: # of test iterations
@@ -73,7 +73,7 @@ ee_status_t th_ecdsa_create(void **p_context // output: portable context
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t th_ecdsa_init(
-    void *         p_context, // input: portable context
+    void          *p_context, // input: portable context
     ecdh_group_t   group,     // input: see `ecdh_group_t` for options
     unsigned char *p_private, // input: private key from host
     size_t         plen       // input: length of private key in bytes
@@ -85,11 +85,11 @@ ee_status_t th_ecdsa_init(
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t th_ecdsa_sign(
-    void *         p_context, // input: portable context
+    void          *p_context, // input: portable context
     unsigned char *p_hash,    // input: sha256 digest
     unsigned int   hlen,      // input: length of digest in bytes
     unsigned char *p_sig,     // output: signature
-    unsigned int * p_slen     // in/out: input=MAX slen, output=resultant
+    unsigned int  *p_slen     // in/out: input=MAX slen, output=resultant
 );
 
 /**
@@ -98,7 +98,7 @@ ee_status_t th_ecdsa_sign(
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t th_ecdsa_verify(
-    void *         p_context, // input: portable context
+    void          *p_context, // input: portable context
     unsigned char *p_hash,    // input: sha256 digest
     unsigned int   hlen,      // input: length of digest in bytes
     unsigned char *p_sig,     // output: signature

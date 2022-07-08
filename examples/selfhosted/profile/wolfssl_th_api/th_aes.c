@@ -27,7 +27,7 @@
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_aes128_create(void **           p_context, // output: portable context
+th_aes128_create(void            **p_context, // output: portable context
                  aes_cipher_mode_t mode       // input: AES_ENC or AES_DEC
 )
 {
@@ -47,7 +47,7 @@ th_aes128_create(void **           p_context, // output: portable context
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_aes128_init(void *               p_context, // input: portable context
+th_aes128_init(void                *p_context, // input: portable context
                const unsigned char *p_key,     // input: key
                unsigned int         keylen,    // input: length of key in bytes
                unsigned int         rounds,    // input: number of AES rounds
@@ -109,7 +109,7 @@ th_aes128_init(void *               p_context, // input: portable context
  * de-init before initializing again, without destroying the context.
  */
 void
-th_aes128_deinit(void *            p_context, // input: portable context
+th_aes128_deinit(void             *p_context, // input: portable context
                  aes_cipher_mode_t mode       // input: AES_ECB or AES_CCM
 )
 {
@@ -123,9 +123,9 @@ th_aes128_deinit(void *            p_context, // input: portable context
  */
 ee_status_t
 th_aes128_ecb_encrypt(
-    void *               p_context, // input: portable context
+    void                *p_context, // input: portable context
     const unsigned char *p_pt,      // input: plaintext (AES_BLOCKSIZE bytes)
-    unsigned char *      p_ct       // output: ciphertext (AES_BLOCKSIZE bytes)
+    unsigned char       *p_ct       // output: ciphertext (AES_BLOCKSIZE bytes)
 )
 {
     int ret;
@@ -145,9 +145,9 @@ th_aes128_ecb_encrypt(
  */
 ee_status_t
 th_aes128_ecb_decrypt(
-    void *               p_context, // input: portable context
+    void                *p_context, // input: portable context
     const unsigned char *p_ct,      // input: ciphertext (AES_BLOCKSIZE bytes)
-    unsigned char *      p_pt       // output: plaintext (AES_BLOCKSIZE bytes)
+    unsigned char       *p_pt       // output: plaintext (AES_BLOCKSIZE bytes)
 )
 {
     int ret;
@@ -166,7 +166,7 @@ th_aes128_ecb_decrypt(
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_aes128_ccm_encrypt(void *               p_context, // input: portable context
+th_aes128_ccm_encrypt(void                *p_context, // input: portable context
                       const unsigned char *p_pt,      // input: plaintext
                       unsigned int ptlen, // input: length of plaintext in bytes
                       unsigned char *p_ct,   // output: ciphertext
@@ -203,13 +203,13 @@ th_aes128_ccm_encrypt(void *               p_context, // input: portable context
  */
 ee_status_t
 th_aes128_ccm_decrypt(
-    void *               p_context, // input: portable context
+    void                *p_context, // input: portable context
     const unsigned char *p_ct,      // input: ciphertext
     unsigned int         ctlen,     // input: length of ciphertext in bytes
-    unsigned char *      p_pt,      // output: plaintext
-    unsigned char *      p_tag,     // input: tag
+    unsigned char       *p_pt,      // output: plaintext
+    unsigned char       *p_tag,     // input: tag
     unsigned int         taglen,    // input: tag length in bytes
-    unsigned char *      p_iv,      // input: initialization vector
+    unsigned char       *p_iv,      // input: initialization vector
     unsigned int         ivlen      // input: IV length in bytes
 )
 {
@@ -240,7 +240,7 @@ th_aes128_ccm_decrypt(
  * Indicate the mode that was used for _create()
  */
 void
-th_aes128_destroy(void *            p_context, // input: portable context
+th_aes128_destroy(void             *p_context, // input: portable context
                   aes_cipher_mode_t mode       // input: AES_ECB or AES_CCM
 )
 {

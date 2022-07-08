@@ -39,9 +39,9 @@ unsigned char ee_rand(void);
 void
 ee_variation_001(unsigned int iterations)
 {
-    void *         p_csha1 = NULL;        // SHA context 1
-    void *         p_csha2 = NULL;        // SHA context 2
-    void *         p_caes  = NULL;        // AES context
+    void          *p_csha1 = NULL;        // SHA context 1
+    void          *p_csha2 = NULL;        // SHA context 2
+    void          *p_caes  = NULL;        // AES context
     unsigned char *p_msg;                 // All bytes to hash
     unsigned char *p_buf1;                // SHA1's buffer
     unsigned char *p_buf2;                // SHA2's buffer

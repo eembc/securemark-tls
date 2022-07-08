@@ -21,7 +21,7 @@
 #ifdef MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
 psa_status_t
 mbedtls_psa_external_get_random(mbedtls_psa_external_random_context_t *context,
-                                uint8_t *                              output,
+                                uint8_t                               *output,
                                 size_t  output_size,
                                 size_t *output_length)
 {
@@ -59,7 +59,9 @@ th_buffer_initialize(void)
 {
     psa_status_t status = psa_crypto_init();
     if (status)
-        printf("psa_crypto_init failed with status %i.\r\n", status);
+    {
+        th_printf("e-[psa_crypto_init failed with status %i.]\r\n", status);
+    }
 }
 
 /**

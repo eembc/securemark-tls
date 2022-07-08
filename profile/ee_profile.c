@@ -107,7 +107,7 @@ void
 ee_printmem(unsigned char *addr, size_t len, char *user_header)
 {
     size_t i;
-    char * header;
+    char  *header;
     char   b;
 
     if (user_header == NULL)
@@ -162,7 +162,7 @@ void
 ee_printmem_be(unsigned char *p_addr, size_t len, char *p_user_header)
 {
     size_t i;
-    char * p_header;
+    char  *p_header;
     char   b;
 
     if (p_user_header == NULL)
