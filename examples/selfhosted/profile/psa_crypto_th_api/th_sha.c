@@ -62,7 +62,9 @@ th_sha256_process(void *context, const unsigned char *in, unsigned int size)
     psa_hash_operation_t *operation = (psa_hash_operation_t *)context;
     psa_status_t          status    = psa_hash_update(operation, in, size);
     if (status)
+    {
         return EE_STATUS_ERROR;
+    }
 
     return EE_STATUS_OK;
 }
@@ -79,7 +81,9 @@ th_sha256_done(void *context, unsigned char *result)
     size_t                length    = PSA_HASH_LENGTH(PSA_ALG_SHA_256);
     psa_status_t status = psa_hash_finish(operation, result, length, &length);
     if (status)
+    {
         return EE_STATUS_ERROR;
+    }
 
     return EE_STATUS_OK;
 }

@@ -85,7 +85,9 @@ th_ecdh_init(void          *p_context, // input: portable context
     status
         = psa_import_key(&attributes, p_private, prilen, &p_ecdh->private_key);
     if (status)
+    {
         return EE_STATUS_ERROR;
+    }
 
     memcpy(&p_ecdh->public_key[1], p_public, publen);
     p_ecdh->public_key[0] = 0x04;
@@ -122,7 +124,9 @@ th_ecdh_calc_secret(void          *p_context, // input: portable context
                                    slen,
                                    &length);
     if (status)
+    {
         return EE_STATUS_ERROR;
+    }
 
     return EE_STATUS_OK;
 }

@@ -87,11 +87,15 @@ th_aes128_init(void                *p_context, // input: portable context
             psa_set_key_bits(&attributes, 128);
             status = psa_import_key(&attributes, p_key, keylen, &key);
             if (status)
+            {
                 return EE_STATUS_ERROR;
+            }
             status = psa_cipher_encrypt_setup(
                 operation, key, PSA_ALG_ECB_NO_PADDING);
             if (status)
+            {
                 return EE_STATUS_ERROR;
+            }
         }
         else
         {
@@ -99,11 +103,15 @@ th_aes128_init(void                *p_context, // input: portable context
             psa_set_key_bits(&attributes, 128);
             status = psa_import_key(&attributes, p_key, keylen, &key);
             if (status)
+            {
                 return EE_STATUS_ERROR;
+            }
             status = psa_cipher_decrypt_setup(
                 operation, key, PSA_ALG_ECB_NO_PADDING);
             if (status)
+            {
                 return EE_STATUS_ERROR;
+            }
         }
     }
     else if (mode == AES_CCM)
@@ -121,10 +129,14 @@ th_aes128_init(void                *p_context, // input: portable context
             psa_set_key_bits(&attributes, 128);
             status = psa_import_key(&attributes, p_key, keylen, &key);
             if (status)
+            {
                 return EE_STATUS_ERROR;
+            }
             status = psa_aead_encrypt_setup(operation, key, PSA_ALG_CCM);
             if (status)
+            {
                 return EE_STATUS_ERROR;
+            }
         }
         else
         {
@@ -132,10 +144,14 @@ th_aes128_init(void                *p_context, // input: portable context
             psa_set_key_bits(&attributes, 128);
             status = psa_import_key(&attributes, p_key, keylen, &key);
             if (status)
+            {
                 return EE_STATUS_ERROR;
+            }
             status = psa_aead_decrypt_setup(operation, key, PSA_ALG_CCM);
             if (status)
+            {
                 return EE_STATUS_ERROR;
+            }
         }
     }
     else
@@ -186,7 +202,9 @@ th_aes128_ecb_encrypt(
     psa_status_t            status
         = psa_cipher_update(operation, p_pt, 16, p_ct, 16, &length);
     if (status)
+    {
         return EE_STATUS_ERROR;
+    }
 
     return EE_STATUS_OK;
 }
@@ -208,7 +226,9 @@ th_aes128_ecb_decrypt(
     psa_status_t            status
         = psa_cipher_update(operation, p_ct, 16, p_pt, 16, &length);
     if (status)
+    {
         return EE_STATUS_ERROR;
+    }
 
     return EE_STATUS_OK;
 }
@@ -234,20 +254,30 @@ th_aes128_ccm_encrypt(void                *p_context, // input: portable context
     size_t                length;
     status = psa_aead_set_lengths(operation, 0, ptlen);
     if (status)
+    {
         return EE_STATUS_ERROR;
+    }
     status = psa_aead_set_nonce(operation, p_iv, ivlen);
     if (status)
+    {
         return EE_STATUS_ERROR;
+    }
     status = psa_aead_update(operation, p_pt, ptlen, p_ct, ptlen, &length);
     if (status)
+    {
         return EE_STATUS_ERROR;
+    }
     status
         = psa_aead_finish(operation, NULL, 0, &length, p_tag, taglen, &length);
     if (status)
+    {
         return EE_STATUS_ERROR;
+    }
     status = psa_destroy_key(key);
     if (status)
+    {
         return EE_STATUS_ERROR;
+    }
 
     return EE_STATUS_OK;
 }
@@ -294,7 +324,9 @@ th_aes128_ccm_decrypt(
     }
     status = psa_destroy_key(key);
     if (status)
+    {
         return EE_STATUS_ERROR;
+    }
 
     return EE_STATUS_OK;
 exit:

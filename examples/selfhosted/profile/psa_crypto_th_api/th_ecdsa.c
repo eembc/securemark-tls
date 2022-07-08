@@ -82,12 +82,16 @@ th_ecdsa_init(void          *p_context, // input: portable context
     status
         = psa_import_key(&attributes, p_private, plen, &p_ecdsa->private_key);
     if (status)
+    {
         return EE_STATUS_ERROR;
+    }
 
     status = psa_export_public_key(
         p_ecdsa->private_key, key_data, sizeof key_data, &key_size);
     if (status)
+    {
         return EE_STATUS_ERROR;
+    }
 
     psa_set_key_type(&attributes,
                      PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1));
@@ -95,7 +99,9 @@ th_ecdsa_init(void          *p_context, // input: portable context
     status
         = psa_import_key(&attributes, key_data, key_size, &p_ecdsa->public_key);
     if (status)
+    {
         return EE_STATUS_ERROR;
+    }
 
     return EE_STATUS_OK;
 }
@@ -106,11 +112,12 @@ th_ecdsa_init(void          *p_context, // input: portable context
  * Return EE_STATUS_OK or EE_STATUS_ERROR.
  */
 ee_status_t
-th_ecdsa_sign(void          *p_context, // input: portable context
-              unsigned char *p_hash,    // input: sha256 digest
-              unsigned int   hlen,      // input: length of digest in bytes
-              unsigned char *p_sig,     // output: signature
-              unsigned int  *p_slen // in/out: input=MAX slen, output=resultant
+th_ecdsa_sign(
+    void               *p_context, // input: portable context
+    unsigned char      *p_hash,    // input: sha256 digest
+    unsigned int        hlen,      // input: length of digest in bytes
+    unsigned char      *p_sig,     // output: signature
+    const unsigned int *p_slen     // in/out: input=MAX slen, output=resultant
 )
 {
     ecdsa_p256_context *p_ecdsa = (ecdsa_p256_context *)p_context;
@@ -145,7 +152,9 @@ th_ecdsa_sign(void          *p_context, // input: portable context
                            *p_slen,
                            p_slen);
     if (status)
+    {
         return EE_STATUS_ERROR;
+    }
 #else
     size_t length;
     status = psa_sign_hash(p_ecdsa->private_key,
