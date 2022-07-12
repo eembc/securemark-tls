@@ -79,13 +79,13 @@ SecureMark-TLS Score is 112677.812 marks
 To compile the SecureMark-TLS benchmark on Windows using Visual Studio open 
 the Visual Studio project file at `visualc/sec-tls/sec-tls.vcxproj`.
 
-## PSA Crypto `PSA_MBEDTLS` self-hosted: mbedTLS (3.1.0)
+## PSA Crypto `PSA_MBEDTLS` self-hosted: mbedTLS (3.2.0)
 
 This example uses `cmake`. The option `PSA_MBEDTLS` enables the `EE_CFG_SELFHOSTED`
 flag in the code, and links in the local `profile/psa_crypto_th_api` implementation (as
-well as `main.c`). The included Mbed TLS 3.1.0 source was downloaded from Github
-(https://github.com/Mbed-TLS/mbedtls/tree/v3.1.0) and the following configuration files
-were changed, their originals are provided for convenience (suffix `_orig`):
+well as `main.c`). The included Mbed TLS 3.2.0 source was downloaded from Github
+(https://github.com/Mbed-TLS/mbedtls/tree/v3.2.0) and the following configuration files
+were changed:
 
 ```
 `include/mbedtls/mbedtls_config.h`
