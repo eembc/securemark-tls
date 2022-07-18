@@ -100,6 +100,7 @@ elseif(PSA_MBEDTLS)
             profile/psa_crypto_th_api/redist/mbedtls/library/psa_crypto_ecp.c
             profile/psa_crypto_th_api/redist/mbedtls/library/psa_crypto_hash.c
             profile/psa_crypto_th_api/redist/mbedtls/library/psa_crypto_mac.c
+            profile/psa_crypto_th_api/redist/mbedtls/library/psa_crypto_rsa.c
             profile/psa_crypto_th_api/redist/mbedtls/library/psa_crypto_slot_management.c
             profile/psa_crypto_th_api/redist/mbedtls/library/psa_crypto_storage.c
             profile/psa_crypto_th_api/redist/mbedtls/library/psa_its_file.c
