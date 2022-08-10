@@ -214,6 +214,8 @@ ee_bench_ecdsa_sign(ee_ecdh_group_t g,
     th_pre();
     do
     {
+        // reset siglen back to maximum for each round, since output length may vary
+        siglen = 256;
         ret = th_ecdsa_sign(p_context, p_msg, n, p_sig, &siglen);
     } while (--i > 0 && ret == EE_STATUS_OK);
     th_post();

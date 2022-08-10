@@ -33,14 +33,14 @@ ee_sha(ee_sha_size_t  size,
     th_printf("m-sha%d-start\r\n", size);
     t0 = th_timestamp();
     th_pre();
-    if (th_sha_init(p_context) != EE_STATUS_OK)
-    {
-        th_post();
-        th_printf("e-sha%d-[Failed to initialize]\r\n", size);
-        goto exit;
-    }
     while (iter-- > 0)
     {
+        if (th_sha_init(p_context) != EE_STATUS_OK)
+        {
+            th_post();
+            th_printf("e-sha%d-[Failed to initialize]\r\n", size);
+            goto exit;
+        }
         if (th_sha_process(p_context, p_in, len) != EE_STATUS_OK)
         {
             th_post();
