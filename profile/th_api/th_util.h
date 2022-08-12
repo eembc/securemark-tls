@@ -73,8 +73,8 @@ uint8_t *th_buffer_address(void);
 /**
  * @brief Returns the size of the buffer.
  *
- * @return uint_fast32_t - The size of the buffer.
+ * @return uint32_t - The size of the buffer.
  */
-uint_fast32_t th_buffer_size(void);
+uint32_t th_buffer_size(void);
 
 #endif /* __TH_UTIL_H */

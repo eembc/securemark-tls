@@ -73,9 +73,9 @@ uint8_t *th_buffer_address(void);
 /**
  * @brief Returns the size of the buffer.
  *
- * @return uint_fast32_t - The size of the buffer.
+ * @return uint32_t - The size of the buffer.
  */
-uint_fast32_t th_buffer_size(void);
+uint32_t th_buffer_size(void);
 
 /* mbedTLS 3.0.0 requires a random function for ECC, we don't
  * care about how good it is. */

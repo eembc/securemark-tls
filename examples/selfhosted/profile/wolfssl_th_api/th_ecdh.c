@@ -13,7 +13,6 @@
 #include <wolfssl/options.h>
 #include <wolfssl/wolfcrypt/ecc.h>
 #include <wolfssl/wolfcrypt/curve25519.h>
-void ee_printmemline(uint8_t *, int, char *);
 
 /* can be set for static memory use */
 #define HEAP_HINT NULL
@@ -113,7 +112,7 @@ error:
 ee_status_t
 th_ecdh_set_peer_public_key(void *        p_context,
                             uint8_t *     p_pub,
-                            uint_fast32_t publen)
+                            uint32_t publen)
 {
     int    ret;
     ctx_t *ctx = (ctx_t *)p_context;
@@ -140,20 +139,24 @@ error:
 }
 
 ee_status_t
-th_ecdh_get_public_key(void *p_context, uint8_t *p_pub, uint_fast32_t *p_publen)
+th_ecdh_get_public_key(void *p_context, uint8_t *p_pub, uint32_t *p_publen)
 {
     int    ret;
     ctx_t *ctx = (ctx_t *)p_context;
+    word32 publen;
+
+    publen = *p_publen;
 
     switch (ctx->curve)
     {
         case ECC_SECP256R1:
         case ECC_SECP384R1:
-            CHK1(wc_ecc_export_x963(&(ctx->key.ecc), p_pub, p_publen));
+            CHK1(wc_ecc_export_x963(&(ctx->key.ecc), p_pub, &publen));
             break;
         case ECC_X25519:
             CHK1(wc_curve25519_export_public_ex(
-                &(ctx->key.c25519), p_pub, p_publen, EC25519_LITTLE_ENDIAN));
+                &(ctx->key.c25519), p_pub, &publen,
+                EC25519_LITTLE_ENDIAN));
             break;
         default:
             th_printf("e-[th_ecdh_get_public_key: invalid curve %d]\r\n",
@@ -161,35 +164,40 @@ th_ecdh_get_public_key(void *p_context, uint8_t *p_pub, uint_fast32_t *p_publen)
             return EE_STATUS_ERROR;
     }
     return EE_STATUS_OK;
+    *p_publen = publen;
 error:
     th_printf("e-[th_ecdh_get_public_key: error %d]\r\n", ret);
     return EE_STATUS_ERROR;
 }
 
 ee_status_t
-th_ecdh_calc_secret(void *p_context, uint8_t *p_sec, uint_fast32_t *p_seclen)
+th_ecdh_calc_secret(void *p_context, uint8_t *p_sec, uint32_t *p_seclen)
 {
     int    ret;
     ctx_t *ctx = (ctx_t *)p_context;
+    word32 slen;
+
+    slen = *p_seclen;
 
     switch (ctx->curve)
     {
         case ECC_SECP256R1:
         case ECC_SECP384R1:
             CHK1(wc_ecc_shared_secret(
-                &(ctx->key.ecc), &(ctx->peer.ecc), p_sec, p_seclen));
+                &(ctx->key.ecc), &(ctx->peer.ecc), p_sec, &slen));
             break;
         case ECC_X25519:
             CHK1(wc_curve25519_shared_secret_ex(&(ctx->key.c25519),
                                                 &(ctx->peer.c25519),
                                                 p_sec,
-                                                p_seclen,
+                                                &slen,
                                                 EC25519_LITTLE_ENDIAN));
             break;
         default:
             th_printf("e-[Invalid curve in th_ecdh_calc_secret]\r\n");
             return EE_STATUS_ERROR;
     }
+    *p_seclen = slen;
     return EE_STATUS_OK;
 error:
     th_printf("e-[th_ecdh_calc_secret: error: %d]\r\n", ret);

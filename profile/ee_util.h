@@ -58,7 +58,7 @@ uint8_t ee_rand(void);
  * @param len - Number of bytes to print
  * @param p_user_header - Pointer to a text string, or NULL for default
  */
-void ee_printmem(uint8_t *p_addr, uint_fast32_t len, char *p_user_header);
+void ee_printmem(uint8_t *p_addr, uint32_t len, char *p_user_header);
 
 /**
  * @brief Prints out hex bytes from an address in a single line.
@@ -67,7 +67,7 @@ void ee_printmem(uint8_t *p_addr, uint_fast32_t len, char *p_user_header);
  * @param len - Number of bytes to print
  * @param p_user_header - Pointer to a text string, or NULL for default
  */
-void ee_printmemline(uint8_t *p_addr, uint_fast32_t len, char *p_user_header);
+void ee_printmemline(uint8_t *p_addr, uint32_t len, char *p_user_header);
 
 /**
  * @brief Swap the bytes in a 32-bit value. This is due to the fact that

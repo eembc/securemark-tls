@@ -41,8 +41,8 @@
  * @return uint32_t - Execution time in microseconds
  */
 uint32_t ee_bench_sha(ee_sha_size_t size,
-                      uint_fast32_t n,
-                      uint_fast32_t i,
+                      uint32_t n,
+                      uint32_t i,
                       bool          verify);
 
 /**
@@ -73,9 +73,9 @@ uint32_t ee_bench_sha(ee_sha_size_t size,
  */
 uint32_t ee_bench_aes(ee_aes_mode_t mode,
                       ee_aes_func_t func,
-                      uint_fast32_t keylen,
-                      uint_fast32_t n,
-                      uint_fast32_t i,
+                      uint32_t keylen,
+                      uint32_t n,
+                      uint32_t i,
                       bool          verify);
 
 /**
@@ -126,7 +126,7 @@ uint32_t ee_bench_chachapoly(ee_chachapoly_func_t func,
  * @param verify - Print verification messages for the host
  * @return uint32_t - Execution time in microseconds
  */
-uint32_t ee_bench_ecdh(ee_ecdh_group_t g, uint_fast32_t i, bool verify);
+uint32_t ee_bench_ecdh(ee_ecdh_group_t g, uint32_t i, bool verify);
 
 /**
  * @brief The top-level ECDSA/EdDSA sign benchmark wrapper.
@@ -153,8 +153,8 @@ uint32_t ee_bench_ecdh(ee_ecdh_group_t g, uint_fast32_t i, bool verify);
  * @return uint32_t - Execution time in microseconds
  */
 uint32_t ee_bench_ecdsa_sign(ee_ecdh_group_t g,
-                             uint_fast32_t   n,
-                             uint_fast32_t   i,
+                             uint32_t   n,
+                             uint32_t   i,
                              bool            verify);
 
 /**
@@ -189,8 +189,8 @@ uint32_t ee_bench_ecdsa_sign(ee_ecdh_group_t g,
  * @return uint32_t - Execution time in microseconds
  */
 uint32_t ee_bench_ecdsa_verify(ee_ecdh_group_t g,
-                               uint_fast32_t   n,
-                               uint_fast32_t   i,
+                               uint32_t   n,
+                               uint32_t   i,
                                bool            verify);
 
 /**

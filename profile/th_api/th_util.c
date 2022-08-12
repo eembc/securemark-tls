@@ -41,7 +41,7 @@ th_buffer_address(void)
     return g_generic_buffer;
 }
 
-uint_fast32_t
+uint32_t
 th_buffer_size(void)
 {
     return BUFFER_SIZE;

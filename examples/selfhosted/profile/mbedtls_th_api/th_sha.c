@@ -92,7 +92,7 @@ th_sha_init(void *p_context)
  * return EE_STATUS_OK on success.
  */
 ee_status_t
-th_sha_process(void *p_context, const uint8_t *p_in, uint_fast32_t len)
+th_sha_process(void *p_context, const uint8_t *p_in, uint32_t len)
 {
     int ret;
     if (((th_mbedtls_sha_context_t*)(p_context))->size == EE_SHA256)

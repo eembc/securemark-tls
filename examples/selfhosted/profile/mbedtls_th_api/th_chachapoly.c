@@ -35,7 +35,7 @@ th_chachapoly_create(void **pp_context // output: portable context
 ee_status_t
 th_chachapoly_init(void *            p_context, // input: portable context
                    const uint8_t *   p_key,     // input: key
-                   uint_fast32_t     keylen    // input: length of key in bytes
+                   uint32_t     keylen    // input: length of key in bytes
 )
 {
     // mbedtls doesn't use func_t on init.
@@ -72,12 +72,12 @@ ee_status_t
 th_chachapoly_encrypt(
     void *         p_context, // input: portable context
     const uint8_t *p_pt,      // input: plaintext
-    uint_fast32_t  ptlen,     // input: length of plaintext in bytes
+    uint32_t  ptlen,     // input: length of plaintext in bytes
     uint8_t *      p_ct,      // output_ ciphertext
     uint8_t *      p_tag,     // output: tag
-    uint_fast32_t  taglen,    // input: tag length in bytes
+    uint32_t  taglen,    // input: tag length in bytes
     uint8_t *      p_iv,      // input: initialization vector
-    uint_fast32_t  ivlen      // input: IV length in bytes
+    uint32_t  ivlen      // input: IV length in bytes
 )
 {
     return mbedtls_chachapoly_encrypt_and_tag(
@@ -103,12 +103,12 @@ ee_status_t
 th_chachapoly_decrypt(
     void *         p_context, // input: portable context
     const uint8_t *p_ct,      // input: ciphertext
-    uint_fast32_t  ctlen,     // input: length of ciphertext in bytes
+    uint32_t  ctlen,     // input: length of ciphertext in bytes
     uint8_t *      p_pt,      // output_ plaintext
     uint8_t *      p_tag,     // input: tag
-    uint_fast32_t  taglen,    // input: tag length in bytes
+    uint32_t  taglen,    // input: tag length in bytes
     uint8_t *      p_iv,      // input: initialization vector
-    uint_fast32_t  ivlen      // input: IV length in bytes
+    uint32_t  ivlen      // input: IV length in bytes
 )
 {
     return mbedtls_chachapoly_auth_decrypt(

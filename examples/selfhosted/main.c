@@ -58,9 +58,9 @@
 /* Stored timestamps (a single primitive may generate multiple stamps) */
 #define MAX_TIMESTAMPS 64u
 /* `1` to turn on debugging messages */
-#define DEBUG_VERIFY 0
+#define DEBUG_VERIFY 1
 /* Only run a single iteration of each task (for debug) */
-#define CRC_ONLY 0
+#define CRC_ONLY 1
 /* All wrapper functions fit this prototype (dataset octets, iterations, res) */
 typedef struct
 {
@@ -305,12 +305,12 @@ pre_wrap_ecdh(ee_ecdh_group_t g, uint32_t i, wres_t *res)
     uint32_t *p_publen = (uint32_t *)th_buffer_address();
     uint8_t * p_pub;
     uint32_t *p_seclen;
-    uint8_t * p_sec;
+    /*uint8_t * p_sec;*/
 
     *p_publen = g_ecc_public_key_sizes[g];
     p_pub     = (uint8_t *)p_publen + sizeof(uint32_t);
     p_seclen  = (uint32_t *)(p_pub + *p_publen);
-    p_sec     = (uint8_t *)p_seclen + sizeof(uint32_t);
+    /*p_sec     = (uint8_t *)p_seclen + sizeof(uint32_t);*/
     th_memcpy(p_pub, g_ecc_public_keys[g], *p_publen);
 
     *p_seclen = 256; // Reasonably-sized space for the sig.
@@ -490,10 +490,14 @@ typedef struct
     uint16_t            actual_crc;   // CRC computed for 1 iter. seed 0
     uint16_t            expected_crc; // Precomputed CRC by EEMBC
     char *              name;
+    void *              extra;        /* Extra data */
 } task_entry_t;
 
 #define TASK(name, n, w, crc) \
-    { wrap_##name, n, 0.0, (float)w, 0x0, crc, #name },
+    { wrap_##name, n, 0.0, (float)w, 0x0, crc, #name, (void*)0 },
+
+#define TASKEX(name, n, w, crc, data) \
+    { wrap_##name, n, 0.0, (float)w, 0x0, crc, #name, data },
 
 /**
  * The weights are used for scoring and are defined by the EEMBC working group.
@@ -602,8 +606,10 @@ int
 main(void)
 {
     size_t   i;
+#if DEBUG_VERIFY == 0
     uint64_t iterations;
     float    component_score;
+#endif
     float    score;
     wres_t   res;
 
@@ -628,8 +634,9 @@ main(void)
                g_task[i].weight);
 #if DEBUG_VERIFY == 1
         printf("\n");
+#else
+        iterations = 0;
 #endif
-        iterations = 0; /* avoid unused warning if CRC_ONLY */
         /* CRC's are always computed with seed 0 */
         ee_srand(0); // CRCs are computed with seed 0
         (*g_task[i].func)(g_task[i].n, 1, &res);

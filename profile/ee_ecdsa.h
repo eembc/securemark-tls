@@ -50,9 +50,9 @@ ee_status_t th_ecdsa_create(void **pp_context, ee_ecdh_group_t group);
  */
 ee_status_t th_ecdsa_sign(void *         p_context,
                           uint8_t *      p_msg,
-                          uint_fast32_t  msglen,
+                          uint32_t  msglen,
                           uint8_t *      p_sig,
-                          uint_fast32_t *p_siglen);
+                          uint32_t *p_siglen);
 
 /**
  * @brief Verify a message (hash) with the public key.
@@ -71,9 +71,9 @@ ee_status_t th_ecdsa_sign(void *         p_context,
  */
 ee_status_t th_ecdsa_verify(void *        p_context,
                             uint8_t *     p_msg,
-                            uint_fast32_t msglen,
+                            uint32_t msglen,
                             uint8_t *     p_sig,
-                            uint_fast32_t siglen);
+                            uint32_t siglen);
 
 /**
  * @brief Return the public key generated during `th_ecdsa_create`.
@@ -85,7 +85,7 @@ ee_status_t th_ecdsa_verify(void *        p_context,
  */
 ee_status_t th_ecdsa_get_public_key(void *         p_context,
                                     uint8_t *      p_out,
-                                    uint_fast32_t *p_outlen);
+                                    uint32_t *p_outlen);
 
 /**
  * @brief Set the public key in the context in order to perform a verify.
@@ -99,7 +99,7 @@ ee_status_t th_ecdsa_get_public_key(void *         p_context,
  */
 ee_status_t th_ecdsa_set_public_key(void *        p_context,
                                     uint8_t *     p_pub,
-                                    uint_fast32_t publen);
+                                    uint32_t publen);
 
 /**
  * @brief Deallocate/destroy the context

@@ -22,7 +22,7 @@ th_ecdsa_create(void **p_context, ee_ecdh_group_t group)
 ee_status_t
 th_ecdsa_get_public_key(void *         p_context,
                         uint8_t *      p_out,
-                        uint_fast32_t *p_outlen)
+                        uint32_t *p_outlen)
 {
 #warning "th_ecdsa_get_public_key not implemented"
     return EE_STATUS_OK;
@@ -31,9 +31,9 @@ th_ecdsa_get_public_key(void *         p_context,
 ee_status_t
 th_ecdsa_verify(void *        p_context,
                 uint8_t *     p_msg,
-                uint_fast32_t msglen,
+                uint32_t msglen,
                 uint8_t *     p_sig,
-                uint_fast32_t siglen)
+                uint32_t siglen)
 {
 #warning "th_ecdsa_verify not implemented"
     return EE_STATUS_OK;
@@ -42,9 +42,9 @@ th_ecdsa_verify(void *        p_context,
 ee_status_t
 th_ecdsa_sign(void *         p_context,
               uint8_t *      p_msg,
-              uint_fast32_t  msglen,
+              uint32_t  msglen,
               uint8_t *      p_sig,
-              uint_fast32_t *p_siglen)
+              uint32_t *p_siglen)
 {
 #warning "th_ecdsa_sign not implemented"
     return EE_STATUS_OK;

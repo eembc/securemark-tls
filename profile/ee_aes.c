@@ -19,18 +19,18 @@ uint32_t
 ee_aes(ee_aes_mode_t  mode,
        ee_aes_func_t  func,
        const uint8_t *p_key,
-       uint_fast32_t  keylen,
+       uint32_t  keylen,
        const uint8_t *p_iv,
        const uint8_t *p_in,
-       uint_fast32_t  len,
+       uint32_t  len,
        uint8_t *      p_out,
        uint8_t *      p_tag,
-       uint_fast32_t  iter)
+       uint32_t  iter)
 {
     void *        p_context;
-    uint_fast32_t numblocks;
-    uint_fast32_t i;
-    uint_fast32_t j;
+    uint32_t numblocks;
+    uint32_t i;
+    uint32_t j;
     uint32_t      t0   = 0;
     uint32_t      t1   = 0;
     uint16_t      bits = keylen * 8;

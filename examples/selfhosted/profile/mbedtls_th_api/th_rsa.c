@@ -25,7 +25,7 @@ th_rsa_create(void **pp_context)
 ee_status_t
 th_rsa_set_public_key(void *         p_context,
                       const uint8_t *p_pub,
-                      uint_fast32_t  publen)
+                      uint32_t  publen)
 {
 #warning "th_rsa_set_public_key not implemented"
     return EE_STATUS_OK;
@@ -34,9 +34,9 @@ th_rsa_set_public_key(void *         p_context,
 ee_status_t
 th_rsa_verify(void *        p_context,
               uint8_t *     p_msg,
-              uint_fast32_t mlen,
+              uint32_t mlen,
               uint8_t *     p_sig,
-              uint_fast32_t slen,
+              uint32_t slen,
               uint8_t *     p_verify)
 {
 #warning "th_rsa_sign not implemented"

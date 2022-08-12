@@ -49,10 +49,10 @@ uint32_t ee_chachapoly(ee_chachapoly_func_t func,
                        uint8_t *            p_key,
                        uint8_t *            p_iv,
                        uint8_t *            p_in,
-                       uint_fast32_t        len,
+                       uint32_t        len,
                        uint8_t *            p_out,
                        uint8_t *            p_tag,
-                       uint_fast32_t        i);
+                       uint32_t        i);
 
 /**
  * @brief Creates a context.
@@ -72,7 +72,7 @@ ee_status_t th_chachapoly_create(void **pp_context);
  */
 ee_status_t th_chachapoly_init(void *         p_context,
                                const uint8_t *p_key,
-                               uint_fast32_t  keylen);
+                               uint32_t  keylen);
 
 /**
  * @brief De-initialize the context (but don't destroy it).
@@ -96,12 +96,12 @@ void th_chachapoly_deinit(void *p_context);
  */
 ee_status_t th_chachapoly_encrypt(void *         p_context,
                                   const uint8_t *p_pt,
-                                  uint_fast32_t  ptlen,
+                                  uint32_t  ptlen,
                                   uint8_t *      p_ct,
                                   uint8_t *      p_tag,
-                                  uint_fast32_t  taglen,
+                                  uint32_t  taglen,
                                   uint8_t *      p_iv,
-                                  uint_fast32_t  ivlen);
+                                  uint32_t  ivlen);
 
 /**
  * @brief Perform a ChaCha-Poly decrypt.
@@ -118,12 +118,12 @@ ee_status_t th_chachapoly_encrypt(void *         p_context,
  */
 ee_status_t th_chachapoly_decrypt(void *         p_context,
                                   const uint8_t *p_ct,
-                                  uint_fast32_t  ctlen,
+                                  uint32_t  ctlen,
                                   uint8_t *      p_pt,
                                   uint8_t *      p_tag,
-                                  uint_fast32_t  taglen,
+                                  uint32_t  taglen,
                                   uint8_t *      p_iv,
-                                  uint_fast32_t  ivlen);
+                                  uint32_t  ivlen);
 
 /**
  * @brief Deallocate/destroy the context.

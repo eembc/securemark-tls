@@ -22,7 +22,7 @@
     }
 
 uint32_t
-ee_variation_001(uint_fast32_t iter)
+ee_variation_001(uint32_t iter)
 {
     void *        p_csha1 = NULL;
     void *        p_csha2 = NULL;
@@ -34,7 +34,7 @@ ee_variation_001(uint_fast32_t iter)
     uint8_t       p_pt[VAR001_AES_LEN];
     uint8_t       p_ct[VAR001_AES_LEN];
     uint8_t       p_key[16];
-    uint_fast32_t idx;
+    uint32_t idx;
     uint32_t      t0 = 0;
     uint32_t      t1 = 0;
 

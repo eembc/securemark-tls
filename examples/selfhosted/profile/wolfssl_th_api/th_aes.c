@@ -36,7 +36,7 @@ th_aes_create(void **p_context, ee_aes_mode_t mode)
 ee_status_t
 th_aes_init(void *         p_context,
             const uint8_t *p_key,
-            uint_fast32_t  keylen,
+            uint32_t  keylen,
             const uint8_t *iv,
             ee_aes_func_t  func,
             ee_aes_mode_t  mode)
@@ -125,7 +125,7 @@ th_aes_ecb_decrypt(void *p_context, const uint8_t *p_ct, uint8_t *p_pt)
 ee_status_t
 th_aes_ctr_encrypt(void *         p_context,
                    const uint8_t *p_pt,
-                   uint_fast32_t  ptlen,
+                   uint32_t  ptlen,
                    uint8_t *      p_ct)
 {
     int ret;
@@ -141,7 +141,7 @@ th_aes_ctr_encrypt(void *         p_context,
 ee_status_t
 th_aes_ctr_decrypt(void *         p_context,
                    const uint8_t *p_ct,
-                   uint_fast32_t  ctlen,
+                   uint32_t  ctlen,
                    uint8_t *      p_pt)
 {
     int ret;
@@ -158,12 +158,12 @@ th_aes_ctr_decrypt(void *         p_context,
 ee_status_t
 th_aes_ccm_encrypt(void *         p_context,
                    const uint8_t *p_pt,
-                   uint_fast32_t  ptlen,
+                   uint32_t  ptlen,
                    uint8_t *      p_ct,
                    uint8_t *      p_tag,
-                   uint_fast32_t  taglen,
+                   uint32_t  taglen,
                    const uint8_t *p_iv,
-                   uint_fast32_t  ivlen)
+                   uint32_t  ivlen)
 {
     int ret;
     ret = wc_AesCcmEncrypt((Aes *)p_context,
@@ -187,12 +187,12 @@ th_aes_ccm_encrypt(void *         p_context,
 ee_status_t
 th_aes_ccm_decrypt(void *         p_context,
                    const uint8_t *p_ct,
-                   uint_fast32_t  ctlen,
+                   uint32_t  ctlen,
                    uint8_t *      p_pt,
                    const uint8_t *p_tag,
-                   uint_fast32_t  taglen,
+                   uint32_t  taglen,
                    const uint8_t *p_iv,
-                   uint_fast32_t  ivlen)
+                   uint32_t  ivlen)
 {
     int ret;
     ret = wc_AesCcmDecrypt((Aes *)p_context,
@@ -216,12 +216,12 @@ th_aes_ccm_decrypt(void *         p_context,
 ee_status_t
 th_aes_gcm_encrypt(void *         p_context,
                    const uint8_t *p_pt,
-                   uint_fast32_t  ptlen,
+                   uint32_t  ptlen,
                    uint8_t *      p_ct,
                    uint8_t *      p_tag,
-                   uint_fast32_t  taglen,
+                   uint32_t  taglen,
                    const uint8_t *p_iv,
-                   uint_fast32_t  ivlen)
+                   uint32_t  ivlen)
 {
     int ret;
     ret = wc_AesGcmEncrypt((Aes *)p_context,
@@ -245,12 +245,12 @@ th_aes_gcm_encrypt(void *         p_context,
 ee_status_t
 th_aes_gcm_decrypt(void *         p_context,
                    const uint8_t *p_ct,
-                   uint_fast32_t  ctlen,
+                   uint32_t  ctlen,
                    uint8_t *      p_pt,
                    const uint8_t *p_tag,
-                   uint_fast32_t  taglen,
+                   uint32_t  taglen,
                    const uint8_t *p_iv,
-                   uint_fast32_t  ivlen)
+                   uint32_t  ivlen)
 {
     int ret;
     ret = wc_AesGcmDecrypt((Aes *)p_context,

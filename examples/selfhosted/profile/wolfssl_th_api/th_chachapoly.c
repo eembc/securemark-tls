@@ -27,7 +27,7 @@ th_chachapoly_create(void **pp_context)
 }
 
 ee_status_t
-th_chachapoly_init(void *p_context, const uint8_t *p_key, uint_fast32_t keylen)
+th_chachapoly_init(void *p_context, const uint8_t *p_key, uint32_t keylen)
 {
     uint8_t *p_ctx = (uint8_t *)p_context;
 
@@ -51,12 +51,12 @@ th_chachapoly_deinit(void *p_context)
 ee_status_t
 th_chachapoly_encrypt(void *         p_context,
                       const uint8_t *p_pt,
-                      uint_fast32_t  ptlen,
+                      uint32_t  ptlen,
                       uint8_t *      p_ct,
                       uint8_t *      p_tag,
-                      uint_fast32_t  taglen,
+                      uint32_t  taglen,
                       uint8_t *      p_iv,
-                      uint_fast32_t  ivlen)
+                      uint32_t  ivlen)
 {
     uint8_t *p_key = (uint8_t *)p_context;
 
@@ -70,12 +70,12 @@ th_chachapoly_encrypt(void *         p_context,
 ee_status_t
 th_chachapoly_decrypt(void *         p_context,
                       const uint8_t *p_ct,
-                      uint_fast32_t  ctlen,
+                      uint32_t  ctlen,
                       uint8_t *      p_pt,
                       uint8_t *      p_tag,
-                      uint_fast32_t  taglen,
+                      uint32_t  taglen,
                       uint8_t *      p_iv,
-                      uint_fast32_t  ivlen)
+                      uint32_t  ivlen)
 {
     uint8_t *p_key = (uint8_t *)p_context;
 

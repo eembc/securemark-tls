@@ -108,7 +108,7 @@ void th_ecdsa_destroy(void *p_context)
  */
 ee_status_t th_ecdsa_get_public_key(void *         p_context,
                                     uint8_t *      p_out,
-                                    uint_fast32_t *p_outlen)
+                                    uint32_t *p_outlen)
 {
     mbedtls_ecp_keypair    *p_our_key = &((th_mbedtls_ecdsa_t *)p_context)->our_key;
     int                     ret;
@@ -140,7 +140,7 @@ ee_status_t th_ecdsa_get_public_key(void *         p_context,
  */
 ee_status_t th_ecdsa_set_public_key(void *        p_context,
                                     uint8_t *     p_pub,
-                                    uint_fast32_t publen)
+                                    uint32_t publen)
 {
     mbedtls_ecdsa_context  *p_ecdsa = &((th_mbedtls_ecdsa_t *)p_context)->ecdsa_ctx;
     mbedtls_ecp_group_id    group_id = ((th_mbedtls_ecdsa_t *)p_context)->group;
@@ -210,9 +210,9 @@ ee_status_t th_ecdsa_set_public_key(void *        p_context,
  */
 ee_status_t th_ecdsa_sign(void *         p_context,
                           uint8_t *      p_msg,
-                          uint_fast32_t  msglen,
+                          uint32_t  msglen,
                           uint8_t *      p_sig,
-                          uint_fast32_t *p_siglen)
+                          uint32_t *p_siglen)
 {
     mbedtls_ecdsa_context  *p_ecdsa = &((th_mbedtls_ecdsa_t *)p_context)->ecdsa_ctx;
     mbedtls_ecp_group_id    group_id = ((th_mbedtls_ecdsa_t *)p_context)->group;
@@ -264,9 +264,9 @@ ee_status_t th_ecdsa_sign(void *         p_context,
  */
 ee_status_t th_ecdsa_verify(void *        p_context,
                             uint8_t *     p_msg,
-                            uint_fast32_t msglen,
+                            uint32_t msglen,
                             uint8_t *     p_sig,
-                            uint_fast32_t siglen)
+                            uint32_t siglen)
 {
     mbedtls_ecdsa_context  *p_ecdsa = &((th_mbedtls_ecdsa_t *)p_context)->ecdsa_ctx;
     int                     result;

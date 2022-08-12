@@ -113,7 +113,7 @@ th_ecdh_create(void **p_context // output: portable context
  */
 ee_status_t th_ecdh_set_peer_public_key(void *        p_context,
                                         uint8_t *     p_pub,
-                                        uint_fast32_t publen)
+                                        uint32_t publen)
 {
     mbedtls_ecdh_context *p_ecdh = &((th_mbedtls_ecdh_t *)p_context)->ecdh_ctx;
     mbedtls_ecp_group_id  group_id = ((th_mbedtls_ecdh_t *)p_context)->group;
@@ -172,7 +172,7 @@ ee_status_t th_ecdh_set_peer_public_key(void *        p_context,
  */
 ee_status_t th_ecdh_get_public_key(void *         p_context,
                                    uint8_t *      p_pub,
-                                   uint_fast32_t *p_publen)
+                                   uint32_t *p_publen)
 {
     mbedtls_ecp_keypair    *p_our_key = &((th_mbedtls_ecdh_t *)p_context)->our_key;
     int                     ret;
@@ -201,7 +201,7 @@ ee_status_t
 th_ecdh_calc_secret(
     void *         p_context, // input: portable context
     uint8_t *      p_secret,  // output: shared secret
-    uint_fast32_t *p_seclen   // input/output: length of shared buffer in bytes
+    uint32_t *p_seclen   // input/output: length of shared buffer in bytes
 )
 {
     mbedtls_ecdh_context *p_ecdh;

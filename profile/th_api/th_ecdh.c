@@ -22,21 +22,21 @@ th_ecdh_create(void **p_context, ee_ecdh_group_t group)
 ee_status_t
 th_ecdh_set_peer_public_key(void *        p_context,
                             uint8_t *     p_pub,
-                            uint_fast32_t publen)
+                            uint32_t publen)
 {
 #warning "th_ecdh_set_peer_public_key not implemented"
     return EE_STATUS_OK;
 }
 
 ee_status_t
-th_ecdh_get_public_key(void *p_context, uint8_t *p_pub, uint_fast32_t *p_publen)
+th_ecdh_get_public_key(void *p_context, uint8_t *p_pub, uint32_t *p_publen)
 {
 #warning "th_ecdh_get_public_key not implemented"
     return EE_STATUS_OK;
 }
 
 ee_status_t
-th_ecdh_calc_secret(void *p_context, uint8_t *p_sec, uint_fast32_t *p_seclen)
+th_ecdh_calc_secret(void *p_context, uint8_t *p_sec, uint32_t *p_seclen)
 {
 #warning "th_ecdh_calc_secret not implemented"
     return EE_STATUS_OK;

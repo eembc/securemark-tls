@@ -93,9 +93,9 @@ error:
 ee_status_t
 th_ecdsa_sign(void *         p_context,
               uint8_t *      p_msg,
-              uint_fast32_t  msglen,
+              uint32_t  msglen,
               uint8_t *      p_sig,
-              uint_fast32_t *p_siglen)
+              uint32_t *p_siglen)
 {
     ctx_t *c = (ctx_t *)p_context;
     int    ret;
@@ -124,9 +124,9 @@ error:
 ee_status_t
 th_ecdsa_verify(void *        p_context,
                 uint8_t *     p_msg,
-                uint_fast32_t msglen,
+                uint32_t msglen,
                 uint8_t *     p_sig,
-                uint_fast32_t siglen)
+                uint32_t siglen)
 {
     ctx_t *c = (ctx_t *)p_context;
     int    ret;
@@ -161,7 +161,7 @@ error:
 ee_status_t
 th_ecdsa_get_public_key(void *         p_context,
                         uint8_t *      p_out,
-                        uint_fast32_t *p_outlen)
+                        uint32_t *p_outlen)
 {
     ctx_t *c = (ctx_t *)p_context;
     int    ret;
@@ -187,7 +187,7 @@ error:
 }
 
 ee_status_t
-th_ecdsa_set_public_key(void *p_context, uint8_t *p_pub, uint_fast32_t publen)
+th_ecdsa_set_public_key(void *p_context, uint8_t *p_pub, uint32_t publen)
 {
     ctx_t *c = (ctx_t *)p_context;
     int    ret;

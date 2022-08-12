@@ -12,7 +12,7 @@
 
 #include "ee_buffer.h"
 
-static uint_fast32_t g_buffer_pos = 0;
+static uint32_t g_buffer_pos = 0;
 
 void
 ee_buffer_add(uint8_t byte)
@@ -34,7 +34,7 @@ ee_buffer_rewind(void)
 void
 ee_buffer_fill(uint8_t byte)
 {
-    uint_fast32_t i;
+    uint32_t i;
 
     ee_buffer_rewind();
     for (i = 0; i < th_buffer_size(); ++i)
@@ -47,8 +47,8 @@ void
 ee_buffer_print(void)
 {
     uint8_t *     buffer;
-    uint_fast32_t buffer_size;
-    uint_fast32_t i;
+    uint32_t buffer_size;
+    uint32_t i;
 
     buffer      = th_buffer_address();
     buffer_size = th_buffer_size();

@@ -75,7 +75,7 @@ th_aes_create(void **           p_context, // output: portable context
 ee_status_t
 th_aes_init(void *            p_context, // input: portable context
             const uint8_t *   p_key,     // input: key
-            uint_fast32_t     keylen,    // input: length of key in bytes
+            uint32_t     keylen,    // input: length of key in bytes
             const uint8_t *   iv,        // input: IV buffer
             ee_aes_func_t     func,      // input: EE_AES_ENC or EE_AES_DEC
             ee_aes_mode_t     mode       // input: EE_AES_ECB|CCM|GCM
@@ -238,7 +238,7 @@ th_aes_ecb_decrypt(
  */
 ee_status_t th_aes_ctr_encrypt(void *         p_context,
                                const uint8_t *p_pt,
-                               uint_fast32_t  ptlen,
+                               uint32_t  ptlen,
                                uint8_t *      p_ct)
 {
     if (EE_AES_CTR != ((th_mbedtls_aes_context_t *)p_context)->aes_mode)
@@ -269,7 +269,7 @@ ee_status_t th_aes_ctr_encrypt(void *         p_context,
  */
 ee_status_t th_aes_ctr_decrypt(void *         p_context,
                                const uint8_t *p_ct,
-                               uint_fast32_t  ctlen,
+                               uint32_t  ctlen,
                                uint8_t *      p_pt)
 {
     if (EE_AES_CTR != ((th_mbedtls_aes_context_t *)p_context)->aes_mode)
@@ -298,12 +298,12 @@ ee_status_t
 th_aes_ccm_encrypt(
     void *         p_context, // input: portable context
     const uint8_t *p_pt,      // input: plaintext
-    uint_fast32_t  ptlen,     // input: length of plaintext in bytes
+    uint32_t  ptlen,     // input: length of plaintext in bytes
     uint8_t *      p_ct,      // output: ciphertext
     uint8_t *      p_tag,     // output: tag
-    uint_fast32_t  taglen,    // input: tag length in bytes
+    uint32_t  taglen,    // input: tag length in bytes
     const uint8_t *p_iv,      // input: initialization vector
-    uint_fast32_t  ivlen      // input: IV length in bytes
+    uint32_t  ivlen      // input: IV length in bytes
 )
 {
     if (EE_AES_CCM != ((th_mbedtls_aes_context_t *)p_context)->aes_mode)
@@ -336,12 +336,12 @@ ee_status_t
 th_aes_ccm_decrypt(
     void *         p_context, // input: portable context
     const uint8_t *p_ct,      // input: ciphertext
-    uint_fast32_t  ctlen,     // input: length of ciphertext in bytes
+    uint32_t  ctlen,     // input: length of ciphertext in bytes
     uint8_t *      p_pt,      // output: plaintext
     const uint8_t *p_tag,     // input: tag
-    uint_fast32_t  taglen,    // input: tag length in bytes
+    uint32_t  taglen,    // input: tag length in bytes
     const uint8_t *p_iv,      // input: initialization vector
-    uint_fast32_t  ivlen      // input: IV length in bytes
+    uint32_t  ivlen      // input: IV length in bytes
 )
 {
     if (EE_AES_CCM != ((th_mbedtls_aes_context_t *)p_context)->aes_mode)
@@ -374,12 +374,12 @@ ee_status_t
 th_aes_gcm_encrypt(
     void *         p_context, // input: portable context
     const uint8_t *p_pt,      // input: plaintext
-    uint_fast32_t  ptlen,     // input: length of plaintext in bytes
+    uint32_t  ptlen,     // input: length of plaintext in bytes
     uint8_t *      p_ct,      // output: ciphertext
     uint8_t *      p_tag,     // output: tag
-    uint_fast32_t  taglen,    // input: tag length in bytes
+    uint32_t  taglen,    // input: tag length in bytes
     const uint8_t *p_iv,      // input: initialization vector
-    uint_fast32_t  ivlen      // input: IV length in bytes
+    uint32_t  ivlen      // input: IV length in bytes
 )
 {
     if (EE_AES_GCM != ((th_mbedtls_aes_context_t *)p_context)->aes_mode)
@@ -413,12 +413,12 @@ ee_status_t
 th_aes_gcm_decrypt(
     void *         p_context, // input: portable context
     const uint8_t *p_ct,      // input: ciphertext
-    uint_fast32_t  ctlen,     // input: length of plaintext in bytes
+    uint32_t  ctlen,     // input: length of plaintext in bytes
     uint8_t *      p_pt,      // output: plaintext
     const uint8_t *p_tag,     // output: tag
-    uint_fast32_t  taglen,    // input: tag length in bytes
+    uint32_t  taglen,    // input: tag length in bytes
     const uint8_t *p_iv,      // input: initialization vector
-    uint_fast32_t  ivlen      // input: IV length in bytes
+    uint32_t  ivlen      // input: IV length in bytes
 )
 {
     if (EE_AES_GCM != ((th_mbedtls_aes_context_t *)p_context)->aes_mode)

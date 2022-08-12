@@ -38,9 +38,28 @@ typedef enum ee_sha_size_t
  */
 uint32_t ee_sha(ee_sha_size_t  size,
                 const uint8_t *p_in,
-                uint_fast32_t  len,
+                uint32_t  len,
                 uint8_t *      p_out,
-                uint_fast32_t  iter);
+                uint32_t  iter);
+
+/**
+ * @brief Perform a number of SHA operations on a set of input buffers.
+ *
+ * @param size - See the `ee_sha_size_t` enum.
+ * @param pp_in - The input buffers
+ * @param p_len - Length of each input buffer
+ * @param pp_out - Output buffers (must be large enough to hold the digest)
+ * @param count - Number of entries in the in/len/out buffers
+ * @param iter - Number of iterations to perform
+ * @return uint32_t - Execution time in microseconds
+ */
+uint32_t
+ee_sha_multi(ee_sha_size_t  size,
+       uint8_t       *pp_in[],
+       uint32_t  p_len[],
+       uint8_t       *pp_out[],
+       uint32_t  count,
+       uint32_t  iter);
 
 /**
  * @brief Creates a context.
@@ -69,7 +88,7 @@ ee_status_t th_sha_init(void *p_context);
  */
 ee_status_t th_sha_process(void *         p_context,
                            const uint8_t *p_in,
-                           uint_fast32_t  len);
+                           uint32_t  len);
 
 /**
  * @brief Complete the digest and populate the result. The result buffer must

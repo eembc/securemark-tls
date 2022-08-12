@@ -43,7 +43,7 @@ ee_status_t th_rsa_create(void **pp_context);
  */
 ee_status_t th_rsa_set_public_key(void *         p_context,
                                   const uint8_t *p_pub,
-                                  uint_fast32_t  publen);
+                                  uint32_t  publen);
 
 /**
  * @brief Verify a message (hash) with the public key.
@@ -57,9 +57,9 @@ ee_status_t th_rsa_set_public_key(void *         p_context,
  */
 ee_status_t th_rsa_verify(void *        p_context,
                           uint8_t *     p_msg,
-                          uint_fast32_t msglen,
+                          uint32_t msglen,
                           uint8_t *     p_sig,
-                          uint_fast32_t siglen);
+                          uint32_t siglen);
 
 /**
  * @brief Deallocate/destroy the context

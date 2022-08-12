@@ -36,8 +36,10 @@ fill_rand(uint8_t *p_buffer, size_t len)
     }
 }
 
+static char *ee_ecdh_group_names[] = { "p256r1", "p384", "c25519", "ed25519" };
+
 uint32_t
-ee_bench_sha(ee_sha_size_t size, uint_fast32_t n, uint_fast32_t i, bool verify)
+ee_bench_sha(ee_sha_size_t size, uint32_t n, uint32_t i, bool verify)
 {
     uint8_t *p_in  = th_buffer_address();
     uint8_t *p_out = p_in + n;
@@ -54,11 +56,46 @@ ee_bench_sha(ee_sha_size_t size, uint_fast32_t n, uint_fast32_t i, bool verify)
 }
 
 uint32_t
+ee_bench_sha_multi(ee_sha_size_t size, uint32_t i, bool verify)
+{
+    /* Buffer contains the INPUT */
+    uint32_t *p_count = (uint32_t *)th_buffer_address();
+    uint32_t *p_len = (uint32_t *)p_count + sizeof(uint32_t);
+
+    /* Buffer contains the OUTPUT after the INPUT */
+    uint8_t **pp_in = (uint8_t **)((uint8_t *)p_len + sizeof(uint32_t) * *p_count);
+    uint8_t **pp_out = pp_in + (sizeof(uint8_t *) * *p_count);
+    /* This is the moveable pointer we use to fill in pp_in, pp_out */
+    uint8_t *ptr = (uint8_t *)pp_out + (sizeof(uint8_t *) * *p_count);
+    /* Generic index for loops */
+    size_t x;
+    uint32_t dt;
+
+    /* TODO: Need to make sure we don't overflow the buffer! */
+    for (x = 0; x < *p_count; ++x)
+    {
+        pp_in[x] = ptr;
+        fill_rand(pp_in[x], p_len[x]);
+        ptr += p_len[x];
+    }
+    for (x = 0; x < *p_count; ++x)
+    {
+        pp_out[x] = ptr;
+        ptr += (size / 8); /* shouldn't really use an enum as a value */
+    }
+
+    dt = ee_sha_multi(size, pp_in, p_len, pp_out, *p_count, i);
+
+    /* No need to verify this run. If SHA verifies, this will verify. */
+    return dt;
+}
+
+uint32_t
 ee_bench_aes(ee_aes_mode_t mode,
              ee_aes_func_t func,
-             uint_fast32_t keylen,
-             uint_fast32_t n,
-             uint_fast32_t i,
+             uint32_t keylen,
+             uint32_t n,
+             uint32_t i,
              bool          verify)
 {
     int      ivlen = mode == EE_AES_CTR ? EE_AES_CTR_IVLEN : EE_AES_AEAD_IVLEN;
@@ -133,7 +170,7 @@ ee_bench_chachapoly(ee_chachapoly_func_t func, int n, int i, bool verify)
 }
 
 uint32_t
-ee_bench_ecdh(ee_ecdh_group_t g, uint_fast32_t i, bool verify)
+ee_bench_ecdh(ee_ecdh_group_t g, uint32_t i, bool verify)
 {
     uint32_t  t0       = 0;
     uint32_t  t1       = 0;
@@ -188,15 +225,15 @@ ee_bench_ecdh(ee_ecdh_group_t g, uint_fast32_t i, bool verify)
 
 uint32_t
 ee_bench_ecdsa_sign(ee_ecdh_group_t g,
-                    uint_fast32_t   n,
-                    uint_fast32_t   i,
+                    uint32_t   n,
+                    uint32_t   i,
                     bool            verify)
 {
     uint32_t t0 = 0;
     uint32_t t1 = 0;
     /* Sig will be ASN.1 so may vary, just put some reasonable values. */
-    uint_fast32_t publen = 256;
-    uint_fast32_t siglen = 256;
+    uint32_t publen = 256;
+    uint32_t siglen = 256;
 
     uint8_t *p_msg = th_buffer_address();
     uint8_t *p_pub = p_msg + n;
@@ -241,8 +278,8 @@ ee_bench_ecdsa_sign(ee_ecdh_group_t g,
 
 uint32_t
 ee_bench_ecdsa_verify(ee_ecdh_group_t g,
-                      uint_fast32_t   n,
-                      uint_fast32_t   i,
+                      uint32_t   n,
+                      uint32_t   i,
                       bool            verify)
 {
     uint32_t  t0       = 0;
@@ -346,8 +383,8 @@ ee_bench_parse(char *p_command, bool verify)
     char *        p_seed;
     char *        p_iter;
     char *        p_size;
-    uint_fast32_t i;
-    uint_fast32_t n;
+    uint32_t i;
+    uint32_t n;
     if (th_strncmp(p_command, "bench", EE_CMD_SIZE) != 0)
     {
         return EE_ARG_UNCLAIMED;
@@ -383,7 +420,7 @@ ee_bench_parse(char *p_command, bool verify)
 
     if (p_size)
     {
-        n = (uint_fast32_t)th_atoi(p_size);
+        n = (uint32_t)th_atoi(p_size);
     }
     else
     {
@@ -392,7 +429,7 @@ ee_bench_parse(char *p_command, bool verify)
 
     if (p_iter)
     {
-        i = (uint_fast32_t)th_atoi(p_iter);
+        i = (uint32_t)th_atoi(p_iter);
 
         if (i == 0)
         {
@@ -413,6 +450,14 @@ ee_bench_parse(char *p_command, bool verify)
     else if (th_strncmp(p_subcmd, "sha384", EE_CMD_SIZE) == 0)
     {
         ee_bench_sha(EE_SHA384, n, i, verify);
+    }
+    else if (th_strncmp(p_subcmd, "sha256_multi", EE_CMD_SIZE) == 0)
+    {
+        ee_bench_sha_multi(EE_SHA256, i, verify);
+    }
+    else if (th_strncmp(p_subcmd, "sha384_multi", EE_CMD_SIZE) == 0)
+    {
+        ee_bench_sha_multi(EE_SHA384, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes128-ecb-enc", EE_CMD_SIZE) == 0)
     {

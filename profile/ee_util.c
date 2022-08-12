@@ -66,9 +66,9 @@ ee_rand(void)
 }
 
 void
-ee_printmem(uint8_t *p_addr, uint_fast32_t len, char *p_user_header)
+ee_printmem(uint8_t *p_addr, uint32_t len, char *p_user_header)
 {
-    uint_fast32_t i;
+    uint32_t i;
     char *        header;
     char          b;
 
@@ -111,9 +111,9 @@ ee_printmem(uint8_t *p_addr, uint_fast32_t len, char *p_user_header)
 }
 
 void
-ee_printmemline(uint8_t *p_addr, uint_fast32_t len, char *p_user_header)
+ee_printmemline(uint8_t *p_addr, uint32_t len, char *p_user_header)
 {
-    uint_fast32_t i;
+    uint32_t i;
     char *        p_header;
     char          b;
 
