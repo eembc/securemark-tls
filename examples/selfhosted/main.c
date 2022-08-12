@@ -58,9 +58,9 @@
 /* Stored timestamps (a single primitive may generate multiple stamps) */
 #define MAX_TIMESTAMPS 64u
 /* `1` to turn on debugging messages */
-#define DEBUG_VERIFY 1
+#define DEBUG_VERIFY 0
 /* Only run a single iteration of each task (for debug) */
-#define CRC_ONLY 1
+#define CRC_ONLY 0
 /* All wrapper functions fit this prototype (dataset octets, iterations, res) */
 typedef struct
 {
@@ -151,7 +151,7 @@ th_printf(const char *fmt, ...)
 uint16_t
 crcu8(uint8_t data, uint16_t crc)
 {
-    uint8_t i;
+    size_t i;
     uint8_t x16;
     uint8_t carry;
 
@@ -484,7 +484,7 @@ tune_iterations(uint32_t n, wrapper_function_t *func)
 typedef struct
 {
     wrapper_function_t *func;         // The primitive for this task
-    uint16_t            n;            // Number of octets for input data
+    uint32_t            n;            // Number of octets for input data
     float               ips;          // iterations-per-second
     float               weight;       // equation scaling weight
     uint16_t            actual_crc;   // CRC computed for 1 iter. seed 0
@@ -607,8 +607,10 @@ main(void)
 {
     size_t   i;
 #if DEBUG_VERIFY == 0
-    uint64_t iterations;
     float    component_score;
+#if CRC_ONLY == 0
+    uint64_t iterations;
+#endif
 #endif
     float    score;
     wres_t   res;
@@ -622,20 +624,19 @@ main(void)
            MIN_ITER);
 
     printf("Heap buffer is %u bytes\n", th_buffer_size());
+    printf("Number of subtests: %zu\n", g_numtasks);
     score = 0.0f;
     printf(" # Component                  data   w    iterations/s\n");
     printf("-- ------------------------- ----- --- ---------------\n");
     for (i = 0; i < g_numtasks; ++i)
     {
-        printf("%2ld %-25s %5d %3.0f ",
+        printf("%2zu %-25s %5d %3.0f ",
                i + 1,
                g_task[i].name,
                g_task[i].n,
                g_task[i].weight);
 #if DEBUG_VERIFY == 1
         printf("\n");
-#else
-        iterations = 0;
 #endif
         /* CRC's are always computed with seed 0 */
         ee_srand(0); // CRCs are computed with seed 0

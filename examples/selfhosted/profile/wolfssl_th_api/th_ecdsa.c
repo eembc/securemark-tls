@@ -199,6 +199,10 @@ th_ecdsa_set_public_key(void *p_context, uint8_t *p_pub, uint32_t publen)
             CHK1(wc_ecc_import_x963(p_pub, publen, &(c->key.ecc)));
             break;
         case ECC_X25519:
+            /* Wolf 5.4.0: cannot import after make in th_*_create() */
+            /* Free the existing, key, re-init, and then import. */
+            wc_ed25519_free(&(c->key.ed25519));
+            CHK1(wc_ed25519_init(&(c->key.ed25519)));
             CHK1(wc_ed25519_import_public(p_pub, publen, &(c->key.ed25519)));
             break;
         default:
