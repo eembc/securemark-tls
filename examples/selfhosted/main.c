@@ -61,13 +61,35 @@
 #define DEBUG_VERIFY 0
 /* Only run a single iteration of each task (for debug) */
 #define CRC_ONLY 0
-/* All wrapper functions fit this prototype (dataset octets, iterations, res) */
+
+/* Wrapper functions fill out a results structure with time and CRC */
 typedef struct
 {
-    uint16_t crc;
-    uint32_t dt;
+    uint16_t crc; /* crc16, depends on the primitive */
+    uint32_t dt;  /* Delta time in millseconds */
 } wres_t;
-typedef void wrapper_function_t(uint32_t, uint32_t, wres_t *);
+/* All wrapper functions fit this prototype (dataset octets, iterations, res) */
+typedef void wrapper_function_t(void *, uint32_t, uint32_t, wres_t *);
+/* For functions that process multiple data records betwee init/free */
+/* TODO: Check compiler portability here */
+typedef struct ee_array_uint32
+{
+    uint32_t size;
+    uint32_t *data;
+} ee_array_uint32_t;
+/* Medium is used for both Medium and Light in V2 */
+/* These are the running SHA values */
+static uint32_t ee_sha_multi_m[] = { 123, 6, 15, 300,  80, 36, 299,  79, 36 };
+static uint32_t ee_sha_multi_h[] = { 155, 6, 17, 361, 110, 52, 360, 111, 52 };
+static ee_array_uint32_t g_sha_multi_m = {
+    sizeof(ee_sha_multi_m) / sizeof(uint32_t),
+    ee_sha_multi_m
+};
+static ee_array_uint32_t g_sha_multi_h = {
+    sizeof(ee_sha_multi_h) / sizeof(uint32_t),
+    ee_sha_multi_h
+};
+/* These are the running AEAD values */
 
 /**
  * @brief Generate a timestamp for performance compuation. Since we are running
@@ -217,10 +239,36 @@ pre_wrap_sha(ee_sha_size_t size, uint32_t n, uint32_t i, wres_t *res)
     }
 }
 
+void
+pre_wrap_sha_multi(ee_sha_size_t size, uint32_t i, void *ex, wres_t *res)
+{
+    ee_array_uint32_t *input = (ee_array_uint32_t *)ex;
+
+    uint32_t *p = (uint32_t *)th_buffer_address();
+    uint32_t *p_lens = p + 1;
+    uint8_t *p_out = (uint8_t *)(p_lens + input->size);
+
+    *p = input->size;
+    for (size_t x = 0; x < *p; ++x)
+    {
+        p_lens[x] = input->data[x];
+    }
+    res->dt = ee_bench_sha_multi(size, i, DEBUG_VERIFY);
+    res->crc = 0;
+    for (size_t x = 0; x < (size / 8); ++x)
+    {
+        res->crc = crcu16(res->crc, (uint8_t)(p_out)[x]);
+    }
+}
+
 #define MAKE_WRAP_SHA(x)                                  \
-    void wrap_sha##x(uint32_t n, uint32_t i, wres_t *res) \
+    void wrap_sha##x(void *ex, uint32_t n, uint32_t i, wres_t *res) \
     {                                                     \
         pre_wrap_sha(EE_SHA##x, n, i, res);               \
+    }                                                       \
+    void wrap_sha##x##_multi(void *ex, uint32_t n, uint32_t i, wres_t *res) \
+    {                                                     \
+        pre_wrap_sha_multi(EE_SHA##x, i, ex, res);               \
     }
 
 MAKE_WRAP_SHA(256)
@@ -248,12 +296,12 @@ pre_wrap_aes(ee_aes_mode_t mode,
 
 #define MAKE_WRAP_AES(bits, MODE, nick)                               \
     void wrap_aes##bits##_##nick##_encrypt(                           \
-        uint32_t n, uint32_t i, wres_t *res)                          \
+        void *ex, uint32_t n, uint32_t i, wres_t *res)                          \
     {                                                                 \
         pre_wrap_aes(EE_AES_##MODE, EE_AES_ENC, bits / 8, n, i, res); \
     }                                                                 \
     void wrap_aes##bits##_##nick##_decrypt(                           \
-        uint32_t n, uint32_t i, wres_t *res)                          \
+        void *ex, uint32_t n, uint32_t i, wres_t *res)                          \
     {                                                                 \
         pre_wrap_aes(EE_AES_##MODE, EE_AES_DEC, bits / 8, n, i, res); \
     }
@@ -288,13 +336,13 @@ pre_wrap_chachapoly(ee_chachapoly_func_t func,
 }
 
 void
-wrap_chachapoly_encrypt(uint32_t n, uint32_t i, wres_t *res)
+wrap_chachapoly_encrypt(void *ex, uint32_t n, uint32_t i, wres_t *res)
 {
     pre_wrap_chachapoly(EE_CHACHAPOLY_ENC, n, i, res);
 }
 
 void
-wrap_chachapoly_decrypt(uint32_t n, uint32_t i, wres_t *res)
+wrap_chachapoly_decrypt(void *ex, uint32_t n, uint32_t i, wres_t *res)
 {
     pre_wrap_chachapoly(EE_CHACHAPOLY_DEC, n, i, res);
 }
@@ -321,7 +369,7 @@ pre_wrap_ecdh(ee_ecdh_group_t g, uint32_t i, wres_t *res)
 }
 
 #define MAKE_WRAP_ECDH(nick, group)                            \
-    void wrap_ecdh_##nick(uint32_t n, uint32_t i, wres_t *res) \
+    void wrap_ecdh_##nick(void *ex, uint32_t n, uint32_t i, wres_t *res) \
     {                                                          \
         pre_wrap_ecdh(group, i, res);                          \
     }
@@ -377,11 +425,11 @@ pre_wrap_ecdsa_verify(ee_ecdh_group_t g, uint32_t i, wres_t *res)
 }
 
 #define MAKE_WRAP_ECDSA(nick, group)                                   \
-    void wrap_ecdsa_sign_##nick(uint32_t n, uint32_t i, wres_t *res)   \
+    void wrap_ecdsa_sign_##nick(void *ex, uint32_t n, uint32_t i, wres_t *res)   \
     {                                                                  \
         pre_wrap_ecdsa_sign(group, i, res);                            \
     }                                                                  \
-    void wrap_ecdsa_verify_##nick(uint32_t n, uint32_t i, wres_t *res) \
+    void wrap_ecdsa_verify_##nick(void *ex, uint32_t n, uint32_t i, wres_t *res) \
     {                                                                  \
         pre_wrap_ecdsa_verify(group, i, res);                          \
     }
@@ -425,7 +473,7 @@ pre_wrap_rsa_verify(ee_rsa_id_t id, uint32_t i, wres_t *res)
 }
 
 #define MAKE_WRAP_RSA(nick, id)                                      \
-    void wrap_rsa_verify_##nick(uint32_t n, uint32_t i, wres_t *res) \
+    void wrap_rsa_verify_##nick(void *ex, uint32_t n, uint32_t i, wres_t *res) \
     {                                                                \
         pre_wrap_rsa_verify(id, i, res);                             \
     }
@@ -435,7 +483,7 @@ MAKE_WRAP_RSA(3072, EE_RSA_3072)
 MAKE_WRAP_RSA(4096, EE_RSA_4096)
 
 void
-wrap_variation_001(uint32_t n, uint32_t i, wres_t *res)
+wrap_variation_001(void *ex, uint32_t n, uint32_t i, wres_t *res)
 {
     n       = 0; /* unused */
     res->dt = ee_variation_001(i);
@@ -456,7 +504,7 @@ wrap_variation_001(uint32_t n, uint32_t i, wres_t *res)
  * @return uint32_t - The number of iterations required
  */
 uint64_t
-tune_iterations(uint32_t n, wrapper_function_t *func)
+tune_iterations(void *ex, uint32_t n, wrapper_function_t *func)
 {
     uint32_t eps   = 1;
     uint32_t mint  = 0;
@@ -468,9 +516,9 @@ tune_iterations(uint32_t n, wrapper_function_t *func)
     do
     {
         guess *= 10;
-        (*func)(n, guess, &res);
+        (*func)(ex, n, guess, &res);
         dt1 = res.dt / 1e3;
-        (*func)(n, guess, &res);
+        (*func)(ex, n, guess, &res);
         dt2  = res.dt / 1e3;
         eps  = (dt1 > dt2) ? (dt1 - dt2) : (dt2 - dt1);
         mint = (dt1 < dt2) ? dt1 : dt2;
@@ -490,12 +538,13 @@ typedef struct
     uint16_t            actual_crc;   // CRC computed for 1 iter. seed 0
     uint16_t            expected_crc; // Precomputed CRC by EEMBC
     char *              name;
-    void *              extra;        /* Extra data */
+    void *              ex;           /* Extra data */
 } task_entry_t;
 
 #define TASK(name, n, w, crc) \
     { wrap_##name, n, 0.0, (float)w, 0x0, crc, #name, (void*)0 },
 
+/* TODO: Is there a portable variadic macro? Use an "extra" struct. */
 #define TASKEX(name, n, w, crc, data) \
     { wrap_##name, n, 0.0, (float)w, 0x0, crc, #name, data },
 
@@ -548,6 +597,8 @@ static task_entry_t g_task[] =
     TASK(sha384               , 4224,  4.0f, 0xb146)
     TASK(aes256_ecb_encrypt   , 2048, 10.0f, 0x2364)
     // V2 - TLS 1.3 & Secure Boot Components
+    TASKEX(sha256_multi       ,    0,  1.0f, 0x2be9, (void*)&g_sha_multi_m)
+    TASKEX(sha384_multi       ,    0,  1.0f, 0x806c, (void*)&g_sha_multi_h)
     // Additional Key Exchange
     TASK(ecdh_p384            ,    0,  1.0f, 0)
     TASK(ecdh_x25519          ,    0,  1.0f, 0)
@@ -640,15 +691,15 @@ main(void)
 #endif
         /* CRC's are always computed with seed 0 */
         ee_srand(0); // CRCs are computed with seed 0
-        (*g_task[i].func)(g_task[i].n, 1, &res);
+        (*g_task[i].func)(g_task[i].ex, g_task[i].n, 1, &res);
         g_task[i].actual_crc = res.crc;
 #if DEBUG_VERIFY == 0
 #if CRC_ONLY == 0
         /* First, compute the correct # of iterations for each primitive. */
-        iterations           = tune_iterations(g_task[i].n, g_task[i].func);
+        iterations  = tune_iterations(g_task[i].ex, g_task[i].n, g_task[i].func);
         g_task[i].actual_crc = res.crc;
         /* Now do a run with the correct number of iterations to get ips */
-        (*g_task[i].func)(g_task[i].n, iterations, &res);
+        (*g_task[i].func)(g_task[i].ex, g_task[i].n, iterations, &res);
         g_task[i].ips = (float)iterations / (res.dt / 1e6f);
 #endif
         /**

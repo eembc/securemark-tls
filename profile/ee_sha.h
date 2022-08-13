@@ -46,9 +46,9 @@ uint32_t ee_sha(ee_sha_size_t  size,
  * @brief Perform a number of SHA operations on a set of input buffers.
  *
  * @param size - See the `ee_sha_size_t` enum.
- * @param pp_in - The input buffers
- * @param p_len - Length of each input buffer
- * @param pp_out - Output buffers (must be large enough to hold the digest)
+ * @param pp_in - Array of input buffers
+ * @param p_len - Array of length of each input buffer
+ * @param p_out - Output buffer (must be large enough to hold the digest)
  * @param count - Number of entries in the in/len/out buffers
  * @param iter - Number of iterations to perform
  * @return uint32_t - Execution time in microseconds
@@ -56,8 +56,8 @@ uint32_t ee_sha(ee_sha_size_t  size,
 uint32_t
 ee_sha_multi(ee_sha_size_t  size,
        uint8_t       *pp_in[],
-       uint32_t  p_len[],
-       uint8_t       *pp_out[],
+       uint32_t      p_len[],
+       uint8_t       *p_out,
        uint32_t  count,
        uint32_t  iter);
 

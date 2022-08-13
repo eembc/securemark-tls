@@ -67,7 +67,7 @@ uint32_t
 ee_sha_multi(ee_sha_size_t  size,
         uint8_t      *pp_in[],
         uint32_t  p_len[],
-         uint8_t       *pp_out[],
+         uint8_t       *p_out,
        uint32_t  count,
        uint32_t  iter)
 {
@@ -104,7 +104,7 @@ ee_sha_multi(ee_sha_size_t  size,
             }
         }
         /* Version 2.x moved this into the timing loop. */
-        if (th_sha_done(p_context, pp_out[i]) != EE_STATUS_OK)
+        if (th_sha_done(p_context, p_out) != EE_STATUS_OK)
         {
             th_post();
             th_printf("e-sha%d_multi-[Failed to complete]\r\n", size);

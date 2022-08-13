@@ -46,6 +46,29 @@ uint32_t ee_bench_sha(ee_sha_size_t size,
                       bool          verify);
 
 /**
+ * @brief The top-level SHA multi benchmark wrapper.
+ *
+ * The `th_buffer` will be populated by the function. The resulting contents
+ * shall be as follows:
+ *
+ * Offset       Data
+ * -----------  ----------------------------------------
+ * 
+ * TODO
+ * 
+ * 
+ *
+ * @param size - The enum indicating the number of bits in the SHA
+ * @param n - The length of the random message to create
+ * @param i - The number of iterations to perform
+ * @param verify - Print verification messages for the host
+ * @return uint32_t - Execution time in microseconds
+ */
+uint32_t ee_bench_sha_multi(ee_sha_size_t size,
+                      uint32_t i,
+                      bool          verify);
+
+/**
  * @brief The top-level AES benchmark wrapper.
  *
  * The `th_buffer` will be populated by the function. The resulting contents

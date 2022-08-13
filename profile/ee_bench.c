@@ -58,18 +58,18 @@ ee_bench_sha(ee_sha_size_t size, uint32_t n, uint32_t i, bool verify)
 uint32_t
 ee_bench_sha_multi(ee_sha_size_t size, uint32_t i, bool verify)
 {
-    /* Buffer contains the INPUT */
+    /* How many SHA's do we need to do? */
     uint32_t *p_count = (uint32_t *)th_buffer_address();
-    uint32_t *p_len = (uint32_t *)p_count + sizeof(uint32_t);
-
-    /* Buffer contains the OUTPUT after the INPUT */
-    uint8_t **pp_in = (uint8_t **)((uint8_t *)p_len + sizeof(uint32_t) * *p_count);
-    uint8_t **pp_out = pp_in + (sizeof(uint8_t *) * *p_count);
-    /* This is the moveable pointer we use to fill in pp_in, pp_out */
-    uint8_t *ptr = (uint8_t *)pp_out + (sizeof(uint8_t *) * *p_count);
+    /* How big is each one? */
+    uint32_t *p_len = p_count + 1;
+    /* After that is the output digest */
+    uint8_t *p_out = (uint8_t *)(p_len + *p_count);
+    /* Next comes the input pointers */
+    uint8_t **pp_in = (uint8_t **)(p_out + (size / 8));
+    /* And then we fill the above points in with pointers to this buffer */
+    uint8_t *ptr = (uint8_t *)(pp_in + *p_count);
     /* Generic index for loops */
     size_t x;
-    uint32_t dt;
 
     /* TODO: Need to make sure we don't overflow the buffer! */
     for (x = 0; x < *p_count; ++x)
@@ -78,16 +78,10 @@ ee_bench_sha_multi(ee_sha_size_t size, uint32_t i, bool verify)
         fill_rand(pp_in[x], p_len[x]);
         ptr += p_len[x];
     }
-    for (x = 0; x < *p_count; ++x)
-    {
-        pp_out[x] = ptr;
-        ptr += (size / 8); /* shouldn't really use an enum as a value */
-    }
-
-    dt = ee_sha_multi(size, pp_in, p_len, pp_out, *p_count, i);
 
     /* No need to verify this run. If SHA verifies, this will verify. */
-    return dt;
+
+    return ee_sha_multi(size, pp_in, p_len, p_out, *p_count, i);
 }
 
 uint32_t
