@@ -15,9 +15,9 @@
 uint32_t
 ee_sha(ee_sha_size_t  size,
        const uint8_t *p_in,
-       uint32_t  len,
+       uint32_t       len,
        uint8_t *      p_out,
-       uint32_t  iter)
+       uint32_t       iter)
 {
     void *   p_context;
     uint32_t t0 = 0;
@@ -64,12 +64,12 @@ exit:
 }
 
 uint32_t
-ee_sha_multi(ee_sha_size_t  size,
-        uint8_t      *pp_in[],
-        uint32_t  p_len[],
-         uint8_t       *p_out,
-       uint32_t  count,
-       uint32_t  iter)
+ee_sha_multi(ee_sha_size_t size,
+             uint8_t *     pp_in[],
+             uint32_t      p_len[],
+             uint8_t *     p_out,
+             uint32_t      count,
+             uint32_t      iter)
 {
     void *   p_context;
     uint32_t i; /* index in to in/len/out arrays */

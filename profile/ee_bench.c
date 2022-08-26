@@ -61,6 +61,7 @@ ee_bench_sha_multi(ee_sha_size_t size, uint32_t i, bool verify)
     /* How many SHA's do we need to do? */
     uint32_t *p_count = (uint32_t *)th_buffer_address();
     /* How big is each one? */
+    /* TODO endian */
     uint32_t *p_len = p_count + 1;
     /* After that is the output digest */
     uint8_t *p_out = (uint8_t *)(p_len + *p_count);
@@ -79,51 +80,95 @@ ee_bench_sha_multi(ee_sha_size_t size, uint32_t i, bool verify)
         ptr += p_len[x];
     }
 
-    /* No need to verify this run. If SHA verifies, this will verify. */
-
+    /* No need to verify this run. If single-use verifies, this will verify. */
     return ee_sha_multi(size, pp_in, p_len, p_out, *p_count, i);
 }
 
 uint32_t
-ee_bench_aes(ee_aes_mode_t mode,
-             ee_aes_func_t func,
-             uint32_t keylen,
-             uint32_t n,
-             uint32_t i,
-             bool          verify)
+ee_bench_aes(ee_aes_mode_t mode, ee_aes_func_t func, uint32_t iter, bool verify)
 {
-    int      ivlen = mode == EE_AES_CTR ? EE_AES_CTR_IVLEN : EE_AES_AEAD_IVLEN;
-    uint8_t *p_key = th_buffer_address();
-    uint8_t *p_iv  = p_key + keylen;
-    uint8_t *p_in  = p_iv + ivlen;
-    uint8_t *p_out = p_in + n;
-    uint8_t *p_tag = p_out + n;
+    uint8_t *p8;
+    uint8_t *p_key;
+    uint8_t *p_iv;
+    void *   p_message_list;
     uint32_t dt;
 
-    fill_rand(p_key, keylen);
-    fill_rand(p_iv, ivlen);
-    fill_rand(p_in, n);
+    uint32_t *p32 = (uint32_t *)th_buffer_address();
+
+    /* The host will send data in BE if it is not an octet stream. */
+    uint32_t keylen = EE_FIX_ENDIAN(*p32++);
+    uint32_t ivlen  = EE_FIX_ENDIAN(*p32++);
+    uint32_t count  = EE_FIX_ENDIAN(*p32++);
+
+    uint32_t length;
+
+    size_t x;
+
+    p8 = (uint8_t *)p32;
+
+    fill_rand(p8, keylen);
+    p_key = p8;
+    p8 += keylen;
+
+    fill_rand(p8, ivlen);
+    p_iv = p8;
+    p8 += ivlen;
+
+    p32 = (uint32_t *)p8;
+
+    p_message_list = (void *)p32;
+
+    /* Follow the list and fill each input with random data. */
+    for (p32 = (uint32_t *)p_message_list, x = 0; x < count; ++x)
+    {
+        length = EE_FIX_ENDIAN(*p32++);
+        p8     = (uint8_t *)p32;
+        fill_rand(p8, length);
+        /* Skip to next operation block */
+        p8 += length + length + EE_AES_TAGLEN;
+        p32 = (uint32_t *)p8;
+    }
+
+    /* Encrypt something for the decrypt loop to decrypt */
     if (func == EE_AES_DEC)
     {
-        /* Encrypt something for the decrypt loop to decrypt */
         g_mute_timestamps = true;
-        ee_aes(mode, EE_AES_ENC, p_key, keylen, p_iv, p_in, n, p_out, p_tag, 1);
+        eex_aes_multi(
+            mode, EE_AES_ENC, p_key, keylen, p_iv, count, p_message_list, 1);
         g_mute_timestamps = false;
-        th_memcpy(p_in, p_out, n);
-        uint8_t *tmp = p_in;
-        p_in         = p_out;
-        p_out        = tmp;
+        /* Now swap all the encrypted outputs to the input space. */
+        for (p32 = (uint32_t *)p_message_list, x = 0; x < count; ++x)
+        {
+            length = EE_FIX_ENDIAN(*p32++);
+            p8     = (uint8_t *)p32;
+            th_memcpy(p8, p8 + length, length);
+            p8 += length + length + EE_AES_TAGLEN;
+            p32 = (uint32_t *)p8;
+        }
     }
-    dt = ee_aes(mode, func, p_key, keylen, p_iv, p_in, n, p_out, p_tag, i);
+
+    dt = eex_aes_multi(
+        mode, func, p_key, keylen, p_iv, count, p_message_list, iter);
+
     if (verify)
     {
-        /* Not all of these are used (ECB, CCM), but print them anyway. */
-        ee_printmemline(p_key, keylen, "m-bench-aes-key-");
-        ee_printmemline(p_iv, ivlen, "m-bench-aes-iv-");
-        ee_printmemline(p_in, n, "m-bench-aes-in-");
-        ee_printmemline(p_out, n, "m-bench-aes-out-");
-        ee_printmemline(p_tag, EE_AES_TAGLEN, "m-bench-aes-tag-");
+        for (p32 = (uint32_t *)p_message_list, x = 0; x < count; ++x)
+        {
+            length = EE_FIX_ENDIAN(*p32++);
+            p8     = (uint8_t *)p32;
+            /* Not all of these are used (ECB, CCM), but print them anyway. */
+            ee_printmemline(p_key, keylen, "m-bench-aes-key-");
+            ee_printmemline(p_iv, ivlen, "m-bench-aes-iv-");
+            ee_printmemline(p8, length, "m-bench-aes-in-");
+            p8 += length;
+            ee_printmemline(p8, length, "m-bench-aes-out-");
+            p8 += length;
+            ee_printmemline(p8, EE_AES_TAGLEN, "m-bench-aes-tag-");
+            p8 += EE_AES_TAGLEN;
+            p32 = (uint32_t *)p8;
+        }
     }
+
     return dt;
 }
 
@@ -218,10 +263,7 @@ ee_bench_ecdh(ee_ecdh_group_t g, uint32_t i, bool verify)
 }
 
 uint32_t
-ee_bench_ecdsa_sign(ee_ecdh_group_t g,
-                    uint32_t   n,
-                    uint32_t   i,
-                    bool            verify)
+ee_bench_ecdsa_sign(ee_ecdh_group_t g, uint32_t n, uint32_t i, bool verify)
 {
     uint32_t t0 = 0;
     uint32_t t1 = 0;
@@ -245,9 +287,10 @@ ee_bench_ecdsa_sign(ee_ecdh_group_t g,
     th_pre();
     do
     {
-        // reset siglen back to maximum for each round, since output length may vary
+        // reset siglen back to maximum for each round, since output length may
+        // vary
         siglen = 256;
-        ret = th_ecdsa_sign(p_context, p_msg, n, p_sig, &siglen);
+        ret    = th_ecdsa_sign(p_context, p_msg, n, p_sig, &siglen);
     } while (--i > 0 && ret == EE_STATUS_OK);
     th_post();
     t1 = th_timestamp();
@@ -271,10 +314,7 @@ ee_bench_ecdsa_sign(ee_ecdh_group_t g,
 }
 
 uint32_t
-ee_bench_ecdsa_verify(ee_ecdh_group_t g,
-                      uint32_t   n,
-                      uint32_t   i,
-                      bool            verify)
+ee_bench_ecdsa_verify(ee_ecdh_group_t g, uint32_t n, uint32_t i, bool verify)
 {
     uint32_t  t0       = 0;
     uint32_t  t1       = 0;
@@ -373,16 +413,19 @@ ee_bench_rsa_verify(ee_rsa_id_t id, unsigned int n, unsigned int i, bool verify)
 arg_claimed_t
 ee_bench_parse(char *p_command, bool verify)
 {
-    char *        p_subcmd;
-    char *        p_seed;
-    char *        p_iter;
-    char *        p_size;
+    char *   p_subcmd;
+    char *   p_seed;
+    char *   p_iter;
+    char *   p_size;
+
     uint32_t i;
     uint32_t n;
+    
     if (th_strncmp(p_command, "bench", EE_CMD_SIZE) != 0)
     {
         return EE_ARG_UNCLAIMED;
     }
+
     /**
      * Each subcommand takes four paramters:
      *
@@ -455,67 +498,67 @@ ee_bench_parse(char *p_command, bool verify)
     }
     else if (th_strncmp(p_subcmd, "aes128-ecb-enc", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_ECB, EE_AES_ENC, EE_AES_128KEYLEN, n, i, verify);
+        ee_bench_aes(EE_AES_ECB, EE_AES_ENC, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes128-ecb-dec", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_ECB, EE_AES_DEC, EE_AES_128KEYLEN, n, i, verify);
+        ee_bench_aes(EE_AES_ECB, EE_AES_DEC, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes128-ctr-enc", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_CTR, EE_AES_ENC, EE_AES_128KEYLEN, n, i, verify);
+        ee_bench_aes(EE_AES_CTR, EE_AES_ENC, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes128-ctr-dec", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_CTR, EE_AES_DEC, EE_AES_128KEYLEN, n, i, verify);
+        ee_bench_aes(EE_AES_CTR, EE_AES_DEC, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes128-ccm-enc", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_CCM, EE_AES_ENC, EE_AES_128KEYLEN, n, i, verify);
+        ee_bench_aes(EE_AES_CCM, EE_AES_ENC, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes128-ccm-dec", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_CCM, EE_AES_DEC, EE_AES_128KEYLEN, n, i, verify);
+        ee_bench_aes(EE_AES_CCM, EE_AES_DEC, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes128-gcm-enc", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_GCM, EE_AES_ENC, EE_AES_128KEYLEN, n, i, verify);
+        ee_bench_aes(EE_AES_GCM, EE_AES_ENC, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes128-gcm-dec", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_GCM, EE_AES_DEC, EE_AES_128KEYLEN, n, i, verify);
+        ee_bench_aes(EE_AES_GCM, EE_AES_DEC, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes256-ecb-enc", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_ECB, EE_AES_ENC, EE_AES_256KEYLEN, n, i, verify);
+        ee_bench_aes(EE_AES_ECB, EE_AES_ENC, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes256-ecb-dec", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_ECB, EE_AES_DEC, EE_AES_256KEYLEN, n, i, verify);
+        ee_bench_aes(EE_AES_ECB, EE_AES_DEC, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes256-ctr-enc", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_CTR, EE_AES_ENC, EE_AES_256KEYLEN, n, i, verify);
+        ee_bench_aes(EE_AES_CTR, EE_AES_ENC, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes256-ctr-dec", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_CTR, EE_AES_DEC, EE_AES_256KEYLEN, n, i, verify);
+        ee_bench_aes(EE_AES_CTR, EE_AES_DEC, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes256-ccm-enc", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_CCM, EE_AES_ENC, EE_AES_256KEYLEN, n, i, verify);
+        ee_bench_aes(EE_AES_CCM, EE_AES_ENC, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes256-ccm-dec", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_CCM, EE_AES_DEC, EE_AES_256KEYLEN, n, i, verify);
+        ee_bench_aes(EE_AES_CCM, EE_AES_DEC, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes256-gcm-enc", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_GCM, EE_AES_ENC, EE_AES_256KEYLEN, n, i, verify);
+        ee_bench_aes(EE_AES_GCM, EE_AES_ENC, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes256-gcm-dec", EE_CMD_SIZE) == 0)
     {
-        ee_bench_aes(EE_AES_GCM, EE_AES_DEC, EE_AES_256KEYLEN, n, i, verify);
+        ee_bench_aes(EE_AES_GCM, EE_AES_DEC, i, verify);
     }
     else if (th_strncmp(p_subcmd, "chachapoly-enc", EE_CMD_SIZE) == 0)
     {

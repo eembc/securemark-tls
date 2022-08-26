@@ -20,15 +20,15 @@ include(cmake/splint.cmake)
 #set(CMAKE_NM ${tools}/bin/arm-none-eabi-nm)
 #set(CMAKE_OBJDUMP ${tools}/bin/arm-none-eabi-objdump)
 
-set(CMAKE_C_FLAGS "-pedantic -Wall -O0 -Werror")
+set(CMAKE_C_FLAGS "-pedantic -Wall -O0 ")
 
 include_directories(../../monitor)
 include_directories(../../monitor/th_api)
 include_directories(../../profile)
 
 if (SELFHOSTED)
-	#set(CMAKE_C_FLAGS "-pedantic -Wall -O0 -g -fcf-protection=none -DEE_CFG_SELFHOSTED=1 -Werror")
-	set(CMAKE_C_FLAGS "-pedantic -Wall -DEE_CFG_SELFHOSTED=1 -Werror")
+	#set(CMAKE_C_FLAGS "-pedantic -Wall -O0 -g -fcf-protection=none -DEE_CFG_SELFHOSTED=1 ")
+	set(CMAKE_C_FLAGS "-pedantic -Wall -DEE_CFG_SELFHOSTED=1 ")
 	if(MBEDTLS)
 		include_directories(profile/mbedtls_th_api)
 		include_directories(profile/mbedtls_th_api/redist/mbedtls-3.0.0/include)

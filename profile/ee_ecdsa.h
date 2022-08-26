@@ -48,10 +48,10 @@ ee_status_t th_ecdsa_create(void **pp_context, ee_ecdh_group_t group);
  * @param p_siglen - The number of bytes used in the output signature buffer.
  * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
-ee_status_t th_ecdsa_sign(void *         p_context,
-                          uint8_t *      p_msg,
+ee_status_t th_ecdsa_sign(void *    p_context,
+                          uint8_t * p_msg,
                           uint32_t  msglen,
-                          uint8_t *      p_sig,
+                          uint8_t * p_sig,
                           uint32_t *p_siglen);
 
 /**
@@ -69,10 +69,10 @@ ee_status_t th_ecdsa_sign(void *         p_context,
  * @param slen - Length of the input signature buffer
  * @return ee_status_t - see above.
  */
-ee_status_t th_ecdsa_verify(void *        p_context,
-                            uint8_t *     p_msg,
+ee_status_t th_ecdsa_verify(void *   p_context,
+                            uint8_t *p_msg,
                             uint32_t msglen,
-                            uint8_t *     p_sig,
+                            uint8_t *p_sig,
                             uint32_t siglen);
 
 /**
@@ -83,8 +83,8 @@ ee_status_t th_ecdsa_verify(void *        p_context,
  * @param p_outlen - Number of bytes used in the buffer
  * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
-ee_status_t th_ecdsa_get_public_key(void *         p_context,
-                                    uint8_t *      p_out,
+ee_status_t th_ecdsa_get_public_key(void *    p_context,
+                                    uint8_t * p_out,
                                     uint32_t *p_outlen);
 
 /**
@@ -97,8 +97,8 @@ ee_status_t th_ecdsa_get_public_key(void *         p_context,
  * @param publen - Length of the public key buffer
  * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
-ee_status_t th_ecdsa_set_public_key(void *        p_context,
-                                    uint8_t *     p_pub,
+ee_status_t th_ecdsa_set_public_key(void *   p_context,
+                                    uint8_t *p_pub,
                                     uint32_t publen);
 
 /**

@@ -49,7 +49,7 @@ typedef enum ee_aes_func_t
  *
  * @param mode - The mode of this AES operation
  * @param func - The AES function to perform
- * @param p_key - The key buffer
+ * @param p_key - Key buffer
  * @param keylen - Length of key buffer
  * @param p_iv - Initialization vector buffer
  * @param p_in - Input PT/CT buffer
@@ -62,14 +62,54 @@ typedef enum ee_aes_func_t
 uint32_t ee_aes(ee_aes_mode_t  mode,
                 ee_aes_func_t  func,
                 const uint8_t *p_key,
-                uint32_t  keylen,
+                uint32_t       keylen,
                 const uint8_t *p_iv,
                 const uint8_t *p_in,
-                uint32_t  len,
+                uint32_t       len,
                 uint8_t *      p_out,
                 uint8_t *      p_tag,
-                uint32_t  iter);
+                uint32_t       iter);
 
+/**
+ * @brief This is the lowest-level benchmark function before the API calls for
+ * multi-mode AES. It performs `i` number of iterations on the primitive.
+ *
+ * None of the functions at this level return an error status; errors are
+ * reported vi `th_printf` and intercepted by the host.
+ *
+ * @param mode - The mode of this AES operation
+ * @param func - The AES function to perform
+ * @param p_key - Key buffer
+ * @param keylen - Length of key buffer
+ * @param p_iv - Initialization vector buffer
+ * @param count - Number of inputs to process
+ * @param pp_in - Input buffers
+ * @param p_len - Lengths of input buffers
+ * @param pp_out - Output buffers
+ * @param pp_tag - Tag buffers
+ * @param iter - Number of iterations
+ * @return uint32_t - Execution time in microseconds
+ */
+uint32_t ee_aes_multi(ee_aes_mode_t  mode,
+                      ee_aes_func_t  func,
+                      const uint8_t *p_key,
+                      uint32_t       keylen,
+                      const uint8_t *p_iv,
+                      const uint32_t count,
+                      const uint8_t *pp_in[],
+                      uint32_t       p_len[],
+                      uint8_t *      pp_out[],
+                      uint8_t *      pp_tag[],
+                      uint32_t       iter);
+
+uint32_t eex_aes_multi(ee_aes_mode_t  mode,
+                       ee_aes_func_t  func,
+                       const uint8_t *p_key,
+                       uint32_t       keylen,
+                       const uint8_t *p_iv,
+                       const uint32_t count,
+                       void *         p_message_list,
+                       uint32_t       i);
 /**
  * @brief Create a context for a given mode.
  *
@@ -93,7 +133,7 @@ ee_status_t th_aes_create(void **pp_context, ee_aes_mode_t mode);
  */
 ee_status_t th_aes_init(void *         p_context,
                         const uint8_t *p_key,
-                        uint32_t  keylen,
+                        uint32_t       keylen,
                         const uint8_t *iv,
                         ee_aes_func_t  func,
                         ee_aes_mode_t  mode);
@@ -110,24 +150,28 @@ void th_aes_deinit(void *p_context, ee_aes_mode_t mode);
  * @brief Perform an AES ECB encryption.
  *
  * @param p_context - The context from the `create` function
- * @param p_pt - Plaintext buffer (16-octets)
- * @param p_ct - Ciphertext buffer (16-octets)
+ * @param p_pt - Plaintext buffer
+ * @param ptlen - Length of the plaintext buffer
+ * @param p_ct - Ciphertext buffer
  * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
 ee_status_t th_aes_ecb_encrypt(void *         p_context,
                                const uint8_t *p_pt,
+                               uint32_t       ptlen,
                                uint8_t *      p_ct);
 
 /**
  * @brief Perform an AES ECB decryption.
  *
  * @param p_context - The context from the `create` function
- * @param p_ct - Ciphertext buffer (16-octets)
- * @param p_pt - Plaintext buffer (16-octets)
+ * @param p_ct - Ciphertext buffer
+ * @param ctlen - Length of the ciphertext buffer
+ * @param p_pt - Plaintext buffer
  * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
 ee_status_t th_aes_ecb_decrypt(void *         p_context,
                                const uint8_t *p_ct,
+                               uint32_t       ctlen,
                                uint8_t *      p_pt);
 
 /**
@@ -141,7 +185,7 @@ ee_status_t th_aes_ecb_decrypt(void *         p_context,
  */
 ee_status_t th_aes_ctr_encrypt(void *         p_context,
                                const uint8_t *p_pt,
-                               uint32_t  ptlen,
+                               uint32_t       ptlen,
                                uint8_t *      p_ct);
 
 /**
@@ -155,7 +199,7 @@ ee_status_t th_aes_ctr_encrypt(void *         p_context,
  */
 ee_status_t th_aes_ctr_decrypt(void *         p_context,
                                const uint8_t *p_ct,
-                               uint32_t  ctlen,
+                               uint32_t       ctlen,
                                uint8_t *      p_pt);
 
 /**
@@ -173,12 +217,12 @@ ee_status_t th_aes_ctr_decrypt(void *         p_context,
  */
 ee_status_t th_aes_ccm_encrypt(void *         p_context,
                                const uint8_t *p_pt,
-                               uint32_t  ptlen,
+                               uint32_t       ptlen,
                                uint8_t *      p_ct,
                                uint8_t *      p_tag,
-                               uint32_t  taglen,
+                               uint32_t       taglen,
                                const uint8_t *p_iv,
-                               uint32_t  ivlen);
+                               uint32_t       ivlen);
 
 /**
  * @brief Perform an AES CCM decryption.
@@ -195,12 +239,12 @@ ee_status_t th_aes_ccm_encrypt(void *         p_context,
  */
 ee_status_t th_aes_ccm_decrypt(void *         p_context,
                                const uint8_t *p_ct,
-                               uint32_t  ctlen,
+                               uint32_t       ctlen,
                                uint8_t *      p_pt,
                                const uint8_t *p_tag,
-                               uint32_t  taglen,
+                               uint32_t       taglen,
                                const uint8_t *p_iv,
-                               uint32_t  ivlen);
+                               uint32_t       ivlen);
 
 /**
  * @brief Perform an AES GCM encryption.
@@ -217,12 +261,12 @@ ee_status_t th_aes_ccm_decrypt(void *         p_context,
  */
 ee_status_t th_aes_gcm_encrypt(void *         p_context,
                                const uint8_t *p_pt,
-                               uint32_t  ptlen,
+                               uint32_t       ptlen,
                                uint8_t *      p_ct,
                                uint8_t *      p_tag,
-                               uint32_t  taglen,
+                               uint32_t       taglen,
                                const uint8_t *p_iv,
-                               uint32_t  ivlen);
+                               uint32_t       ivlen);
 
 /**
  * @brief Perform an AES GCM decryption.
@@ -239,12 +283,12 @@ ee_status_t th_aes_gcm_encrypt(void *         p_context,
  */
 ee_status_t th_aes_gcm_decrypt(void *         p_context,
                                const uint8_t *p_ct,
-                               uint32_t  ctlen,
+                               uint32_t       ctlen,
                                uint8_t *      p_pt,
                                const uint8_t *p_tag,
-                               uint32_t  taglen,
+                               uint32_t       taglen,
                                const uint8_t *p_iv,
-                               uint32_t  ivlen);
+                               uint32_t       ivlen);
 
 /**
  * @brief Deallocate/destroy the context.

@@ -60,7 +60,7 @@
 /* `1` to turn on debugging messages */
 #define DEBUG_VERIFY 0
 /* Only run a single iteration of each task (for debug) */
-#define CRC_ONLY 0
+#define CRC_ONLY 1
 
 /* Wrapper functions fill out a results structure with time and CRC */
 typedef struct
@@ -74,22 +74,29 @@ typedef void wrapper_function_t(void *, uint32_t, uint32_t, wres_t *);
 /* TODO: Check compiler portability here */
 typedef struct ee_array_uint32
 {
-    uint32_t size;
+    uint32_t  size;
     uint32_t *data;
 } ee_array_uint32_t;
+/* This macro makes a global array structure out of an array */
+#define MAKE_ARRAY(PREFIX)              \
+    static ee_array_uint32_t g_##PREFIX \
+        = { sizeof(ee_##PREFIX) / sizeof(uint32_t), ee_##PREFIX }
 /* Medium is used for both Medium and Light in V2 */
 /* These are the running SHA values */
-static uint32_t ee_sha_multi_m[] = { 123, 6, 15, 300,  80, 36, 299,  79, 36 };
+static uint32_t ee_single_use[]  = { 0 };
+static uint32_t ee_sha_multi_m[] = { 123, 6, 15, 300, 80, 36, 299, 79, 36 };
 static uint32_t ee_sha_multi_h[] = { 155, 6, 17, 361, 110, 52, 360, 111, 52 };
-static ee_array_uint32_t g_sha_multi_m = {
-    sizeof(ee_sha_multi_m) / sizeof(uint32_t),
-    ee_sha_multi_m
-};
-static ee_array_uint32_t g_sha_multi_h = {
-    sizeof(ee_sha_multi_h) / sizeof(uint32_t),
-    ee_sha_multi_h
-};
-/* These are the running AEAD values */
+static uint32_t ee_aead_e_multi_m[] = { 300, 80, 48 };
+static uint32_t ee_aead_e_multi_h[] = { 368, 112, 64 };
+static uint32_t ee_aead_d_multi_m[] = { 16, 16, 304, 96, 48 };
+static uint32_t ee_aead_d_multi_h[] = { 16, 32, 368, 112, 64 };
+MAKE_ARRAY(single_use);
+MAKE_ARRAY(sha_multi_m);
+MAKE_ARRAY(sha_multi_h);
+MAKE_ARRAY(aead_e_multi_m);
+MAKE_ARRAY(aead_e_multi_h);
+MAKE_ARRAY(aead_d_multi_m);
+MAKE_ARRAY(aead_d_multi_h);
 
 /**
  * @brief Generate a timestamp for performance compuation. Since we are running
@@ -173,7 +180,7 @@ th_printf(const char *fmt, ...)
 uint16_t
 crcu8(uint8_t data, uint16_t crc)
 {
-    size_t i;
+    size_t  i;
     uint8_t x16;
     uint8_t carry;
 
@@ -244,31 +251,32 @@ pre_wrap_sha_multi(ee_sha_size_t size, uint32_t i, void *ex, wres_t *res)
 {
     ee_array_uint32_t *input = (ee_array_uint32_t *)ex;
 
-    uint32_t *p = (uint32_t *)th_buffer_address();
+    uint32_t *p      = (uint32_t *)th_buffer_address();
     uint32_t *p_lens = p + 1;
-    uint8_t *p_out = (uint8_t *)(p_lens + input->size);
+    uint8_t * p_out  = (uint8_t *)(p_lens + input->size);
 
     *p = input->size;
     for (size_t x = 0; x < *p; ++x)
     {
         p_lens[x] = input->data[x];
     }
-    res->dt = ee_bench_sha_multi(size, i, DEBUG_VERIFY);
+    res->dt  = ee_bench_sha_multi(size, i, DEBUG_VERIFY);
     res->crc = 0;
+    /* TODO: Is this only doing the first byte of each output? */
     for (size_t x = 0; x < (size / 8); ++x)
     {
         res->crc = crcu16(res->crc, (uint8_t)(p_out)[x]);
     }
 }
 
-#define MAKE_WRAP_SHA(x)                                  \
-    void wrap_sha##x(void *ex, uint32_t n, uint32_t i, wres_t *res) \
-    {                                                     \
-        pre_wrap_sha(EE_SHA##x, n, i, res);               \
-    }                                                       \
+#define MAKE_WRAP_SHA(x)                                                    \
+    void wrap_sha##x(void *ex, uint32_t n, uint32_t i, wres_t *res)         \
+    {                                                                       \
+        pre_wrap_sha(EE_SHA##x, n, i, res);                                 \
+    }                                                                       \
     void wrap_sha##x##_multi(void *ex, uint32_t n, uint32_t i, wres_t *res) \
-    {                                                     \
-        pre_wrap_sha_multi(EE_SHA##x, i, ex, res);               \
+    {                                                                       \
+        pre_wrap_sha_multi(EE_SHA##x, i, ex, res);                          \
     }
 
 MAKE_WRAP_SHA(256)
@@ -278,32 +286,79 @@ void
 pre_wrap_aes(ee_aes_mode_t mode,
              ee_aes_func_t func,
              uint32_t      keylen,
-             uint32_t      n,
+             uint32_t      n, /* n=0 to use ex */
              uint32_t      i,
+             void *        ex, /* null if n>0 */
              wres_t *      res)
 {
-    uint8_t *p_out;
-    int      ivlen = mode == EE_AES_CTR ? EE_AES_CTR_IVLEN : EE_AES_AEAD_IVLEN;
+    uint32_t *p32;
+    uint32_t *p_list;
+    uint8_t * p8;
+    uint32_t  ivlen = mode == EE_AES_CTR ? EE_AES_CTR_IVLEN : EE_AES_AEAD_IVLEN;
+    uint32_t  msglen;
+    ee_array_uint32_t *input = (ee_array_uint32_t *)ex;
+    size_t             x, y; /* generic iteration indices */
 
-    p_out    = th_buffer_address() + keylen + ivlen + n;
-    res->dt  = ee_bench_aes(mode, func, keylen, n, i, DEBUG_VERIFY);
-    res->crc = 0;
-    for (size_t x = 0; x < n; ++x)
+    /* If single mode, use the premade single-element structure. */
+    if (n > 0 && ex == 0)
     {
-        res->crc = crcu16(res->crc, (uint8_t)p_out[x]);
+        g_single_use.data[0] = n;
+        input                = &g_single_use;
+    }
+
+    /* Setup the generic buffer to contain the test data */
+    p32 = (uint32_t *)th_buffer_address();
+    /* First the header */
+    *p32++ = keylen;
+    *p32++ = ivlen;
+    *p32++ = input->size;
+    /* Then the key and iv (the ee_bench function will fill these). */
+    p8 = (uint8_t *)p32;
+    p8 += keylen;
+    p8 += ivlen;
+    /* Then place the length values for each message packet (same as above) */
+    p32    = (uint32_t *)p8;
+    p_list = p32;
+    for (x = 0; x < input->size; ++x)
+    {
+        *p32++ = input->data[x];
+        p8     = (uint8_t *)p32;
+        p8 += input->data[x]; /* input */
+        p8 += input->data[x]; /* output */
+        p8 += EE_AES_TAGLEN;
+        p32 = (uint32_t *)p8;
+    }
+
+    /* Benchmark the mode/function on the data */
+    res->dt  = ee_bench_aes(mode, func, i, DEBUG_VERIFY);
+    res->crc = 0;
+
+    /* Calculate the CRC16 over the output */
+    for (p32 = p_list, x = 0; x < input->size; ++x)
+    {
+        msglen = *p32++;
+        p8     = (uint8_t *)p32;
+        p8 += input->data[x]; /* move to output message */
+        for (y = 0; y < msglen; ++y)
+        {
+            res->crc = crcu16(res->crc, (uint8_t)p8[y]);
+        }
+        p8 += input->data[x]; /* move to tag */
+        p8 += EE_AES_TAGLEN;  /* skip tag */
+        p32 = (uint32_t *)p8;
     }
 }
 
-#define MAKE_WRAP_AES(bits, MODE, nick)                               \
-    void wrap_aes##bits##_##nick##_encrypt(                           \
-        void *ex, uint32_t n, uint32_t i, wres_t *res)                          \
-    {                                                                 \
-        pre_wrap_aes(EE_AES_##MODE, EE_AES_ENC, bits / 8, n, i, res); \
-    }                                                                 \
-    void wrap_aes##bits##_##nick##_decrypt(                           \
-        void *ex, uint32_t n, uint32_t i, wres_t *res)                          \
-    {                                                                 \
-        pre_wrap_aes(EE_AES_##MODE, EE_AES_DEC, bits / 8, n, i, res); \
+#define MAKE_WRAP_AES(bits, MODE, nick)                                   \
+    void wrap_aes##bits##_##nick##_encrypt(                               \
+        void *ex, uint32_t n, uint32_t i, wres_t *res)                    \
+    {                                                                     \
+        pre_wrap_aes(EE_AES_##MODE, EE_AES_ENC, bits / 8, n, i, ex, res); \
+    }                                                                     \
+    void wrap_aes##bits##_##nick##_decrypt(                               \
+        void *ex, uint32_t n, uint32_t i, wres_t *res)                    \
+    {                                                                     \
+        pre_wrap_aes(EE_AES_##MODE, EE_AES_DEC, bits / 8, n, i, ex, res); \
     }
 
 MAKE_WRAP_AES(128, ECB, ecb)
@@ -313,6 +368,7 @@ MAKE_WRAP_AES(128, GCM, gcm)
 MAKE_WRAP_AES(256, ECB, ecb)
 MAKE_WRAP_AES(256, CTR, ctr)
 MAKE_WRAP_AES(256, CCM, ccm)
+MAKE_WRAP_AES(256, GCM, gcm)
 
 void
 pre_wrap_chachapoly(ee_chachapoly_func_t func,
@@ -368,10 +424,10 @@ pre_wrap_ecdh(ee_ecdh_group_t g, uint32_t i, wres_t *res)
     res->crc = 0;
 }
 
-#define MAKE_WRAP_ECDH(nick, group)                            \
+#define MAKE_WRAP_ECDH(nick, group)                                      \
     void wrap_ecdh_##nick(void *ex, uint32_t n, uint32_t i, wres_t *res) \
-    {                                                          \
-        pre_wrap_ecdh(group, i, res);                          \
+    {                                                                    \
+        pre_wrap_ecdh(group, i, res);                                    \
     }
 
 MAKE_WRAP_ECDH(p256r1, EE_P256R1)
@@ -424,14 +480,15 @@ pre_wrap_ecdsa_verify(ee_ecdh_group_t g, uint32_t i, wres_t *res)
     res->crc = *passfail;
 }
 
-#define MAKE_WRAP_ECDSA(nick, group)                                   \
-    void wrap_ecdsa_sign_##nick(void *ex, uint32_t n, uint32_t i, wres_t *res)   \
-    {                                                                  \
-        pre_wrap_ecdsa_sign(group, i, res);                            \
-    }                                                                  \
-    void wrap_ecdsa_verify_##nick(void *ex, uint32_t n, uint32_t i, wres_t *res) \
-    {                                                                  \
-        pre_wrap_ecdsa_verify(group, i, res);                          \
+#define MAKE_WRAP_ECDSA(nick, group)                                           \
+    void wrap_ecdsa_sign_##nick(void *ex, uint32_t n, uint32_t i, wres_t *res) \
+    {                                                                          \
+        pre_wrap_ecdsa_sign(group, i, res);                                    \
+    }                                                                          \
+    void wrap_ecdsa_verify_##nick(                                             \
+        void *ex, uint32_t n, uint32_t i, wres_t *res)                         \
+    {                                                                          \
+        pre_wrap_ecdsa_verify(group, i, res);                                  \
     }
 
 MAKE_WRAP_ECDSA(p256r1, EE_P256R1)
@@ -472,10 +529,10 @@ pre_wrap_rsa_verify(ee_rsa_id_t id, uint32_t i, wres_t *res)
     res->crc = *passfail;
 }
 
-#define MAKE_WRAP_RSA(nick, id)                                      \
+#define MAKE_WRAP_RSA(nick, id)                                                \
     void wrap_rsa_verify_##nick(void *ex, uint32_t n, uint32_t i, wres_t *res) \
-    {                                                                \
-        pre_wrap_rsa_verify(id, i, res);                             \
+    {                                                                          \
+        pre_wrap_rsa_verify(id, i, res);                                       \
     }
 
 MAKE_WRAP_RSA(2048, EE_RSA_2048)
@@ -528,25 +585,25 @@ tune_iterations(void *ex, uint32_t n, wrapper_function_t *func)
     return (guess * 11000) / mint;
 }
 
-// We tune each function independently by using a table entry for each wrapper:
+/* This structure and macros facilitates a more readable task list. */
 typedef struct
 {
-    wrapper_function_t *func;         // The primitive for this task
-    uint32_t            n;            // Number of octets for input data
-    float               ips;          // iterations-per-second
-    float               weight;       // equation scaling weight
-    uint16_t            actual_crc;   // CRC computed for 1 iter. seed 0
-    uint16_t            expected_crc; // Precomputed CRC by EEMBC
-    char *              name;
+    wrapper_function_t *func;         /* The primitive for this task */
+    uint32_t            n;            /* Number of octets for input data */
+    float               ips;          /* iterations-per-second */
+    float               weight;       /* equation scaling weight */
+    uint16_t            actual_crc;   /* CRC computed for 1 iter. seed 0 */
+    uint16_t            expected_crc; /* Precomputed CRC by EEMBC */
+    char *              name;         /* Name of the task */
     void *              ex;           /* Extra data */
 } task_entry_t;
 
 #define TASK(name, n, w, crc) \
-    { wrap_##name, n, 0.0, (float)w, 0x0, crc, #name, (void*)0 },
+    { wrap_##name, n, 0.0, (float)w, 0x0, crc, #name, (void *)0 },
 
 /* TODO: Is there a portable variadic macro? Use an "extra" struct. */
-#define TASKEX(name, n, w, crc, data) \
-    { wrap_##name, n, 0.0, (float)w, 0x0, crc, #name, data },
+#define TASKEX(name, w, crc, data) \
+    { wrap_##name, 0, 0.0, (float)w, 0x0, crc, #name, (void *)data },
 
 /**
  * The weights are used for scoring and are defined by the EEMBC working group.
@@ -560,9 +617,20 @@ typedef struct
  * Note: All sign/verify operations must be 32-byte messages; Ed25519 will
  *       hash this *again* with SHA512. This is unavoidable.
  */
+
 // clang-format off
 static task_entry_t g_task[] =
 {
+    TASKEX(aes128_gcm_encrypt, 1.0f, 0x954b, &g_aead_e_multi_m)
+    TASKEX(aes256_gcm_encrypt, 1.0f, 0x9f97, &g_aead_e_multi_h)
+    TASKEX(aes128_ccm_encrypt, 1.0f, 0xb9d9, &g_aead_e_multi_m)
+    TASKEX(aes256_ccm_encrypt, 1.0f, 0xf16d, &g_aead_e_multi_h)
+
+    TASKEX(aes128_gcm_decrypt, 1.0f, 0x7b96, &g_aead_d_multi_m)
+    TASKEX(aes256_gcm_decrypt, 1.0f, 0x56f1, &g_aead_d_multi_h)
+    TASKEX(aes128_ccm_decrypt, 1.0f, 0x7b96, &g_aead_d_multi_m)
+    TASKEX(aes256_ccm_decrypt, 1.0f, 0x56f1, &g_aead_d_multi_h)
+
     /*
      *   Macro nickname       ,Bytes, weight, crc
      */
@@ -570,7 +638,7 @@ static task_entry_t g_task[] =
     // For Medium
     TASK(aes128_ecb_encrypt   ,  320,  1.0f, 0x0b7a)
     TASK(aes128_ccm_encrypt   ,   52,  1.0f, 0xd82d)
-    TASK(aes128_ccm_decrypt   ,  168,  1.0f, 0x005b)
+    TASK(aes128_ccm_decrypt   ,  168,  1.0f, 0x9a42)
     TASK(ecdh_p256r1          ,    0,  1.0f, 0)
     TASK(ecdsa_sign_p256r1    ,   32,  1.0f, 0)
     TASK(ecdsa_verify_p256r1  ,   32,  1.0f, 1)
@@ -587,7 +655,7 @@ static task_entry_t g_task[] =
     // For Heavy
     TASK(aes256_ecb_encrypt   ,  320,  1.0f, 0xba50)
     TASK(aes256_ccm_encrypt   ,   52,  1.0f, 0xd195)
-    TASK(aes256_ccm_decrypt   ,  168,  1.0f, 0xd7ff)
+    TASK(aes256_ccm_decrypt   ,  168,  1.0f, 0x0dc3)
     // NOTE: WolfCrypt has a problem here, compute CRC with mbedTLS
     TASK(ecdsa_sign_p384      ,   32,  1.0f, 0)
     TASK(ecdsa_verify_p384    ,   32,  1.0f, 1)
@@ -597,8 +665,8 @@ static task_entry_t g_task[] =
     TASK(sha384               , 4224,  4.0f, 0xb146)
     TASK(aes256_ecb_encrypt   , 2048, 10.0f, 0x2364)
     // V2 - TLS 1.3 & Secure Boot Components
-    TASKEX(sha256_multi       ,    0,  1.0f, 0x2be9, (void*)&g_sha_multi_m)
-    TASKEX(sha384_multi       ,    0,  1.0f, 0x806c, (void*)&g_sha_multi_h)
+    TASKEX(sha256_multi       , 1.0f, 0x2be9, &g_sha_multi_m)
+    TASKEX(sha384_multi       , 1.0f, 0x806c, &g_sha_multi_h)
     // Additional Key Exchange
     TASK(ecdh_p384            ,    0,  1.0f, 0)
     TASK(ecdh_x25519          ,    0,  1.0f, 0)
@@ -612,19 +680,19 @@ static task_entry_t g_task[] =
     TASK(ecdsa_verify_ed25519 ,   32,  1.0f, 1)
     // AEAD
     TASK(aes128_ccm_encrypt   ,  416,  1.0f, 0x286a)
-    TASK(aes128_ccm_decrypt   ,  444,  1.0f, 0x4256)
+    TASK(aes128_ccm_decrypt   ,  444,  1.0f, 0x11b7)
     TASK(aes128_ccm_encrypt   ,   38,  1.0f, 0x5137)
-    TASK(aes128_ccm_decrypt   ,  136,  1.0f, 0xe8db)
+    TASK(aes128_ccm_decrypt   ,  136,  1.0f, 0xab71)
     // -
     TASK(aes256_ccm_encrypt   ,  416,  1.0f, 0x28dd)
-    TASK(aes256_ccm_decrypt   ,  444,  1.0f, 0x9dc7)
+    TASK(aes256_ccm_decrypt   ,  444,  1.0f, 0x06f9)
     TASK(aes256_ccm_encrypt   ,   38,  1.0f, 0xd879)
-    TASK(aes256_ccm_decrypt   ,  136,  1.0f, 0xf288)
+    TASK(aes256_ccm_decrypt   ,  136,  1.0f, 0xc310)
     // -
     TASK(aes128_gcm_encrypt   ,  416,  1.0f, 0xa22f)
-    TASK(aes128_gcm_decrypt   ,  444,  1.0f, 0x7ca3)
+    TASK(aes128_gcm_decrypt   ,  444,  1.0f, 0x11b7)
     TASK(aes128_gcm_encrypt   ,   38,  1.0f, 0x9970)
-    TASK(aes128_gcm_decrypt   ,  136,  1.0f, 0x0e7e)
+    TASK(aes128_gcm_decrypt   ,  136,  1.0f, 0xab71)
     // -
     TASK(chachapoly_encrypt   ,  416,  1.0f, 0x47fa)
     TASK(chachapoly_decrypt   ,  444,  1.0f, 0x066a)
@@ -656,17 +724,18 @@ static const size_t g_numtasks = sizeof(g_task) / sizeof(task_entry_t);
 int
 main(void)
 {
-    size_t   i;
+    char   namebuf[30];
+    float  score;
+    wres_t res;
 #if DEBUG_VERIFY == 0
-    float    component_score;
+    float component_score;
 #if CRC_ONLY == 0
     uint64_t iterations;
 #endif
 #endif
-    float    score;
-    wres_t   res;
 
     setbuf(stdout, 0);
+
     /* N.B.: We use printf here rather than th_printf because we mute it to
        keep things less messy. If you can't use printf, use th_printf and turn
        off QUIET in the CMakeLists.txt file. */
@@ -679,24 +748,36 @@ main(void)
     score = 0.0f;
     printf(" # Component                  data   w    iterations/s\n");
     printf("-- ------------------------- ----- --- ---------------\n");
-    for (i = 0; i < g_numtasks; ++i)
+    for (size_t i = 0; i < g_numtasks; ++i)
     {
-        printf("%2zu %-25s %5d %3.0f ",
-               i + 1,
-               g_task[i].name,
-               g_task[i].n,
-               g_task[i].weight);
+        if (g_task[i].ex == 0)
+        {
+            printf("%2zu %-25s %5d %3.0f ",
+                   i + 1,
+                   g_task[i].name,
+                   g_task[i].n,
+                   g_task[i].weight);
+        }
+        else
+        {
+            sprintf(namebuf, "%s_multi", g_task[i].name);
+            printf("%2zu %-25s %5d %3.0f ",
+                   i + 1,
+                   namebuf,
+                   ((ee_array_uint32_t *)g_task[i].ex)->size,
+                   g_task[i].weight);
+        }
 #if DEBUG_VERIFY == 1
         printf("\n");
 #endif
         /* CRC's are always computed with seed 0 */
-        ee_srand(0); // CRCs are computed with seed 0
+        ee_srand(0);
         (*g_task[i].func)(g_task[i].ex, g_task[i].n, 1, &res);
         g_task[i].actual_crc = res.crc;
 #if DEBUG_VERIFY == 0
 #if CRC_ONLY == 0
         /* First, compute the correct # of iterations for each primitive. */
-        iterations  = tune_iterations(g_task[i].ex, g_task[i].n, g_task[i].func);
+        iterations = tune_iterations(g_task[i].ex, g_task[i].n, g_task[i].func);
         g_task[i].actual_crc = res.crc;
         /* Now do a run with the correct number of iterations to get ips */
         (*g_task[i].func)(g_task[i].ex, g_task[i].n, iterations, &res);

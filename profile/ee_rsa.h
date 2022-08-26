@@ -43,7 +43,7 @@ ee_status_t th_rsa_create(void **pp_context);
  */
 ee_status_t th_rsa_set_public_key(void *         p_context,
                                   const uint8_t *p_pub,
-                                  uint32_t  publen);
+                                  uint32_t       publen);
 
 /**
  * @brief Verify a message (hash) with the public key.
@@ -55,10 +55,10 @@ ee_status_t th_rsa_set_public_key(void *         p_context,
  * @param siglen - Length of the output signature buffer
  * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
-ee_status_t th_rsa_verify(void *        p_context,
-                          uint8_t *     p_msg,
+ee_status_t th_rsa_verify(void *   p_context,
+                          uint8_t *p_msg,
                           uint32_t msglen,
-                          uint8_t *     p_sig,
+                          uint8_t *p_sig,
                           uint32_t siglen);
 
 /**

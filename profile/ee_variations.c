@@ -24,19 +24,19 @@
 uint32_t
 ee_variation_001(uint32_t iter)
 {
-    void *        p_csha1 = NULL;
-    void *        p_csha2 = NULL;
-    void *        p_caes  = NULL;
-    uint8_t *     p_msg;
-    uint8_t *     p_buf1;
-    uint8_t *     p_buf2;
-    uint8_t       p_digest[EE_SHA256 / 8];
-    uint8_t       p_pt[VAR001_AES_LEN];
-    uint8_t       p_ct[VAR001_AES_LEN];
-    uint8_t       p_key[16];
+    void *   p_csha1 = NULL;
+    void *   p_csha2 = NULL;
+    void *   p_caes  = NULL;
+    uint8_t *p_msg;
+    uint8_t *p_buf1;
+    uint8_t *p_buf2;
+    uint8_t  p_digest[EE_SHA256 / 8];
+    uint8_t  p_pt[VAR001_AES_LEN];
+    uint8_t  p_ct[VAR001_AES_LEN];
+    uint8_t  p_key[16];
     uint32_t idx;
-    uint32_t      t0 = 0;
-    uint32_t      t1 = 0;
+    uint32_t t0 = 0;
+    uint32_t t1 = 0;
 
     p_msg = (uint8_t *)th_malloc(VAR001_SESSION_LEN);
     if (p_msg == NULL)
@@ -103,12 +103,12 @@ ee_variation_001(uint32_t iter)
 
         CHECK(th_aes_create(&p_caes, EE_AES_ECB));
         CHECK(th_aes_init(p_caes, p_key, 16, NULL, EE_AES_ENC, EE_AES_ECB));
-        CHECK(th_aes_ecb_encrypt(p_caes, p_pt, p_ct));
+        CHECK(th_aes_ecb_encrypt(p_caes, p_pt, 16, p_ct));
         th_aes_destroy(p_caes);
 
         CHECK(th_aes_create(&p_caes, EE_AES_ECB));
         CHECK(th_aes_init(p_caes, p_key, 16, NULL, EE_AES_ENC, EE_AES_ECB));
-        CHECK(th_aes_ecb_encrypt(p_caes, p_pt, p_ct));
+        CHECK(th_aes_ecb_encrypt(p_caes, p_pt, 16, p_ct));
         th_aes_destroy(p_caes);
 
         CHECK(th_sha_process(p_csha1, p_buf1, 16));
@@ -118,7 +118,7 @@ ee_variation_001(uint32_t iter)
 
         CHECK(th_aes_create(&p_caes, EE_AES_ECB));
         CHECK(th_aes_init(p_caes, p_key, 16, NULL, EE_AES_ENC, EE_AES_ECB));
-        CHECK(th_aes_ecb_encrypt(p_caes, p_pt, p_ct));
+        CHECK(th_aes_ecb_encrypt(p_caes, p_pt, 16, p_ct));
         th_aes_destroy(p_caes);
 
         CHECK(th_sha_done(p_csha1, p_digest));

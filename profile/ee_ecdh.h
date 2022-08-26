@@ -43,8 +43,8 @@ ee_status_t th_ecdh_create(void **pp_context, ee_ecdh_group_t group);
  * @param publen - Length of the public key buffer
  * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
-ee_status_t th_ecdh_set_peer_public_key(void *        p_context,
-                                        uint8_t *     p_pub,
+ee_status_t th_ecdh_set_peer_public_key(void *   p_context,
+                                        uint8_t *p_pub,
                                         uint32_t publen);
 
 /**
@@ -56,8 +56,8 @@ ee_status_t th_ecdh_set_peer_public_key(void *        p_context,
  * @param p_publen - Length of the public key buffer
  * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
-ee_status_t th_ecdh_get_public_key(void *         p_context,
-                                   uint8_t *      p_pub,
+ee_status_t th_ecdh_get_public_key(void *    p_context,
+                                   uint8_t * p_pub,
                                    uint32_t *p_publen);
 
 /**
@@ -68,8 +68,8 @@ ee_status_t th_ecdh_get_public_key(void *         p_context,
  * @param p_seclen - Input is the max buffer length, output is length of secret
  * @return ee_status_t - EE_STATUS_OK or EE_STATUS_ERROR
  */
-ee_status_t th_ecdh_calc_secret(void *         p_context,
-                                uint8_t *      p_sec,
+ee_status_t th_ecdh_calc_secret(void *    p_context,
+                                uint8_t * p_sec,
                                 uint32_t *p_seclen);
 
 /**

@@ -46,7 +46,7 @@ ee_buffer_fill(uint8_t byte)
 void
 ee_buffer_print(void)
 {
-    uint8_t *     buffer;
+    uint8_t *buffer;
     uint32_t buffer_size;
     uint32_t i;
 

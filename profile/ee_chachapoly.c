@@ -18,10 +18,10 @@ ee_chachapoly(ee_chachapoly_func_t func,
               uint8_t *            p_key,
               uint8_t *            p_iv,
               uint8_t *            p_in,
-              uint32_t        len,
+              uint32_t             len,
               uint8_t *            p_out,
               uint8_t *            p_tag,
-              uint32_t        iter)
+              uint32_t             iter)
 {
     void *   p_context;
     uint32_t t0 = 0;

@@ -40,10 +40,7 @@
  * @param verify - Print verification messages for the host
  * @return uint32_t - Execution time in microseconds
  */
-uint32_t ee_bench_sha(ee_sha_size_t size,
-                      uint32_t n,
-                      uint32_t i,
-                      bool          verify);
+uint32_t ee_bench_sha(ee_sha_size_t size, uint32_t n, uint32_t i, bool verify);
 
 /**
  * @brief The top-level SHA multi benchmark wrapper.
@@ -53,20 +50,21 @@ uint32_t ee_bench_sha(ee_sha_size_t size,
  *
  * Offset       Data
  * -----------  ----------------------------------------
- * 
- * TODO
- * 
- * 
+ * 0            # of SHAs to do = N
+ * 4            1st 32-bit sizes, the size of each SHA
+ * 4+4*1        2nd
+ * 4+4*(N-1)    Nth SHA input size
+ * 4+4*N        1st output digest pointer
+ * 4+4*N+P*(N-1)Nth output digest pointer; pointer size in bytes = P
+ * 4+4*N+P*N    1st input message pointer
+ * 4*4*N+P*N+P*(N-1) Nth input message pointer
  *
  * @param size - The enum indicating the number of bits in the SHA
- * @param n - The length of the random message to create
  * @param i - The number of iterations to perform
  * @param verify - Print verification messages for the host
  * @return uint32_t - Execution time in microseconds
  */
-uint32_t ee_bench_sha_multi(ee_sha_size_t size,
-                      uint32_t i,
-                      bool          verify);
+uint32_t ee_bench_sha_multi(ee_sha_size_t size, uint32_t i, bool verify);
 
 /**
  * @brief The top-level AES benchmark wrapper.
@@ -94,12 +92,30 @@ uint32_t ee_bench_sha_multi(ee_sha_size_t size,
  * @param verify - Print verification messages for the host
  * @return uint32_t - Execution time in microseconds
  */
-uint32_t ee_bench_aes(ee_aes_mode_t mode,
-                      ee_aes_func_t func,
-                      uint32_t keylen,
-                      uint32_t n,
-                      uint32_t i,
-                      bool          verify);
+uint32_t ee_bench_aes(ee_aes_mode_t mode, ee_aes_func_t func, uint32_t i, bool verify);
+
+/**
+ * @brief The top-level AES multi benchmark wrapper.
+ *
+ * The `th_buffer` will be populated by the function. The resulting contents
+ * shall be as follows:
+ *
+ * Offset       Data
+ * -----------  ----------------------------------------
+ * 0            # of AESs to do = N
+ * 4            N 32-bit sizes, the size of each AES operation
+ * :
+ * 4+4*N        1st output ciphertext pointer
+ * 4+4*N+P*(N-1)Nth output ciphertext pointer; pointer size in bytes = P
+ * 4+4*N+P*N    1st input plaintext pointer
+ * 4*4*N+P*N+P*(N-1) Nth input plantext pointer
+ *
+ * @param mode - The enum indicating the AES mode
+ * @param func - The enum indicating the function
+ * @param i - The number of iterations to perform
+ * @return uint32_t - Execution time in microseconds
+ */
+uint32_t ee_bench_aes_multi(ee_aes_mode_t mode, ee_aes_func_t func, uint32_t i);
 
 /**
  * @brief The top-level ChaCha20-Poly1305 benchmark wrapper.
@@ -176,8 +192,8 @@ uint32_t ee_bench_ecdh(ee_ecdh_group_t g, uint32_t i, bool verify);
  * @return uint32_t - Execution time in microseconds
  */
 uint32_t ee_bench_ecdsa_sign(ee_ecdh_group_t g,
-                             uint32_t   n,
-                             uint32_t   i,
+                             uint32_t        n,
+                             uint32_t        i,
                              bool            verify);
 
 /**
@@ -212,8 +228,8 @@ uint32_t ee_bench_ecdsa_sign(ee_ecdh_group_t g,
  * @return uint32_t - Execution time in microseconds
  */
 uint32_t ee_bench_ecdsa_verify(ee_ecdh_group_t g,
-                               uint32_t   n,
-                               uint32_t   i,
+                               uint32_t        n,
+                               uint32_t        i,
                                bool            verify);
 
 /**

@@ -69,8 +69,8 @@ void
 ee_printmem(uint8_t *p_addr, uint32_t len, char *p_user_header)
 {
     uint32_t i;
-    char *        header;
-    char          b;
+    char *   header;
+    char     b;
 
     if (p_user_header == NULL)
     {
@@ -114,8 +114,8 @@ void
 ee_printmemline(uint8_t *p_addr, uint32_t len, char *p_user_header)
 {
     uint32_t i;
-    char *        p_header;
-    char          b;
+    char *   p_header;
+    char     b;
 
     if (p_user_header == NULL)
     {

@@ -97,27 +97,43 @@ th_aes_deinit(void *p_context, ee_aes_mode_t mode)
 }
 
 ee_status_t
-th_aes_ecb_encrypt(void *p_context, const uint8_t *p_pt, uint8_t *p_ct)
+th_aes_ecb_encrypt(void *p_context, const uint8_t *p_pt, uint32_t ptlen, uint8_t *p_ct)
 {
     int ret;
-    ret = wc_AesEcbEncrypt((Aes *)p_context, p_ct, p_pt, AES_BLOCK_SIZE);
-    if (ret != 0)
+    uint32_t numblocks = ptlen / 16;
+    const uint8_t *in = p_pt;
+    uint8_t *out = p_ct;
+    for (uint32_t i = 0; i < numblocks; ++i)
     {
-        th_printf("e-[wc_AesEcbEncrypt: %d]\r\n", ret);
-        return EE_STATUS_ERROR;
+        ret = wc_AesEcbEncrypt((Aes *)p_context, out, in, AES_BLOCK_SIZE);
+        if (ret != 0)
+        {
+            th_printf("e-[wc_AesEcbEncrypt: %d]\r\n", ret);
+            return EE_STATUS_ERROR;
+        }
+        in += 16;
+        out += 16;
     }
     return EE_STATUS_OK;
 }
 
 ee_status_t
-th_aes_ecb_decrypt(void *p_context, const uint8_t *p_ct, uint8_t *p_pt)
+th_aes_ecb_decrypt(void *p_context, const uint8_t *p_ct, uint32_t ctlen, uint8_t *p_pt)
 {
     int ret;
-    ret = wc_AesEcbDecrypt((Aes *)p_context, p_pt, p_ct, AES_BLOCK_SIZE);
-    if (ret != 0)
+    uint32_t numblocks = ctlen / 16;
+    const uint8_t *in = p_ct;
+    uint8_t *out = p_pt;
+    for (uint32_t i = 0; i < numblocks; ++i)
     {
-        th_printf("e-[wc_AesEcbDecrypt: %d]\r\n", ret);
-        return EE_STATUS_ERROR;
+        ret = wc_AesEcbDecrypt((Aes *)p_context, out, in, AES_BLOCK_SIZE);
+        if (ret != 0)
+        {
+            th_printf("e-[wc_AesEcbDecrypt: %d]\r\n", ret);
+            return EE_STATUS_ERROR;
+        }
+        in += 16;
+        out += 16;
     }
     return EE_STATUS_OK;
 }
