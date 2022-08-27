@@ -29,93 +29,46 @@
  * The `th_buffer` will be populated by the function. The resulting contents
  * shall be as follows:
  *
- * Offset       Data
- * -----------  ----------------------------------------
- * 0            Message (randomly generated)
- * " + n        Digest (size depends on SHA)
- *
- * @param size - The enum indicating the number of bits in the SHA
- * @param n - The length of the random message to create
- * @param i - The number of iterations to perform
- * @param verify - Print verification messages for the host
- * @return uint32_t - Execution time in microseconds
- */
-uint32_t ee_bench_sha(ee_sha_size_t size, uint32_t n, uint32_t i, bool verify);
-
-/**
- * @brief The top-level SHA multi benchmark wrapper.
- *
- * The `th_buffer` will be populated by the function. The resulting contents
- * shall be as follows:
- *
- * Offset       Data
- * -----------  ----------------------------------------
- * 0            # of SHAs to do = N
- * 4            1st 32-bit sizes, the size of each SHA
- * 4+4*1        2nd
- * 4+4*(N-1)    Nth SHA input size
- * 4+4*N        1st output digest pointer
- * 4+4*N+P*(N-1)Nth output digest pointer; pointer size in bytes = P
- * 4+4*N+P*N    1st input message pointer
- * 4*4*N+P*N+P*(N-1) Nth input message pointer
+ * Offset   Size    Data
+ * ------   ----    ---------------------------------------------
+ * 0        4       Number of messages to hash = N
+ * 4        ...     See ee_sha.h for a description of the message format
  *
  * @param size - The enum indicating the number of bits in the SHA
  * @param i - The number of iterations to perform
  * @param verify - Print verification messages for the host
  * @return uint32_t - Execution time in microseconds
  */
-uint32_t ee_bench_sha_multi(ee_sha_size_t size, uint32_t i, bool verify);
+uint32_t ee_bench_sha(ee_sha_size_t size, uint32_t i, bool verify);
 
 /**
  * @brief The top-level AES benchmark wrapper.
  *
- * The `th_buffer` will be populated by the function. The resulting contents
+ * The `th_buffer` will be populated by the caller. The resulting contents
  * shall be as follows:
  *
- * Offset       Data
- * -----------  ----------------------------------------
- * 0            key (randomly generated)
- * " + keylen   iv (if used, randomly generated)
- * " + ivlen    input text message (randomly generated)
- * " + n        output buffer (result of encrypt/decrypt)
- * " + n        tag (if used, populated by function)
+ * Offset   Size    Data
+ * ------   ----    ---------------------------------------------
+ * 0        4       Key length = n
+ * 4        4       IV length = m
+ * 8        4       Number of messages = N
+ * 12       n       Key (n=16 or 32 depending on AES128 or AES256)
+ * " + n    m       Initialization vector*
+ * " + m    ...     See ee_aes.h for a description of the message format
  *
- * Why not just have the host pre-fill the buffer and ignore `n`? Randomly
- * generating these values on the DUT reduces the amount of data the host has
- * to send down the UART, speeding up the test.
+ * * If the initialization vector or tag is not used (ECB), these fields are
+ *   still required but are ignored.
  *
  * @param mode - The enum indicating the AES mode
  * @param func - The enum indicating the function
- * @param keylen - The length of the key to generate (in bytes)
- * @param n - The length of the text (plain/cipher, depends on function)
  * @param i - The number of iterations to perform
  * @param verify - Print verification messages for the host
  * @return uint32_t - Execution time in microseconds
  */
-uint32_t ee_bench_aes(ee_aes_mode_t mode, ee_aes_func_t func, uint32_t i, bool verify);
-
-/**
- * @brief The top-level AES multi benchmark wrapper.
- *
- * The `th_buffer` will be populated by the function. The resulting contents
- * shall be as follows:
- *
- * Offset       Data
- * -----------  ----------------------------------------
- * 0            # of AESs to do = N
- * 4            N 32-bit sizes, the size of each AES operation
- * :
- * 4+4*N        1st output ciphertext pointer
- * 4+4*N+P*(N-1)Nth output ciphertext pointer; pointer size in bytes = P
- * 4+4*N+P*N    1st input plaintext pointer
- * 4*4*N+P*N+P*(N-1) Nth input plantext pointer
- *
- * @param mode - The enum indicating the AES mode
- * @param func - The enum indicating the function
- * @param i - The number of iterations to perform
- * @return uint32_t - Execution time in microseconds
- */
-uint32_t ee_bench_aes_multi(ee_aes_mode_t mode, ee_aes_func_t func, uint32_t i);
+uint32_t ee_bench_aes(ee_aes_mode_t mode,
+                      ee_aes_func_t func,
+                      uint32_t      i,
+                      bool          verify);
 
 /**
  * @brief The top-level ChaCha20-Poly1305 benchmark wrapper.

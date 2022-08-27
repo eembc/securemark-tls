@@ -131,7 +131,20 @@ th_timestamp(void)
     return elapsedMicroSeconds;
 }
 
-/** ERROR HANDLER **/
+/**
+ * @brief Helper function to copy a number of pseudo-random octets to a buffer.
+ *
+ * @param p_buffer Destination buffer.
+ * @param len Number of octets.
+ */
+void
+fill_rand(uint8_t *p_buffer, size_t len)
+{
+    for (size_t x = 0; x < len; ++x)
+    {
+        p_buffer[x] = ee_rand();
+    }
+}
 
 void
 error_handler(void)
@@ -234,49 +247,63 @@ crcu16(uint16_t newval, uint16_t crc)
  */
 
 void
-pre_wrap_sha(ee_sha_size_t size, uint32_t n, uint32_t i, wres_t *res)
+pre_wrap_sha(ee_sha_size_t size, uint32_t n, uint32_t i, void *ex, wres_t *res)
 {
-    uint8_t *p = th_buffer_address();
+    uint32_t *         p32;            /* Helper construction pointer */
+    uint8_t *          p8;             /* Helper construction pointer */
+    void *             p_message_list; /* A pointer to the message list */
+    ee_array_uint32_t *input;          /* Extended input data */
+    uint32_t           length;         /* The length of each message */
+    size_t             x, y;           /* Generic loop index */
 
-    res->dt  = ee_bench_sha(size, n, i, DEBUG_VERIFY);
-    res->crc = 0;
-    for (size_t x = 0; x < (size / 8); ++x)
+    /* If single value, use the premade single-element structure. */
+    input = (ee_array_uint32_t *)ex;
+    if (n > 0 && ex == 0)
     {
-        res->crc = crcu16(res->crc, (uint8_t)(p + n)[x]);
+        g_single_use.data[0] = n;
+        input                = &g_single_use;
+    }
+    /* See ee_bench_sha comments in ee_bench.h for memory layout. */
+    /* Set up the scratchpad buffer values */
+    p32    = (uint32_t *)th_buffer_address();
+    *p32++ = input->size;
+    /* Save where we are as the start of the message list */
+    p_message_list = p32;
+    /* Fill in message length and bytes, and leave space for output & tag */
+    for (x = 0; x < input->size; ++x)
+    {
+        length = input->data[x];
+        *p32++ = length;
+        p8     = (uint8_t *)p32;
+        /* Create a random message */
+        fill_rand(p8, length);
+        /* Skip to next message */
+        p8 += length + (size / 8);
+        p32 = (uint32_t *)p8;
+    }
+    /* With the filled buffer, call the benchmark routine */
+    res->dt  = ee_bench_sha(size, i, DEBUG_VERIFY);
+    res->crc = 0;
+    /* Calculate the CRC16 over the output */
+    for (p32 = p_message_list, x = 0; x < input->size; ++x)
+    {
+        length = *p32++;
+        p8     = (uint8_t *)p32;
+        p8 += length; /* move to the output digest */
+        for (y = 0; y < (size / 8); ++y)
+        {
+            res->crc = crcu16(res->crc, (uint8_t)p8[y]);
+        }
+        /* Skip to next message */
+        p8 += size / 8;
+        p32 = (uint32_t *)p8;
     }
 }
 
-void
-pre_wrap_sha_multi(ee_sha_size_t size, uint32_t i, void *ex, wres_t *res)
-{
-    ee_array_uint32_t *input = (ee_array_uint32_t *)ex;
-
-    uint32_t *p      = (uint32_t *)th_buffer_address();
-    uint32_t *p_lens = p + 1;
-    uint8_t * p_out  = (uint8_t *)(p_lens + input->size);
-
-    *p = input->size;
-    for (size_t x = 0; x < *p; ++x)
-    {
-        p_lens[x] = input->data[x];
-    }
-    res->dt  = ee_bench_sha_multi(size, i, DEBUG_VERIFY);
-    res->crc = 0;
-    /* TODO: Is this only doing the first byte of each output? */
-    for (size_t x = 0; x < (size / 8); ++x)
-    {
-        res->crc = crcu16(res->crc, (uint8_t)(p_out)[x]);
-    }
-}
-
-#define MAKE_WRAP_SHA(x)                                                    \
-    void wrap_sha##x(void *ex, uint32_t n, uint32_t i, wres_t *res)         \
-    {                                                                       \
-        pre_wrap_sha(EE_SHA##x, n, i, res);                                 \
-    }                                                                       \
-    void wrap_sha##x##_multi(void *ex, uint32_t n, uint32_t i, wres_t *res) \
-    {                                                                       \
-        pre_wrap_sha_multi(EE_SHA##x, i, ex, res);                          \
+#define MAKE_WRAP_SHA(x)                                            \
+    void wrap_sha##x(void *ex, uint32_t n, uint32_t i, wres_t *res) \
+    {                                                               \
+        pre_wrap_sha(EE_SHA##x, n, i, ex, res);                     \
     }
 
 MAKE_WRAP_SHA(256)
@@ -291,60 +318,65 @@ pre_wrap_aes(ee_aes_mode_t mode,
              void *        ex, /* null if n>0 */
              wres_t *      res)
 {
-    uint32_t *p32;
-    uint32_t *p_list;
-    uint8_t * p8;
-    uint32_t  ivlen = mode == EE_AES_CTR ? EE_AES_CTR_IVLEN : EE_AES_AEAD_IVLEN;
-    uint32_t  msglen;
-    ee_array_uint32_t *input = (ee_array_uint32_t *)ex;
-    size_t             x, y; /* generic iteration indices */
+    uint32_t *         p32;            /* Helper construction pointer */
+    uint8_t *          p8;             /* Helper construction pointer */
+    void *             p_message_list; /* A pointer to the message list */
+    ee_array_uint32_t *input;          /* Extended input data */
+    uint32_t           length;         /* The length of each message */
+    uint32_t           ivlen;          /* IV length, based on mode */
+    size_t             x, y;           /* Generic loop index */
 
-    /* If single mode, use the premade single-element structure. */
+    ivlen = mode == EE_AES_CTR ? EE_AES_CTR_IVLEN : EE_AES_AEAD_IVLEN;
+    /* If single value, use the premade single-element structure. */
+    input = (ee_array_uint32_t *)ex;
     if (n > 0 && ex == 0)
     {
         g_single_use.data[0] = n;
         input                = &g_single_use;
     }
-
-    /* Setup the generic buffer to contain the test data */
+    /* See ee_bench_aes comments in ee_bench.h for memory layout. */
+    /* Set up the scratchpad buffer values */
     p32 = (uint32_t *)th_buffer_address();
-    /* First the header */
+    /* First the lengths and count */
     *p32++ = keylen;
     *p32++ = ivlen;
     *p32++ = input->size;
-    /* Then the key and iv (the ee_bench function will fill these). */
+    /* Then the key and iv */
     p8 = (uint8_t *)p32;
+    fill_rand(p8, keylen);
     p8 += keylen;
+    fill_rand(p8, ivlen);
     p8 += ivlen;
+    p32 = (uint32_t *)p8;
+    /* Save where we are as the start of the message list */
+    p_message_list = p32;
     /* Then place the length values for each message packet (same as above) */
-    p32    = (uint32_t *)p8;
-    p_list = p32;
     for (x = 0; x < input->size; ++x)
     {
-        *p32++ = input->data[x];
+        length = input->data[x];
+        *p32++ = length;
         p8     = (uint8_t *)p32;
-        p8 += input->data[x]; /* input */
-        p8 += input->data[x]; /* output */
-        p8 += EE_AES_TAGLEN;
+        /* Create a random message */
+        fill_rand(p8, length);
+        /* Skip to next message */
+        p8 += length + length + EE_AES_TAGLEN;
         p32 = (uint32_t *)p8;
     }
-
-    /* Benchmark the mode/function on the data */
+    /* With the filled buffer, call the benchmark routine */
     res->dt  = ee_bench_aes(mode, func, i, DEBUG_VERIFY);
     res->crc = 0;
-
     /* Calculate the CRC16 over the output */
-    for (p32 = p_list, x = 0; x < input->size; ++x)
+    for (p32 = p_message_list, x = 0; x < input->size; ++x)
     {
-        msglen = *p32++;
+        length = *p32++;
         p8     = (uint8_t *)p32;
-        p8 += input->data[x]; /* move to output message */
-        for (y = 0; y < msglen; ++y)
+        p8 += length; /* move to output message */
+        for (y = 0; y < length; ++y)
         {
             res->crc = crcu16(res->crc, (uint8_t)p8[y]);
         }
-        p8 += input->data[x]; /* move to tag */
-        p8 += EE_AES_TAGLEN;  /* skip tag */
+        /* Skip to next message */
+        p8 += length + EE_AES_TAGLEN;
         p32 = (uint32_t *)p8;
     }
 }
@@ -441,7 +473,7 @@ pre_wrap_ecdsa_sign(ee_ecdh_group_t g, uint32_t i, wres_t *res)
     uint8_t *msg    = th_buffer_address();
 
     th_memcpy(msg, g_dsa_message, msglen);
-    res->dt = ee_bench_ecdsa_sign(g, msglen, i, false);
+    res->dt = ee_bench_ecdsa_sign(g, msglen, i, DEBUG_VERIFY);
     /* Since the DUT generates a new keypair every run, we can't CRC */
     res->crc = 0;
 }
@@ -475,7 +507,7 @@ pre_wrap_ecdsa_verify(ee_ecdh_group_t g, uint32_t i, wres_t *res)
     passfail  = sig + *siglen;
     *passfail = 0;
     /* This function calls the primitives and manages the buffer. */
-    res->dt = ee_bench_ecdsa_verify(g, msglen, i, false);
+    res->dt = ee_bench_ecdsa_verify(g, msglen, i, DEBUG_VERIFY);
     /* No CRC here, just pass/fail, e.g. 1/0 */
     res->crc = *passfail;
 }
@@ -621,21 +653,21 @@ typedef struct
 // clang-format off
 static task_entry_t g_task[] =
 {
-    TASKEX(aes128_gcm_encrypt, 1.0f, 0x954b, &g_aead_e_multi_m)
-    TASKEX(aes256_gcm_encrypt, 1.0f, 0x9f97, &g_aead_e_multi_h)
-    TASKEX(aes128_ccm_encrypt, 1.0f, 0xb9d9, &g_aead_e_multi_m)
-    TASKEX(aes256_ccm_encrypt, 1.0f, 0xf16d, &g_aead_e_multi_h)
+    /* Note: changing the order of these changes the CRC due to rand() */
 
-    TASKEX(aes128_gcm_decrypt, 1.0f, 0x7b96, &g_aead_d_multi_m)
-    TASKEX(aes256_gcm_decrypt, 1.0f, 0x56f1, &g_aead_d_multi_h)
-    TASKEX(aes128_ccm_decrypt, 1.0f, 0x7b96, &g_aead_d_multi_m)
-    TASKEX(aes256_ccm_decrypt, 1.0f, 0x56f1, &g_aead_d_multi_h)
+    TASKEX(sha256             , 1.0f, 0x2be9, &g_sha_multi_m)
+    TASKEX(sha384             , 1.0f, 0x0d41, &g_sha_multi_h)
 
-    /*
-     *   Macro nickname       ,Bytes, weight, crc
-     */
-    // V1 - TLS 1.2 (note CRCs changed due to new keys & wrappers)
-    // For Medium
+    TASKEX(aes128_gcm_encrypt , 1.0f, 0x954b, &g_aead_e_multi_m)
+    TASKEX(aes256_gcm_encrypt , 1.0f, 0x9f97, &g_aead_e_multi_h)
+    TASKEX(aes128_ccm_encrypt , 1.0f, 0xb9d9, &g_aead_e_multi_m)
+    TASKEX(aes256_ccm_encrypt , 1.0f, 0xf16d, &g_aead_e_multi_h)
+
+    TASKEX(aes128_gcm_decrypt , 1.0f, 0x7b96, &g_aead_d_multi_m)
+    TASKEX(aes256_gcm_decrypt , 1.0f, 0x56f1, &g_aead_d_multi_h)
+    TASKEX(aes128_ccm_decrypt , 1.0f, 0x7b96, &g_aead_d_multi_m)
+    TASKEX(aes256_ccm_decrypt , 1.0f, 0x56f1, &g_aead_d_multi_h)
+
     TASK(aes128_ecb_encrypt   ,  320,  1.0f, 0x0b7a)
     TASK(aes128_ccm_encrypt   ,   52,  1.0f, 0xd82d)
     TASK(aes128_ccm_decrypt   ,  168,  1.0f, 0x9a42)
@@ -645,14 +677,14 @@ static task_entry_t g_task[] =
     TASK(sha256               ,   23,  3.0f, 0x2151)
     TASK(sha256               ,   57,  1.0f, 0x3b3c)
     TASK(sha256               ,  384,  1.0f, 0x1d3f)
-    // TODO: need a variation 001 for Light and Heavy
+
     TASK(variation_001        ,    0,  3.0f, 0x0000)
     TASK(sha256               , 4224,  4.0f, 0x9284)
     TASK(aes128_ecb_encrypt   , 2048, 10.0f, 0xc380)
-    // For Light
+
     TASK(chachapoly_encrypt   ,   52,  1.0f, 0xa7f5)
     TASK(chachapoly_decrypt   ,  168,  1.0f, 0x44be)
-    // For Heavy
+
     TASK(aes256_ecb_encrypt   ,  320,  1.0f, 0xba50)
     TASK(aes256_ccm_encrypt   ,   52,  1.0f, 0xd195)
     TASK(aes256_ccm_decrypt   ,  168,  1.0f, 0x0dc3)
@@ -664,56 +696,53 @@ static task_entry_t g_task[] =
     TASK(sha384               ,  384,  1.0f, 0xb5e8)
     TASK(sha384               , 4224,  4.0f, 0xb146)
     TASK(aes256_ecb_encrypt   , 2048, 10.0f, 0x2364)
-    // V2 - TLS 1.3 & Secure Boot Components
-    TASKEX(sha256_multi       , 1.0f, 0x2be9, &g_sha_multi_m)
-    TASKEX(sha384_multi       , 1.0f, 0x806c, &g_sha_multi_h)
-    // Additional Key Exchange
+
     TASK(ecdh_p384            ,    0,  1.0f, 0)
     TASK(ecdh_x25519          ,    0,  1.0f, 0)
-    // Additional ECDSA Sign & Hashes
+
     TASK(sha256               , 1539,  1.0f, 0xb48c)
     TASK(sha384               , 1539,  1.0f, 0x7cbc)
     TASK(ecdsa_sign_ed25519   ,   32,  1.0f, 0)
-    // Additional ECDSA Verify & Hashes
+
     TASK(sha256               , 4104,  2.0f, 0x39c9)
     TASK(sha384               , 4104,  2.0f, 0xa424)
     TASK(ecdsa_verify_ed25519 ,   32,  1.0f, 1)
-    // AEAD
+
     TASK(aes128_ccm_encrypt   ,  416,  1.0f, 0x286a)
     TASK(aes128_ccm_decrypt   ,  444,  1.0f, 0x11b7)
     TASK(aes128_ccm_encrypt   ,   38,  1.0f, 0x5137)
     TASK(aes128_ccm_decrypt   ,  136,  1.0f, 0xab71)
-    // -
+
     TASK(aes256_ccm_encrypt   ,  416,  1.0f, 0x28dd)
     TASK(aes256_ccm_decrypt   ,  444,  1.0f, 0x06f9)
     TASK(aes256_ccm_encrypt   ,   38,  1.0f, 0xd879)
     TASK(aes256_ccm_decrypt   ,  136,  1.0f, 0xc310)
-    // -
+
     TASK(aes128_gcm_encrypt   ,  416,  1.0f, 0xa22f)
     TASK(aes128_gcm_decrypt   ,  444,  1.0f, 0x11b7)
     TASK(aes128_gcm_encrypt   ,   38,  1.0f, 0x9970)
     TASK(aes128_gcm_decrypt   ,  136,  1.0f, 0xab71)
-    // -
+
     TASK(chachapoly_encrypt   ,  416,  1.0f, 0x47fa)
     TASK(chachapoly_decrypt   ,  444,  1.0f, 0x066a)
     TASK(chachapoly_encrypt   ,   38,  1.0f, 0x5dbb)
     TASK(chachapoly_decrypt   ,  136,  1.0f, 0xffab)
-    // Ciphers
+
     TASK(aes128_ecb_encrypt   ,  288,  1.0f, 0x859a)
     TASK(aes256_ecb_encrypt   ,  288,  1.0f, 0x0ebc)
     TASK(aes128_ctr_encrypt   ,  288,  1.0f, 0x3afb)
     TASK(aes256_ctr_encrypt   ,  288,  1.0f, 0xa675)
-    // Digests
+
     TASK(sha256               , 1132,  1.0f, 0x9c1f)
     TASK(sha256               ,  204, 15.0f, 0x0e57)
     TASK(sha256               ,  176, 14.0f, 0x3bd6)
     TASK(sha256               ,  130,  2.0f, 0xbaed)
-    // -
+
     TASK(sha384               , 1132,  1.0f, 0x7839)
     TASK(sha384               ,  204, 15.0f, 0x4b8a)
     TASK(sha384               ,  176, 14.0f, 0x660b)
     TASK(sha384               ,  130,  2.0f, 0x445b)
-    // Secure boot verify only
+
     TASK(rsa_verify_2048      ,   32,  1.0f, 1)
     TASK(rsa_verify_3072      ,   32,  1.0f, 1)
     TASK(rsa_verify_4096      ,   32,  1.0f, 1)

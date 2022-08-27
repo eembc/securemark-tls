@@ -27,38 +27,28 @@ typedef enum ee_sha_size_t
 } ee_sha_size_t;
 
 /**
- * @brief Perform a number of SHA operations on an input buffer.
+ * @brief Perform a number of SHA operations on messages in the generic buffer.
  *
- * @param size - See the `ee_sha_size_t` enum.
- * @param p_in - The input buffer
- * @param len - Length of the input buffer
- * @param p_out - Output buffer (must be large enough to hold the digest)
+ * The message format reserved in the temp buffer is in the form:
+ *
+ * Offset   Size    Data
+ * ------   ----    ---------------------------------------------
+ * 0        4       Size of message #1 = n1
+ * 4        n1      Message #1
+ * " + n1   h1      Hash of message #1
+ * " + h1   4       Size of message #2 = n2
+ * " + 4    n2      ... etc for N messages.
+ *
+ * @param size - See the `ee_sha_size_t` enum
+ * @param count - Number of messages to hash
+ * @param p_message_list - Pointer to the message list shown above
  * @param iter - Number of iterations to perform
  * @return uint32_t - Execution time in microseconds
  */
-uint32_t ee_sha(ee_sha_size_t  size,
-                const uint8_t *p_in,
-                uint32_t       len,
-                uint8_t *      p_out,
-                uint32_t       iter);
-
-/**
- * @brief Perform a number of SHA operations on a set of input buffers.
- *
- * @param size - See the `ee_sha_size_t` enum.
- * @param pp_in - Array of input buffers
- * @param p_len - Array of length of each input buffer
- * @param p_out - Output buffer (must be large enough to hold the digest)
- * @param count - Number of entries in the in/len/out buffers
- * @param iter - Number of iterations to perform
- * @return uint32_t - Execution time in microseconds
- */
-uint32_t ee_sha_multi(ee_sha_size_t size,
-                      uint8_t *     pp_in[],
-                      uint32_t      p_len[],
-                      uint8_t *     p_out,
-                      uint32_t      count,
-                      uint32_t      iter);
+uint32_t ee_sha(ee_sha_size_t size,
+                uint32_t      count,
+                void *        p_message_list,
+                uint32_t      iter);
 
 /**
  * @brief Creates a context.

@@ -21,140 +21,121 @@
  */
 extern bool g_mute_timestamps;
 
-/**
- * @brief Helper function to copy a number of pseudo-random octets to a buffer.
- *
- * @param p_buffer Destination buffer.
- * @param len Number of octets.
- */
-static void
-fill_rand(uint8_t *p_buffer, size_t len)
-{
-    for (size_t x = 0; x < len; ++x)
-    {
-        p_buffer[x] = ee_rand();
-    }
-}
-
+void fill_rand(uint8_t *, size_t);
+/* These are to make the verification messages more clear. */
 static char *ee_ecdh_group_names[] = { "p256r1", "p384", "c25519", "ed25519" };
 
 uint32_t
-ee_bench_sha(ee_sha_size_t size, uint32_t n, uint32_t i, bool verify)
+ee_bench_sha(ee_sha_size_t size, uint32_t i, bool verify)
 {
-    uint8_t *p_in  = th_buffer_address();
-    uint8_t *p_out = p_in + n;
-    uint32_t dt;
+    uint32_t *p32;            /* Helper construction pointer */
+    uint8_t * p8;             /* Helper construction pointer */
+    void *    p_message_list; /* A pointer to the message list */
+    uint32_t  count;          /* The number of messages to hash */
+    uint32_t  length;         /* The length of each message */
+    uint32_t  dt;             /* Runtime in microseconds */
+    size_t    x;              /* Generic loop index */
 
-    fill_rand(p_in, n);
-    dt = ee_sha(size, p_in, n, p_out, i);
+    /* Extract data from the scratchpad, and fixup endian */
+    p32 = (uint32_t *)th_buffer_address();
+    /* Host endian does not always match target endian */
+    count          = EE_FIX_ENDIAN(*p32++);
+    /* Save where we are as the start of the message list */
+    p_message_list = (void *)p32;
+    /* Host endian does not always match target endian, fix it here */
+    for (p32 = (uint32_t *)p_message_list, x = 0; x < count; ++x)
+    {
+        length = EE_FIX_ENDIAN(*p32);
+        *p32++ = length;
+        p8     = ((uint8_t *)p32 + length + (size / 8));
+        p32    = (uint32_t *)p8;
+    }
+    /* Run the number of iterations */
+    dt = ee_sha(size, count, p_message_list, i);
+    /* Print verification messages used by the host for proof-of-work */
     if (verify)
     {
-        ee_printmemline(p_in, n, "m-bench-sha-in");
-        ee_printmemline(p_out, size / 8, "m-bench-sha-out");
+        for (p32 = (uint32_t *)p_message_list, x = 0; x < count; ++x)
+        {
+            length = *p32++;
+            p8     = (uint8_t *)p32;
+            ee_printmemline(p8, length, "m-bench-sha-msg-");
+            p8 += length;
+            ee_printmemline(p8, size / 8, "m-bench-sha-out-");
+            p8 += size / 8;
+            p32 = (uint32_t *)p8;
+        }
     }
     return dt;
 }
 
 uint32_t
-ee_bench_sha_multi(ee_sha_size_t size, uint32_t i, bool verify)
-{
-    /* How many SHA's do we need to do? */
-    uint32_t *p_count = (uint32_t *)th_buffer_address();
-    /* How big is each one? */
-    /* TODO endian */
-    uint32_t *p_len = p_count + 1;
-    /* After that is the output digest */
-    uint8_t *p_out = (uint8_t *)(p_len + *p_count);
-    /* Next comes the input pointers */
-    uint8_t **pp_in = (uint8_t **)(p_out + (size / 8));
-    /* And then we fill the above points in with pointers to this buffer */
-    uint8_t *ptr = (uint8_t *)(pp_in + *p_count);
-    /* Generic index for loops */
-    size_t x;
-
-    /* TODO: Need to make sure we don't overflow the buffer! */
-    for (x = 0; x < *p_count; ++x)
-    {
-        pp_in[x] = ptr;
-        fill_rand(pp_in[x], p_len[x]);
-        ptr += p_len[x];
-    }
-
-    /* No need to verify this run. If single-use verifies, this will verify. */
-    return ee_sha_multi(size, pp_in, p_len, p_out, *p_count, i);
-}
-
-uint32_t
 ee_bench_aes(ee_aes_mode_t mode, ee_aes_func_t func, uint32_t iter, bool verify)
 {
-    uint8_t *p8;
-    uint8_t *p_key;
-    uint8_t *p_iv;
-    void *   p_message_list;
-    uint32_t dt;
+    uint32_t *p32;            /* Helper construction pointer */
+    uint8_t * p8;             /* Helper construction pointer */
+    uint32_t  keylen;         /* Key length from the host */
+    uint32_t  ivlen;          /* IV length from the host */
+    uint8_t * p_key;          /* Pointer to the key */
+    uint8_t * p_iv;           /* Pointer to the IV */
+    void *    p_message_list; /* A pointer to the message list */
+    uint32_t  count;          /* The number of messages to en{de}crypt */
+    uint32_t  length;         /* The length of each message */
+    uint32_t  dt;             /* Runtime in microseconds */
+    size_t    x;              /* Generic loop index */
 
-    uint32_t *p32 = (uint32_t *)th_buffer_address();
-
-    /* The host will send data in BE if it is not an octet stream. */
-    uint32_t keylen = EE_FIX_ENDIAN(*p32++);
-    uint32_t ivlen  = EE_FIX_ENDIAN(*p32++);
-    uint32_t count  = EE_FIX_ENDIAN(*p32++);
-
-    uint32_t length;
-
-    size_t x;
-
-    p8 = (uint8_t *)p32;
-
-    fill_rand(p8, keylen);
+    /* Set up the scratchpad buffer values */
+    p32 = (uint32_t *)th_buffer_address();
+    /* Host endian does not always match target endian */
+    keylen = EE_FIX_ENDIAN(*p32++);
+    ivlen  = EE_FIX_ENDIAN(*p32++);
+    count  = EE_FIX_ENDIAN(*p32++);
+    /* Switch to a byte pointer for the key and IV pointers */
+    p8    = (uint8_t *)p32;
     p_key = p8;
     p8 += keylen;
-
-    fill_rand(p8, ivlen);
     p_iv = p8;
     p8 += ivlen;
-
+    /* Switch back to a 32-bit pointer for setting up the message list */
     p32 = (uint32_t *)p8;
-
+    /* Save where we are as the start of the message list */
     p_message_list = (void *)p32;
-
-    /* Follow the list and fill each input with random data. */
+    /* Host endian does not always match target endian, fix it here */
     for (p32 = (uint32_t *)p_message_list, x = 0; x < count; ++x)
     {
-        length = EE_FIX_ENDIAN(*p32++);
+        /* Host endian does not always match target endian, fix it here */
+        length = EE_FIX_ENDIAN(*p32);
+        *p32++ = length;
         p8     = (uint8_t *)p32;
-        fill_rand(p8, length);
-        /* Skip to next operation block */
+        /* Skip to next operation block (input + output + tag) */
         p8 += length + length + EE_AES_TAGLEN;
         p32 = (uint32_t *)p8;
     }
-
-    /* Encrypt something for the decrypt loop to decrypt */
+    /* If decrypting, encrypt something for the decrypt loop to decrypt */
     if (func == EE_AES_DEC)
     {
+        /* Don't confuse the host with bogus timestamps! */
         g_mute_timestamps = true;
-        eex_aes_multi(
-            mode, EE_AES_ENC, p_key, keylen, p_iv, count, p_message_list, 1);
+        ee_aes(mode, EE_AES_ENC, p_key, keylen, p_iv, count, p_message_list, 1);
         g_mute_timestamps = false;
         /* Now swap all the encrypted outputs to the input space. */
         for (p32 = (uint32_t *)p_message_list, x = 0; x < count; ++x)
         {
-            length = EE_FIX_ENDIAN(*p32++);
+            length = *p32++;
             p8     = (uint8_t *)p32;
             th_memcpy(p8, p8 + length, length);
             p8 += length + length + EE_AES_TAGLEN;
             p32 = (uint32_t *)p8;
         }
     }
-
-    dt = eex_aes_multi(
-        mode, func, p_key, keylen, p_iv, count, p_message_list, iter);
-
+    /* Run the number of iterations */
+    dt = ee_aes(mode, func, p_key, keylen, p_iv, count, p_message_list, iter);
+    /* Print verification messages used by the host for proof-of-work */
     if (verify)
     {
         for (p32 = (uint32_t *)p_message_list, x = 0; x < count; ++x)
         {
-            length = EE_FIX_ENDIAN(*p32++);
+            length = *p32++;
             p8     = (uint8_t *)p32;
             /* Not all of these are used (ECB, CCM), but print them anyway. */
             ee_printmemline(p_key, keylen, "m-bench-aes-key-");
@@ -168,7 +149,6 @@ ee_bench_aes(ee_aes_mode_t mode, ee_aes_func_t func, uint32_t iter, bool verify)
             p32 = (uint32_t *)p8;
         }
     }
-
     return dt;
 }
 
@@ -214,7 +194,8 @@ ee_bench_ecdh(ee_ecdh_group_t g, uint32_t i, bool verify)
     uint32_t  t0       = 0;
     uint32_t  t1       = 0;
     uint32_t *p_publen = (uint32_t *)th_buffer_address();
-    /* The host will send data in BE if it is not an octet stream. */
+
+    /* Host endian does not always match target endian */
     *p_publen = EE_FIX_ENDIAN(*p_publen);
     if (*p_publen > 0x80000)
     {
@@ -223,7 +204,7 @@ ee_bench_ecdh(ee_ecdh_group_t g, uint32_t i, bool verify)
     }
     uint8_t * p_pub    = (uint8_t *)p_publen + sizeof(uint32_t);
     uint32_t *p_seclen = (uint32_t *)(p_pub + *p_publen);
-    /* The host will send data in BE if it is not an octet stream. */
+    /* Host endian does not always match target endian */
     *p_seclen      = EE_FIX_ENDIAN(*p_seclen);
     uint8_t *p_sec = (uint8_t *)p_seclen + sizeof(uint32_t);
 
@@ -278,8 +259,6 @@ ee_bench_ecdsa_sign(ee_ecdh_group_t g, uint32_t n, uint32_t i, bool verify)
     void *      p_context = NULL;
     ee_status_t ret       = EE_STATUS_OK;
 
-    fill_rand(p_msg, n);
-
     th_ecdsa_create(&p_context, g);
     th_printf("m-ecdsa-%s-sign-iter[%d]\r\n", ee_ecdh_group_names[g], i);
     th_printf("m-ecdsa-%s-sign-start\r\n", ee_ecdh_group_names[g]);
@@ -320,7 +299,8 @@ ee_bench_ecdsa_verify(ee_ecdh_group_t g, uint32_t n, uint32_t i, bool verify)
     uint32_t  t1       = 0;
     uint8_t * p_msg    = th_buffer_address();
     uint32_t *p_publen = (uint32_t *)(p_msg + n);
-    /* The host will send data in BE if it is not an octet stream. */
+
+    /* Host endian does not always match target endian */
     *p_publen = EE_FIX_ENDIAN(*p_publen);
     if (*p_publen > 0x80000)
     {
@@ -370,7 +350,8 @@ ee_bench_rsa_verify(ee_rsa_id_t id, unsigned int n, unsigned int i, bool verify)
     uint32_t  t1       = 0;
     uint8_t * p_msg    = th_buffer_address();
     uint32_t *p_publen = (uint32_t *)(p_msg + n);
-    /* The host will send data in BE if it is not an octet stream. */
+
+    /* Host endian does not always match target endian */
     *p_publen = EE_FIX_ENDIAN(*p_publen);
     if (*p_publen > 0x80000)
     {
@@ -379,7 +360,7 @@ ee_bench_rsa_verify(ee_rsa_id_t id, unsigned int n, unsigned int i, bool verify)
     }
     uint8_t * p_pub    = (uint8_t *)p_publen + sizeof(uint32_t);
     uint32_t *p_siglen = (uint32_t *)(p_pub + *p_publen);
-    /* The host will send data in BE if it is not an octet stream. */
+    /* Host endian does not always match target endian */
     *p_siglen              = EE_FIX_ENDIAN(*p_siglen);
     uint8_t *   p_sig      = (uint8_t *)p_siglen + sizeof(uint32_t);
     uint8_t *   p_passfail = p_sig + *p_siglen;
@@ -413,14 +394,14 @@ ee_bench_rsa_verify(ee_rsa_id_t id, unsigned int n, unsigned int i, bool verify)
 arg_claimed_t
 ee_bench_parse(char *p_command, bool verify)
 {
-    char *   p_subcmd;
-    char *   p_seed;
-    char *   p_iter;
-    char *   p_size;
+    char *p_subcmd;
+    char *p_seed;
+    char *p_iter;
+    char *p_size;
 
     uint32_t i;
     uint32_t n;
-    
+
     if (th_strncmp(p_command, "bench", EE_CMD_SIZE) != 0)
     {
         return EE_ARG_UNCLAIMED;
@@ -482,19 +463,11 @@ ee_bench_parse(char *p_command, bool verify)
 
     if (th_strncmp(p_subcmd, "sha256", EE_CMD_SIZE) == 0)
     {
-        ee_bench_sha(EE_SHA256, n, i, verify);
+        ee_bench_sha(EE_SHA256, i, verify);
     }
     else if (th_strncmp(p_subcmd, "sha384", EE_CMD_SIZE) == 0)
     {
-        ee_bench_sha(EE_SHA384, n, i, verify);
-    }
-    else if (th_strncmp(p_subcmd, "sha256_multi", EE_CMD_SIZE) == 0)
-    {
-        ee_bench_sha_multi(EE_SHA256, i, verify);
-    }
-    else if (th_strncmp(p_subcmd, "sha384_multi", EE_CMD_SIZE) == 0)
-    {
-        ee_bench_sha_multi(EE_SHA384, i, verify);
+        ee_bench_sha(EE_SHA384, i, verify);
     }
     else if (th_strncmp(p_subcmd, "aes128-ecb-enc", EE_CMD_SIZE) == 0)
     {

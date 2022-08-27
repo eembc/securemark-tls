@@ -44,19 +44,30 @@ typedef enum ee_aes_func_t
  * @brief This is the lowest-level benchmark function before the API calls.
  * It performs `i` number of iterations on the primitive.
  *
- * None of the functions at this level return an error status; errors are
- * reported vi `th_printf` and intercepted by the host.
+ * The message format reserved in the temp buffer is in the form:
  *
- * @param mode - The mode of this AES operation
- * @param func - The AES function to perform
+ * Offset   Size    Data
+ * ------   ----    ---------------------------------------------
+ * 0        4       Size of message #1 = n1
+ * 4        n1      Input buffer #1 containing message
+ * " + n    n1      Output buffer #1 encrypted/decrypted message
+ * " + n    16      Tag #1 (tag length 16 bytes) *
+ * " + 16   4       Size of message #2 = n2
+ * ...etc
+ *
+ * * If the initialization vector or tag is not used (ECB), these fields are
+ *   still required but are ignored.
+ *
+ * There are `count` number of messages at the `p_message_list` pointer.
+ *
+ * @param mode - The enum indicating the AES mode
+ * @param func - The enum indicating the function
  * @param p_key - Key buffer
  * @param keylen - Length of key buffer
  * @param p_iv - Initialization vector buffer
- * @param p_in - Input PT/CT buffer
- * @param len - Length of input buffer
- * @param p_out - Output CT/PT buffer
- * @param p_tag - Tag buffer
- * @param iter - Number of iterations to perform
+ * @param count - Number of messages
+ * @param p_message_list - See comment above for structure.
+ * @param iter - Number of iterations
  * @return uint32_t - Execution time in microseconds
  */
 uint32_t ee_aes(ee_aes_mode_t  mode,
@@ -64,52 +75,10 @@ uint32_t ee_aes(ee_aes_mode_t  mode,
                 const uint8_t *p_key,
                 uint32_t       keylen,
                 const uint8_t *p_iv,
-                const uint8_t *p_in,
-                uint32_t       len,
-                uint8_t *      p_out,
-                uint8_t *      p_tag,
+                const uint32_t count,
+                void *         p_message_list,
                 uint32_t       iter);
 
-/**
- * @brief This is the lowest-level benchmark function before the API calls for
- * multi-mode AES. It performs `i` number of iterations on the primitive.
- *
- * None of the functions at this level return an error status; errors are
- * reported vi `th_printf` and intercepted by the host.
- *
- * @param mode - The mode of this AES operation
- * @param func - The AES function to perform
- * @param p_key - Key buffer
- * @param keylen - Length of key buffer
- * @param p_iv - Initialization vector buffer
- * @param count - Number of inputs to process
- * @param pp_in - Input buffers
- * @param p_len - Lengths of input buffers
- * @param pp_out - Output buffers
- * @param pp_tag - Tag buffers
- * @param iter - Number of iterations
- * @return uint32_t - Execution time in microseconds
- */
-uint32_t ee_aes_multi(ee_aes_mode_t  mode,
-                      ee_aes_func_t  func,
-                      const uint8_t *p_key,
-                      uint32_t       keylen,
-                      const uint8_t *p_iv,
-                      const uint32_t count,
-                      const uint8_t *pp_in[],
-                      uint32_t       p_len[],
-                      uint8_t *      pp_out[],
-                      uint8_t *      pp_tag[],
-                      uint32_t       iter);
-
-uint32_t eex_aes_multi(ee_aes_mode_t  mode,
-                       ee_aes_func_t  func,
-                       const uint8_t *p_key,
-                       uint32_t       keylen,
-                       const uint8_t *p_iv,
-                       const uint32_t count,
-                       void *         p_message_list,
-                       uint32_t       i);
 /**
  * @brief Create a context for a given mode.
  *

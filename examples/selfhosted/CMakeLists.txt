@@ -28,7 +28,7 @@ include_directories(../../profile)
 
 if (SELFHOSTED)
 	#set(CMAKE_C_FLAGS "-pedantic -Wall -O0 -g -fcf-protection=none -DEE_CFG_SELFHOSTED=1 ")
-	set(CMAKE_C_FLAGS "-pedantic -Wall -DEE_CFG_SELFHOSTED=1 ")
+	set(CMAKE_C_FLAGS "-pedantic -g -O0 -Wall -DEE_CFG_SELFHOSTED=1 ")
 	if(MBEDTLS)
 		include_directories(profile/mbedtls_th_api)
 		include_directories(profile/mbedtls_th_api/redist/mbedtls-3.0.0/include)
