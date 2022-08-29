@@ -465,28 +465,7 @@ pre_wrap_chachapoly(ee_chachapoly_func_t func,
         p32 = (uint32_t *)p8;
     }
 }
-#if 0
-void
-pre_wrap_chachapoly(ee_chachapoly_func_t func,
-                    uint32_t             n,
-                    uint32_t             i,
-                    wres_t *             res)
-{
-    uint8_t *p_out;
 
-    assert(th_buffer_size() > (EE_CHACHAPOLY_KEYLEN + EE_CHACHAPOLY_IVLEN
-                               + EE_CHACHAPOLY_TAGLEN + +n));
-    p_out
-        = th_buffer_address() + EE_CHACHAPOLY_KEYLEN + EE_CHACHAPOLY_IVLEN + n;
-
-    res->dt  = ee_bench_chachapoly(func, i, DEBUG_VERIFY);
-    res->crc = 0;
-    for (size_t x = 0; x < n; ++x)
-    {
-        res->crc = crcu16(res->crc, (uint8_t)p_out[x]);
-    }
-}
-#endif
 void
 wrap_chachapoly_encrypt(void *ex, uint32_t n, uint32_t i, wres_t *res)
 {
