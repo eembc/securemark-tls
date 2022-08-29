@@ -400,10 +400,10 @@ MAKE_WRAP_AES(256, GCM, gcm)
 
 void
 pre_wrap_chachapoly(ee_chachapoly_func_t func,
-             uint32_t      n, /* n=0 to use ex */
-             uint32_t      i,
-             void *        ex, /* null if n>0 */
-             wres_t *      res)
+                    uint32_t             n, /* n=0 to use ex */
+                    uint32_t             i,
+                    void *               ex, /* null if n>0 */
+                    wres_t *             res)
 {
     uint32_t *         p32;            /* Helper construction pointer */
     uint8_t *          p8;             /* Helper construction pointer */

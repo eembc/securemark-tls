@@ -45,7 +45,7 @@ typedef enum
  * " + n    16      Tag #1 (tag length 16 bytes)
  * " + 16   4       Size of message #2 = n2
  * ...etc
- * 
+ *
  * @param func - ChaChaPoly function
  * @param p_key - The key buffer
  * @param p_iv - Initialization vector buffer
@@ -54,13 +54,12 @@ typedef enum
  * @param i - Number of iterations to perform
  * @return uint32_t - Execution time in microseconds
  */
-uint32_t
-ee_chachapoly(ee_chachapoly_func_t func,
-              uint8_t *            p_key,
-              uint8_t *            p_iv,
-              uint32_t count,
-              void * p_message_list,
-              uint32_t i);
+uint32_t ee_chachapoly(ee_chachapoly_func_t func,
+                       uint8_t *            p_key,
+                       uint8_t *            p_iv,
+                       uint32_t             count,
+                       void *               p_message_list,
+                       uint32_t             i);
 
 /**
  * @brief Creates a context.

@@ -39,7 +39,7 @@ ee_bench_sha(ee_sha_size_t size, uint32_t i, bool verify)
     /* Extract data from the scratchpad, and fixup endian */
     p32 = (uint32_t *)th_buffer_address();
     /* Host endian does not always match target endian */
-    count          = EE_FIX_ENDIAN(*p32++);
+    count = EE_FIX_ENDIAN(*p32++);
     /* Save where we are as the start of the message list */
     p_message_list = (void *)p32;
     /* Host endian does not always match target endian, fix it here */
@@ -151,6 +151,7 @@ ee_bench_aes(ee_aes_mode_t mode, ee_aes_func_t func, uint32_t iter, bool verify)
     return dt;
 }
 
+/* TODO: This function is nearly identical to `ee_bench_aes`, can we unify? */
 uint32_t
 ee_bench_chachapoly(ee_chachapoly_func_t func, uint32_t iter, bool verify)
 {
@@ -226,50 +227,15 @@ ee_bench_chachapoly(ee_chachapoly_func_t func, uint32_t iter, bool verify)
             p8 += length;
             ee_printmemline(p8, length, "m-bench-chachapoly-out-");
             p8 += length;
-            ee_printmemline(p8, EE_CHACHAPOLY_TAGLEN, "m-bench-chachapoly-tag-");
+            ee_printmemline(
+                p8, EE_CHACHAPOLY_TAGLEN, "m-bench-chachapoly-tag-");
             p8 += EE_CHACHAPOLY_TAGLEN;
             p32 = (uint32_t *)p8;
         }
     }
     return dt;
 }
-#if 0
-uint32_t
-ee_bench_chachapolyx(ee_chachapoly_func_t func, int n, int i, bool verify)
-{
-    uint8_t *p_key = th_buffer_address();
-    uint8_t *p_iv  = p_key + EE_CHACHAPOLY_KEYLEN;
-    uint8_t *p_in  = p_iv + EE_CHACHAPOLY_IVLEN;
-    uint8_t *p_out = p_in + n;
-    uint8_t *p_tag = p_out + n;
-    uint32_t dt;
 
-    fill_rand(p_key, EE_CHACHAPOLY_KEYLEN);
-    fill_rand(p_iv, EE_CHACHAPOLY_IVLEN);
-    fill_rand(p_in, n);
-    if (func == EE_CHACHAPOLY_DEC)
-    {
-        /* Encrypt something for the decrypt loop to decrypt */
-        g_mute_timestamps = true;
-        ee_chachapoly(EE_CHACHAPOLY_ENC, p_key, p_iv, p_in, n, p_out, p_tag, 1);
-        g_mute_timestamps = false;
-        th_memcpy(p_in, p_out, n);
-        uint8_t *tmp = p_in;
-        p_in         = p_out;
-        p_out        = tmp;
-    }
-    dt = ee_chachapoly(func, p_key, p_iv, p_in, n, p_out, p_tag, i);
-    if (verify)
-    {
-        ee_printmemline(p_key, EE_CHACHAPOLY_KEYLEN, "m-bench-chachapoly-key-");
-        ee_printmemline(p_iv, EE_CHACHAPOLY_IVLEN, "m-bench-chachapoly-iv-");
-        ee_printmemline(p_in, n, "m-bench-chachapoly-in-");
-        ee_printmemline(p_out, n, "m-bench-chachapoly-out-");
-        ee_printmemline(p_tag, EE_AES_TAGLEN, "m-bench-chachapoly-tag-");
-    }
-    return dt;
-}
-#endif
 uint32_t
 ee_bench_ecdh(ee_ecdh_group_t g, uint32_t i, bool verify)
 {

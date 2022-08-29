@@ -91,7 +91,9 @@ uint32_t ee_bench_aes(ee_aes_mode_t mode,
  * @param verify - Print verification messages for the host
  * @return uint32_t - Execution time in microseconds
  */
-uint32_t ee_bench_chachapoly(ee_chachapoly_func_t func, uint32_t iter, bool verify);
+uint32_t ee_bench_chachapoly(ee_chachapoly_func_t func,
+                             uint32_t             iter,
+                             bool                 verify);
 
 /**
  * @brief The top-level ECDH benchmark wrapper.
