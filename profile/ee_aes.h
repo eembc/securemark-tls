@@ -66,7 +66,7 @@ typedef enum ee_aes_func_t
  * @param keylen - Length of key buffer
  * @param p_iv - Initialization vector buffer
  * @param count - Number of messages
- * @param p_message_list - See comment above for structure.
+ * @param p_message_list - See comment above for structure
  * @param iter - Number of iterations
  * @return uint32_t - Execution time in microseconds
  */

@@ -35,24 +35,32 @@ typedef enum
  * None of the functions at this level return an error status; errors are
  * reported vi `th_printf` and intercepted by the host.
  *
+ * The message format reserved in the temp buffer is in the form:
+ *
+ * Offset   Size    Data
+ * ------   ----    ---------------------------------------------
+ * 0        4       Size of message #1 = n1
+ * 4        n1      Input buffer #1 containing message
+ * " + n    n1      Output buffer #1 encrypted/decrypted message
+ * " + n    16      Tag #1 (tag length 16 bytes)
+ * " + 16   4       Size of message #2 = n2
+ * ...etc
+ * 
  * @param func - ChaChaPoly function
  * @param p_key - The key buffer
  * @param p_iv - Initialization vector buffer
- * @param p_in - Input PT/CT buffer
- * @param len - Length of input buffer
- * @param p_out - Output CT/PT buffer
- * @param p_tag - Tag buffer
+ * @param count - Number of messages
+ * @param p_message_list - See comment above for structure
  * @param i - Number of iterations to perform
  * @return uint32_t - Execution time in microseconds
  */
-uint32_t ee_chachapoly(ee_chachapoly_func_t func,
-                       uint8_t *            p_key,
-                       uint8_t *            p_iv,
-                       uint8_t *            p_in,
-                       uint32_t             len,
-                       uint8_t *            p_out,
-                       uint8_t *            p_tag,
-                       uint32_t             i);
+uint32_t
+ee_chachapoly(ee_chachapoly_func_t func,
+              uint8_t *            p_key,
+              uint8_t *            p_iv,
+              uint32_t count,
+              void * p_message_list,
+              uint32_t i);
 
 /**
  * @brief Creates a context.

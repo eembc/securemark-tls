@@ -252,6 +252,7 @@ pre_wrap_sha(ee_sha_size_t size, uint32_t n, uint32_t i, void *ex, wres_t *res)
     uint32_t *         p32;            /* Helper construction pointer */
     uint8_t *          p8;             /* Helper construction pointer */
     void *             p_message_list; /* A pointer to the message list */
+    uint8_t *          p_digest;       /* Final digest of all messages */
     ee_array_uint32_t *input;          /* Extended input data */
     uint32_t           length;         /* The length of each message */
     size_t             x, y;           /* Generic loop index */
@@ -278,25 +279,20 @@ pre_wrap_sha(ee_sha_size_t size, uint32_t n, uint32_t i, void *ex, wres_t *res)
         /* Create a random message */
         fill_rand(p8, length);
         /* Skip to next message */
-        p8 += length + (size / 8);
+        p8 += length;
         p32 = (uint32_t *)p8;
     }
+    p_digest = p8;
     /* With the filled buffer, call the benchmark routine */
     res->dt  = ee_bench_sha(size, i, DEBUG_VERIFY);
     res->crc = 0;
     /* Calculate the CRC16 over the output */
     for (p32 = p_message_list, x = 0; x < input->size; ++x)
     {
-        length = *p32++;
-        p8     = (uint8_t *)p32;
-        p8 += length; /* move to the output digest */
         for (y = 0; y < (size / 8); ++y)
         {
-            res->crc = crcu16(res->crc, (uint8_t)p8[y]);
+            res->crc = crcu16(res->crc, (uint8_t)p_digest[y]);
         }
-        /* Skip to next message */
-        p8 += size / 8;
-        p32 = (uint32_t *)p8;
     }
 }
 
@@ -404,6 +400,74 @@ MAKE_WRAP_AES(256, GCM, gcm)
 
 void
 pre_wrap_chachapoly(ee_chachapoly_func_t func,
+             uint32_t      n, /* n=0 to use ex */
+             uint32_t      i,
+             void *        ex, /* null if n>0 */
+             wres_t *      res)
+{
+    uint32_t *         p32;            /* Helper construction pointer */
+    uint8_t *          p8;             /* Helper construction pointer */
+    void *             p_message_list; /* A pointer to the message list */
+    ee_array_uint32_t *input;          /* Extended input data */
+    uint32_t           length;         /* The length of each message */
+    size_t             x, y;           /* Generic loop index */
+
+    /* If single value, use the premade single-element structure. */
+    input = (ee_array_uint32_t *)ex;
+    if (n > 0 && ex == 0)
+    {
+        g_single_use.data[0] = n;
+        input                = &g_single_use;
+    }
+    /* See ee_bench_aes comments in ee_bench.h for memory layout. */
+    /* Set up the scratchpad buffer values */
+    p32 = (uint32_t *)th_buffer_address();
+    /* First the lengths and count */
+    *p32++ = EE_CHACHAPOLY_KEYLEN;
+    *p32++ = EE_CHACHAPOLY_IVLEN;
+    *p32++ = input->size;
+    /* Then the key and iv */
+    p8 = (uint8_t *)p32;
+    fill_rand(p8, EE_CHACHAPOLY_KEYLEN);
+    p8 += EE_CHACHAPOLY_KEYLEN;
+    fill_rand(p8, EE_CHACHAPOLY_IVLEN);
+    p8 += EE_CHACHAPOLY_IVLEN;
+    p32 = (uint32_t *)p8;
+    /* Save where we are as the start of the message list */
+    p_message_list = p32;
+    /* Then place the length values for each message packet (same as above) */
+    for (x = 0; x < input->size; ++x)
+    {
+        length = input->data[x];
+        *p32++ = length;
+        p8     = (uint8_t *)p32;
+        /* Create a random message */
+        fill_rand(p8, length);
+        /* Skip to next message */
+        p8 += length + length + EE_CHACHAPOLY_TAGLEN;
+        p32 = (uint32_t *)p8;
+    }
+    /* With the filled buffer, call the benchmark routine */
+    res->dt  = ee_bench_chachapoly(func, i, DEBUG_VERIFY);
+    res->crc = 0;
+    /* Calculate the CRC16 over the output */
+    for (p32 = p_message_list, x = 0; x < input->size; ++x)
+    {
+        length = *p32++;
+        p8     = (uint8_t *)p32;
+        p8 += length; /* move to output message */
+        for (y = 0; y < length; ++y)
+        {
+            res->crc = crcu16(res->crc, (uint8_t)p8[y]);
+        }
+        /* Skip to next message */
+        p8 += length + EE_CHACHAPOLY_TAGLEN;
+        p32 = (uint32_t *)p8;
+    }
+}
+#if 0
+void
+pre_wrap_chachapoly(ee_chachapoly_func_t func,
                     uint32_t             n,
                     uint32_t             i,
                     wres_t *             res)
@@ -415,24 +479,24 @@ pre_wrap_chachapoly(ee_chachapoly_func_t func,
     p_out
         = th_buffer_address() + EE_CHACHAPOLY_KEYLEN + EE_CHACHAPOLY_IVLEN + n;
 
-    res->dt  = ee_bench_chachapoly(func, n, i, DEBUG_VERIFY);
+    res->dt  = ee_bench_chachapoly(func, i, DEBUG_VERIFY);
     res->crc = 0;
     for (size_t x = 0; x < n; ++x)
     {
         res->crc = crcu16(res->crc, (uint8_t)p_out[x]);
     }
 }
-
+#endif
 void
 wrap_chachapoly_encrypt(void *ex, uint32_t n, uint32_t i, wres_t *res)
 {
-    pre_wrap_chachapoly(EE_CHACHAPOLY_ENC, n, i, res);
+    pre_wrap_chachapoly(EE_CHACHAPOLY_ENC, n, i, ex, res);
 }
 
 void
 wrap_chachapoly_decrypt(void *ex, uint32_t n, uint32_t i, wres_t *res)
 {
-    pre_wrap_chachapoly(EE_CHACHAPOLY_DEC, n, i, res);
+    pre_wrap_chachapoly(EE_CHACHAPOLY_DEC, n, i, ex, res);
 }
 
 void
@@ -653,10 +717,8 @@ typedef struct
 // clang-format off
 static task_entry_t g_task[] =
 {
-    /* Note: changing the order of these changes the CRC due to rand() */
-
-    TASKEX(sha256             , 1.0f, 0x2be9, &g_sha_multi_m)
-    TASKEX(sha384             , 1.0f, 0x0d41, &g_sha_multi_h)
+    TASKEX(sha256             , 1.0f, 0xa23c, &g_sha_multi_m)
+    TASKEX(sha384             , 1.0f, 0xa6b6, &g_sha_multi_h)
 
     TASKEX(aes128_gcm_encrypt , 1.0f, 0x954b, &g_aead_e_multi_m)
     TASKEX(aes256_gcm_encrypt , 1.0f, 0x9f97, &g_aead_e_multi_h)
@@ -683,7 +745,7 @@ static task_entry_t g_task[] =
     TASK(aes128_ecb_encrypt   , 2048, 10.0f, 0xc380)
 
     TASK(chachapoly_encrypt   ,   52,  1.0f, 0xa7f5)
-    TASK(chachapoly_decrypt   ,  168,  1.0f, 0x44be)
+    TASK(chachapoly_decrypt   ,  168,  1.0f, 0x0dc3)
 
     TASK(aes256_ecb_encrypt   ,  320,  1.0f, 0xba50)
     TASK(aes256_ccm_encrypt   ,   52,  1.0f, 0xd195)
@@ -724,9 +786,9 @@ static task_entry_t g_task[] =
     TASK(aes128_gcm_decrypt   ,  136,  1.0f, 0xab71)
 
     TASK(chachapoly_encrypt   ,  416,  1.0f, 0x47fa)
-    TASK(chachapoly_decrypt   ,  444,  1.0f, 0x066a)
+    TASK(chachapoly_decrypt   ,  444,  1.0f, 0x06f9)
     TASK(chachapoly_encrypt   ,   38,  1.0f, 0x5dbb)
-    TASK(chachapoly_decrypt   ,  136,  1.0f, 0xffab)
+    TASK(chachapoly_decrypt   ,  136,  1.0f, 0xc310)
 
     TASK(aes128_ecb_encrypt   ,  288,  1.0f, 0x859a)
     TASK(aes256_ecb_encrypt   ,  288,  1.0f, 0x0ebc)
@@ -811,7 +873,7 @@ main(void)
         /* Now do a run with the correct number of iterations to get ips */
         (*g_task[i].func)(g_task[i].ex, g_task[i].n, iterations, &res);
         g_task[i].ips = (float)iterations / (res.dt / 1e6f);
-#endif
+#endif /* CRC_ONLY == 0 */
         /**
          * Generate the component and final scores.
          *
@@ -823,20 +885,22 @@ main(void)
         component_score = g_task[i].weight / g_task[i].ips;
         score += component_score;
         printf("%15.3f", g_task[i].ips);
+#endif /* DEBUG_VERIFY == 0 */
         if (g_task[i].actual_crc != g_task[i].expected_crc)
         {
             printf(" ***ERROR: CRCs did not match, expected 0x%04x, got 0x%04x",
                    g_task[i].expected_crc,
                    g_task[i].actual_crc);
         }
+#if DEBUG_VERIFY == 0
 #if CRC_ONLY == 0
         if (res.dt < MIN_RUNTIME_USEC)
         {
             printf(" ***ERROR: Not enough runtime %.3f sec.", res.dt / 1.0e6f);
         }
-#endif
+#endif /* CRC_ONLY == 0 */
         printf("\n");
-#endif /* DEBUG_VERIFY */
+#endif /* DEBUG_VERIFY == 0 */
     }
     score = 1000.0f / score;
     printf("\n");

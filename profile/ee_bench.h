@@ -87,15 +87,11 @@ uint32_t ee_bench_aes(ee_aes_mode_t mode,
  * See note above in `ee_bench_aes()` about host pre-filling the buffer.
  *
  * @param func - The enum indicating the function
- * @param n - The length of the text (plain/cipher, depends on function)
  * @param i - The number of iterations to perform
  * @param verify - Print verification messages for the host
  * @return uint32_t - Execution time in microseconds
  */
-uint32_t ee_bench_chachapoly(ee_chachapoly_func_t func,
-                             int                  n,
-                             int                  i,
-                             bool                 verify);
+uint32_t ee_bench_chachapoly(ee_chachapoly_func_t func, uint32_t iter, bool verify);
 
 /**
  * @brief The top-level ECDH benchmark wrapper.

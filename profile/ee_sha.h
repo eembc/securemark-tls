@@ -35,9 +35,9 @@ typedef enum ee_sha_size_t
  * ------   ----    ---------------------------------------------
  * 0        4       Size of message #1 = n1
  * 4        n1      Message #1
- * " + n1   h1      Hash of message #1
- * " + h1   4       Size of message #2 = n2
- * " + 4    n2      ... etc for N messages.
+ * " + n1   4       Size of message #2 = n2
+ * " + 4    n2      Message #2, etc...
+ * ...      h1      Digest of all messages (length based on size)
  *
  * @param size - See the `ee_sha_size_t` enum
  * @param count - Number of messages to hash

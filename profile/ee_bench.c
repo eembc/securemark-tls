@@ -47,7 +47,7 @@ ee_bench_sha(ee_sha_size_t size, uint32_t i, bool verify)
     {
         length = EE_FIX_ENDIAN(*p32);
         *p32++ = length;
-        p8     = ((uint8_t *)p32 + length + (size / 8));
+        p8     = ((uint8_t *)p32 + length);
         p32    = (uint32_t *)p8;
     }
     /* Run the number of iterations */
@@ -61,10 +61,9 @@ ee_bench_sha(ee_sha_size_t size, uint32_t i, bool verify)
             p8     = (uint8_t *)p32;
             ee_printmemline(p8, length, "m-bench-sha-msg-");
             p8 += length;
-            ee_printmemline(p8, size / 8, "m-bench-sha-out-");
-            p8 += size / 8;
             p32 = (uint32_t *)p8;
         }
+        ee_printmemline(p8, size / 8, "m-bench-sha-out-");
     }
     return dt;
 }
@@ -153,7 +152,90 @@ ee_bench_aes(ee_aes_mode_t mode, ee_aes_func_t func, uint32_t iter, bool verify)
 }
 
 uint32_t
-ee_bench_chachapoly(ee_chachapoly_func_t func, int n, int i, bool verify)
+ee_bench_chachapoly(ee_chachapoly_func_t func, uint32_t iter, bool verify)
+{
+    uint32_t *p32;            /* Helper construction pointer */
+    uint8_t * p8;             /* Helper construction pointer */
+    uint32_t  keylen;         /* Key length from the host */
+    uint32_t  ivlen;          /* IV length from the host */
+    uint8_t * p_key;          /* Pointer to the key */
+    uint8_t * p_iv;           /* Pointer to the IV */
+    void *    p_message_list; /* A pointer to the message list */
+    uint32_t  count;          /* The number of messages to en{de}crypt */
+    uint32_t  length;         /* The length of each message */
+    uint32_t  dt;             /* Runtime in microseconds */
+    size_t    x;              /* Generic loop index */
+
+    /* Set up the scratchpad buffer values */
+    p32 = (uint32_t *)th_buffer_address();
+    /* Host endian does not always match target endian */
+    keylen = EE_FIX_ENDIAN(*p32++);
+    ivlen  = EE_FIX_ENDIAN(*p32++);
+    count  = EE_FIX_ENDIAN(*p32++);
+    /* Switch to a byte pointer for the key and IV pointers */
+    p8    = (uint8_t *)p32;
+    p_key = p8;
+    p8 += keylen;
+    p_iv = p8;
+    p8 += ivlen;
+    /* Switch back to a 32-bit pointer for setting up the message list */
+    p32 = (uint32_t *)p8;
+    /* Save where we are as the start of the message list */
+    p_message_list = (void *)p32;
+    /* Host endian does not always match target endian, fix it here */
+    for (p32 = (uint32_t *)p_message_list, x = 0; x < count; ++x)
+    {
+        /* Host endian does not always match target endian, fix it here */
+        length = EE_FIX_ENDIAN(*p32);
+        *p32++ = length;
+        p8     = (uint8_t *)p32;
+        /* Skip to next operation block (input + output + tag) */
+        p8 += length + length + EE_CHACHAPOLY_TAGLEN;
+        p32 = (uint32_t *)p8;
+    }
+    /* If decrypting, encrypt something for the decrypt loop to decrypt */
+    if (func == EE_CHACHAPOLY_DEC)
+    {
+        /* Don't confuse the host with bogus timestamps! */
+        g_mute_timestamps = true;
+        ee_chachapoly(EE_CHACHAPOLY_ENC, p_key, p_iv, count, p_message_list, 1);
+        g_mute_timestamps = false;
+        /* Now swap all the encrypted outputs to the input space. */
+        for (p32 = (uint32_t *)p_message_list, x = 0; x < count; ++x)
+        {
+            length = *p32++;
+            p8     = (uint8_t *)p32;
+            th_memcpy(p8, p8 + length, length);
+            p8 += length + length + EE_CHACHAPOLY_TAGLEN;
+            p32 = (uint32_t *)p8;
+        }
+    }
+    /* Run the number of iterations */
+    dt = ee_chachapoly(func, p_key, p_iv, count, p_message_list, iter);
+    /* Print verification messages used by the host for proof-of-work */
+    if (verify)
+    {
+        for (p32 = (uint32_t *)p_message_list, x = 0; x < count; ++x)
+        {
+            length = *p32++;
+            p8     = (uint8_t *)p32;
+            /* Not all of these are used (ECB, CCM), but print them anyway. */
+            ee_printmemline(p_key, keylen, "m-bench-chachapoly-key-");
+            ee_printmemline(p_iv, ivlen, "m-bench-chachapoly-iv-");
+            ee_printmemline(p8, length, "m-bench-chachapoly-in-");
+            p8 += length;
+            ee_printmemline(p8, length, "m-bench-chachapoly-out-");
+            p8 += length;
+            ee_printmemline(p8, EE_CHACHAPOLY_TAGLEN, "m-bench-chachapoly-tag-");
+            p8 += EE_CHACHAPOLY_TAGLEN;
+            p32 = (uint32_t *)p8;
+        }
+    }
+    return dt;
+}
+#if 0
+uint32_t
+ee_bench_chachapolyx(ee_chachapoly_func_t func, int n, int i, bool verify)
 {
     uint8_t *p_key = th_buffer_address();
     uint8_t *p_iv  = p_key + EE_CHACHAPOLY_KEYLEN;
@@ -187,7 +269,7 @@ ee_bench_chachapoly(ee_chachapoly_func_t func, int n, int i, bool verify)
     }
     return dt;
 }
-
+#endif
 uint32_t
 ee_bench_ecdh(ee_ecdh_group_t g, uint32_t i, bool verify)
 {
@@ -535,11 +617,11 @@ ee_bench_parse(char *p_command, bool verify)
     }
     else if (th_strncmp(p_subcmd, "chachapoly-enc", EE_CMD_SIZE) == 0)
     {
-        ee_bench_chachapoly(EE_CHACHAPOLY_ENC, n, i, verify);
+        ee_bench_chachapoly(EE_CHACHAPOLY_ENC, i, verify);
     }
     else if (th_strncmp(p_subcmd, "chachapoly-dec", EE_CMD_SIZE) == 0)
     {
-        ee_bench_chachapoly(EE_CHACHAPOLY_DEC, n, i, verify);
+        ee_bench_chachapoly(EE_CHACHAPOLY_DEC, i, verify);
     }
     else if (th_strncmp(p_subcmd, "ecdh-p256", EE_CMD_SIZE) == 0)
     {

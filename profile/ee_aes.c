@@ -26,18 +26,18 @@ ee_aes(ee_aes_mode_t  mode,
        uint32_t       iter)
 {
     void *      p_context;
+    uint8_t *   p_in;
+    uint8_t *   p_out;
+    uint8_t *   p_tag;
     uint32_t *  p32;
     uint8_t *   p8;
+    uint32_t    len;
     uint32_t    t0   = 0;
     uint32_t    t1   = 0;
     uint16_t    bits = keylen * 8;
     const char *m    = aes_cipher_mode_text[mode];
     ee_status_t ret;
     uint32_t    x;
-    uint32_t    len;
-    uint8_t *   p_in;
-    uint8_t *   p_out;
-    uint8_t *   p_tag;
 
     if (th_aes_create(&p_context, mode) != EE_STATUS_OK)
     {
@@ -45,6 +45,7 @@ ee_aes(ee_aes_mode_t  mode,
         return 0;
     }
     th_printf("m-aes%d_%s-iter[%d]\r\n", bits, m, iter);
+    th_printf("m-aes%d_%s-count[%d]\r\n", bits, m, count);
     if (func == EE_AES_ENC)
     {
         th_printf("m-aes%d_%s-encrypt-start\r\n", bits, m);

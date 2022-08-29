@@ -53,10 +53,10 @@ ee_sha(ee_sha_size_t size, uint32_t count, void *p_message_list, uint32_t iter)
                 goto exit;
             }
             p8 += length;
-            p8 += (size / 8);
             p32 = (uint32_t *)p8;
         }
-        if (th_sha_done(p_context, p8 - (size / 8)) != EE_STATUS_OK)
+        /* p8 now points to the end of the message list, and is the digest */
+        if (th_sha_done(p_context, p8) != EE_STATUS_OK)
         {
             th_post();
             th_printf("e-sha%d-[Failed to complete]\r\n", size);
