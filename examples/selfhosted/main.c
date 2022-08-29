@@ -60,7 +60,7 @@
 /* `1` to turn on debugging messages */
 #define DEBUG_VERIFY 0
 /* Only run a single iteration of each task (for debug) */
-#define CRC_ONLY 1
+#define CRC_ONLY 0
 
 /* Wrapper functions fill out a results structure with time and CRC */
 typedef struct
@@ -398,6 +398,7 @@ MAKE_WRAP_AES(256, CTR, ctr)
 MAKE_WRAP_AES(256, CCM, ccm)
 MAKE_WRAP_AES(256, GCM, gcm)
 
+/* TODO: This function is nearly identical to `pre_wrap_aes`, can we unify? */
 void
 pre_wrap_chachapoly(ee_chachapoly_func_t func,
                     uint32_t             n, /* n=0 to use ex */
@@ -484,17 +485,13 @@ pre_wrap_ecdh(ee_ecdh_group_t g, uint32_t i, wres_t *res)
     uint32_t *p_publen = (uint32_t *)th_buffer_address();
     uint8_t * p_pub;
     uint32_t *p_seclen;
-    /*uint8_t * p_sec;*/
 
     *p_publen = g_ecc_public_key_sizes[g];
     p_pub     = (uint8_t *)p_publen + sizeof(uint32_t);
     p_seclen  = (uint32_t *)(p_pub + *p_publen);
-    /*p_sec     = (uint8_t *)p_seclen + sizeof(uint32_t);*/
     th_memcpy(p_pub, g_ecc_public_keys[g], *p_publen);
-
-    *p_seclen = 256; // Reasonably-sized space for the sig.
-
-    res->dt = ee_bench_ecdh(g, i, DEBUG_VERIFY);
+    *p_seclen = 256; /* Reasonably-sized space for the sig. */
+    res->dt   = ee_bench_ecdh(g, i, DEBUG_VERIFY);
     /* TODO: We don't have access to the private key so we cannot verify. */
     res->crc = 0;
 }
@@ -696,19 +693,7 @@ typedef struct
 // clang-format off
 static task_entry_t g_task[] =
 {
-    TASKEX(sha256             , 1.0f, 0xa23c, &g_sha_multi_m)
-    TASKEX(sha384             , 1.0f, 0xa6b6, &g_sha_multi_h)
-
-    TASKEX(aes128_gcm_encrypt , 1.0f, 0x954b, &g_aead_e_multi_m)
-    TASKEX(aes256_gcm_encrypt , 1.0f, 0x9f97, &g_aead_e_multi_h)
-    TASKEX(aes128_ccm_encrypt , 1.0f, 0xb9d9, &g_aead_e_multi_m)
-    TASKEX(aes256_ccm_encrypt , 1.0f, 0xf16d, &g_aead_e_multi_h)
-
-    TASKEX(aes128_gcm_decrypt , 1.0f, 0x7b96, &g_aead_d_multi_m)
-    TASKEX(aes256_gcm_decrypt , 1.0f, 0x56f1, &g_aead_d_multi_h)
-    TASKEX(aes128_ccm_decrypt , 1.0f, 0x7b96, &g_aead_d_multi_m)
-    TASKEX(aes256_ccm_decrypt , 1.0f, 0x56f1, &g_aead_d_multi_h)
-
+    /* Version 1: TLS1.2 */
     TASK(aes128_ecb_encrypt   ,  320,  1.0f, 0x0b7a)
     TASK(aes128_ccm_encrypt   ,   52,  1.0f, 0xd82d)
     TASK(aes128_ccm_decrypt   ,  168,  1.0f, 0x9a42)
@@ -718,75 +703,67 @@ static task_entry_t g_task[] =
     TASK(sha256               ,   23,  3.0f, 0x2151)
     TASK(sha256               ,   57,  1.0f, 0x3b3c)
     TASK(sha256               ,  384,  1.0f, 0x1d3f)
-
     TASK(variation_001        ,    0,  3.0f, 0x0000)
     TASK(sha256               , 4224,  4.0f, 0x9284)
     TASK(aes128_ecb_encrypt   , 2048, 10.0f, 0xc380)
-
-    TASK(chachapoly_encrypt   ,   52,  1.0f, 0xa7f5)
-    TASK(chachapoly_decrypt   ,  168,  1.0f, 0x0dc3)
-
-    TASK(aes256_ecb_encrypt   ,  320,  1.0f, 0xba50)
-    TASK(aes256_ccm_encrypt   ,   52,  1.0f, 0xd195)
-    TASK(aes256_ccm_decrypt   ,  168,  1.0f, 0x0dc3)
-    // NOTE: WolfCrypt has a problem here, compute CRC with mbedTLS
-    TASK(ecdsa_sign_p384      ,   32,  1.0f, 0)
-    TASK(ecdsa_verify_p384    ,   32,  1.0f, 1)
-    TASK(sha384               ,   23,  3.0f, 0x9f68)
-    TASK(sha384               ,   57,  1.0f, 0x8a5c)
-    TASK(sha384               ,  384,  1.0f, 0xb5e8)
-    TASK(sha384               , 4224,  4.0f, 0xb146)
-    TASK(aes256_ecb_encrypt   , 2048, 10.0f, 0x2364)
-
-    TASK(ecdh_p384            ,    0,  1.0f, 0)
+    /* Version 2: */
+    /*   Light */
+    /*     TLS1.3 */
+    TASK(sha256               ,  102, 10.0f, 0x880c)
+    TASK(sha256               ,   94, 34.0f, 0xd86b)
+    TASKEX(sha256             ,        1.0f, 0xa23c, &g_sha_multi_m)
+    TASKEX(chachapoly_encrypt ,        1.0f, 0x5086, &g_aead_e_multi_m)
+    TASKEX(chachapoly_decrypt ,        1.0f, 0x7b1a, &g_aead_d_multi_m)
     TASK(ecdh_x25519          ,    0,  1.0f, 0)
-
-    TASK(sha256               , 1539,  1.0f, 0xb48c)
-    TASK(sha384               , 1539,  1.0f, 0x7cbc)
-    TASK(ecdsa_sign_ed25519   ,   32,  1.0f, 0)
-
-    TASK(sha256               , 4104,  2.0f, 0x39c9)
-    TASK(sha384               , 4104,  2.0f, 0xa424)
-    TASK(ecdsa_verify_ed25519 ,   32,  1.0f, 1)
-
-    TASK(aes128_ccm_encrypt   ,  416,  1.0f, 0x286a)
-    TASK(aes128_ccm_decrypt   ,  444,  1.0f, 0x11b7)
-    TASK(aes128_ccm_encrypt   ,   38,  1.0f, 0x5137)
-    TASK(aes128_ccm_decrypt   ,  136,  1.0f, 0xab71)
-
-    TASK(aes256_ccm_encrypt   ,  416,  1.0f, 0x28dd)
-    TASK(aes256_ccm_decrypt   ,  444,  1.0f, 0x06f9)
-    TASK(aes256_ccm_encrypt   ,   38,  1.0f, 0xd879)
-    TASK(aes256_ccm_decrypt   ,  136,  1.0f, 0xc310)
-
-    TASK(aes128_gcm_encrypt   ,  416,  1.0f, 0xa22f)
-    TASK(aes128_gcm_decrypt   ,  444,  1.0f, 0x11b7)
-    TASK(aes128_gcm_encrypt   ,   38,  1.0f, 0x9970)
-    TASK(aes128_gcm_decrypt   ,  136,  1.0f, 0xab71)
-
-    TASK(chachapoly_encrypt   ,  416,  1.0f, 0x47fa)
-    TASK(chachapoly_decrypt   ,  444,  1.0f, 0x06f9)
-    TASK(chachapoly_encrypt   ,   38,  1.0f, 0x5dbb)
-    TASK(chachapoly_decrypt   ,  136,  1.0f, 0xc310)
-
-    TASK(aes128_ecb_encrypt   ,  288,  1.0f, 0x859a)
-    TASK(aes256_ecb_encrypt   ,  288,  1.0f, 0x0ebc)
-    TASK(aes128_ctr_encrypt   ,  288,  1.0f, 0x3afb)
-    TASK(aes256_ctr_encrypt   ,  288,  1.0f, 0xa675)
-
-    TASK(sha256               , 1132,  1.0f, 0x9c1f)
-    TASK(sha256               ,  204, 15.0f, 0x0e57)
-    TASK(sha256               ,  176, 14.0f, 0x3bd6)
-    TASK(sha256               ,  130,  2.0f, 0xbaed)
-
-    TASK(sha384               , 1132,  1.0f, 0x7839)
-    TASK(sha384               ,  204, 15.0f, 0x4b8a)
-    TASK(sha384               ,  176, 14.0f, 0x660b)
-    TASK(sha384               ,  130,  2.0f, 0x445b)
-
+    TASK(ecdsa_sign_ed25519   ,  130,  1.0f, 0)
+    TASK(ecdsa_verify_ed25519 ,   64,  2.0f, 1)
+    /*     Secure Boot, RSA */
+    TASK(sha256               , 4000, 20.0f, 0xc7d1)
     TASK(rsa_verify_2048      ,   32,  1.0f, 1)
+    /*     Secure Boot, ECC */
+    TASK(ecdsa_verify_ed25519 , 4000, 20.0f, 1)
+    /*     Secure Boot, Decrypt */
+    TASK(chachapoly_decrypt   , 4000, 20.0f, 0xc999)
+    /*   Medium */
+    /*     TLS1.3 */
+    TASK(sha256               ,  102, 10.0f, 0x880c)
+    TASK(sha256               ,   94, 34.0f, 0xd86b)
+    TASKEX(sha256             ,        1.0f, 0xa23c, &g_sha_multi_m)
+    TASKEX(aes128_ccm_encrypt ,        1.0f, 0xb9d9, &g_aead_e_multi_m)
+    TASKEX(aes128_ccm_decrypt ,        1.0f, 0x7b96, &g_aead_d_multi_m)
+    TASKEX(aes128_gcm_encrypt ,        1.0f, 0x954b, &g_aead_e_multi_m)
+    TASKEX(aes128_gcm_decrypt ,        1.0f, 0x7b96, &g_aead_d_multi_m)
+    TASK(ecdh_p256r1          ,    0,  1.0f, 0)
+    TASK(ecdsa_sign_p256r1    ,   32,  1.0f, 0)
+    TASK(ecdsa_verify_p256r1  ,   32,  2.0f, 1)
+    /*     Secure Boot, RSA */
+    TASK(sha256               , 4000, 20.0f, 0xc7d1)
     TASK(rsa_verify_3072      ,   32,  1.0f, 1)
+    /*     Secure Boot, ECC */
+    TASK(sha256               , 4000, 20.0f, 0xc7d1)
+    TASK(ecdsa_verify_p256r1  ,   32,  1.0f, 1)
+    /*     Secure Boot, Decrypt */
+    TASK(aes128_ctr_decrypt   , 4000, 20.0f, 0x884e)
+    /*   High */
+    /*     TLS1.3 */
+    TASK(sha384               ,  102, 10.0f, 0xd3f8)
+    TASK(sha384               ,   94, 34.0f, 0x3aff)
+    TASKEX(sha384             ,        1.0f, 0xa6b6, &g_sha_multi_h)
+    TASKEX(aes256_ccm_encrypt ,        1.0f, 0xf16d, &g_aead_e_multi_h)
+    TASKEX(aes256_ccm_decrypt ,        1.0f, 0x56f1, &g_aead_d_multi_h)
+    TASKEX(aes256_gcm_encrypt ,        1.0f, 0x9f97, &g_aead_e_multi_h)
+    TASKEX(aes256_gcm_decrypt ,        1.0f, 0x56f1, &g_aead_d_multi_h)
+    TASK(ecdh_p384            ,    0,  1.0f, 0)
+    TASK(ecdsa_sign_p384      ,   48,  1.0f, 0)
+    TASK(ecdsa_verify_p384    ,   48,  2.0f, 1)
+    /*     Secure Boot, RSA */
+    TASK(sha256               , 4000, 20.0f, 0xc7d1)
     TASK(rsa_verify_4096      ,   32,  1.0f, 1)
+    /*     Secure Boot, ECC */
+    TASK(sha384               , 4000, 20.0f, 0x6411)
+    TASK(ecdsa_verify_p384    ,   32,  1.0f, 1)
+    /*     Secure Boot, Decrypt */
+    TASK(aes256_ctr_decrypt   , 4000, 20.0f, 0x681d)
 };
 // clang-format on
 static const size_t g_numtasks = sizeof(g_task) / sizeof(task_entry_t);
