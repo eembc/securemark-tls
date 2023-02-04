@@ -4,6 +4,10 @@ EEMBC's SecureMark® benchmark is an objective, standardized benchmarking framew
 
 This repository contains the SecureMark-TLS firmware for *standalone* execution, which does not require the external hardware test-harness, nor the host GUI software. This means you can run the benchmark and collect just performance scores. In order collect official energy scores and upload them to the EEMBC website, you will need both the hardware for the test-harness and a license for the host software. While this is still the same benchmark workload, the host software is needed to determines the run was valid (i.e. to discourage cheating and verify adherence to the "Run Rules"), and the test-harness is needed to collect the measurements required to compute the energy-efficiency score.
 
+# SecureMark V2
+
+Version 2.0 of SecureMark is now available [here](https://github.com/eembc/securemark-v2). This new version adds light, medium, and heavy cryptoprimitive strengths for TLS scenarios, introducing the test on P384r1 curves and the option to use ChaCha20/Poly1305 as the AEAD (as well as CCM or GCM AES modes). We also added testing for TRNG throughput and latency, as well as secure boot profiles using RSA verification with 2048- and 4096-bit keys.
+
 # Firmware
 
 The firmware is divided into two sections: the `monitor` and the `profile`. The `monitor` contains a basic API to the device under test (DUT), and the `profile` contains the actual benchmark code and algorithm API. In the code, files and functions that start with `ee_` cannot be changed, whereas those which begin with `th_` in most cases must be edited, as they are empty hardware-specific implementation layers.
